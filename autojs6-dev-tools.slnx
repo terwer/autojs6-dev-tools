@@ -6,8 +6,10 @@
   </Configurations>
   <Folder Name="/docs/">
     <File Path=".gitignore" />
+    <File Path="AGENTS.md" />
     <File Path="LICENSE.txt" />
     <File Path="README.md" />
+    <File Path="README_zh_CN.md" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="App/App.csproj">
