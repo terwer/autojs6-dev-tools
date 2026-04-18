@@ -1,11 +1,13 @@
 # AutoJS6 Visual Development Toolkit
 
+> **⚠️ Under Active Development** - This project is in early development stage. Features are not yet complete. Do not use in production.
+
 [English](README.md) | [简体中文](README_zh_CN.md)
 
-🎯 An ADB-based development toolkit for AutoJS6 script developers, with visual screenshot analysis, template matching preview, and code generation.
+🎯 A development toolkit for AutoJS6 script developers, with visual screenshot analysis, UI widget parsing, image matching preview, and AutoJS6 script code generation.
 
-> **Stop wasting hours on manual screenshot cropping and coordinate guessing**  
-> Real-time template matching preview • One-click coordinate picking • Auto-generated AutoJS6 code
+> **Image recognition takes 20 tries to work? Breaks on different devices?**  
+> Use this tool: Real-time match preview • Visual threshold and region adjustment • Auto-generate AutoJS6 code
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![WinUI 3](https://img.shields.io/badge/WinUI-3-0078D4?logo=windows)](https://microsoft.github.io/microsoft-ui-xaml/)
@@ -17,7 +19,7 @@
 
 **Developing AutoJS6 scripts without this tool:**
 
-1. 📸 Screenshot device → Open Photoshop/Paint → Manually crop template → Save
+1. 📸 Screenshot → Manually crop template → Save → Write code → Run on device
 2. 📝 Guess coordinates (x: 500? 520? 540?) → Write code → Run on device
 3. ❌ Template not found → Adjust crop by 2 pixels → Run again
 4. 🔄 Repeat 20 times until it works
@@ -61,15 +63,62 @@
 
 **You need this if you:**
 - ✅ Spend >30 minutes per day cropping screenshots and adjusting coordinates
-- ✅ Test AutoJS6 scripts on multiple Android devices with different resolutions
-- ✅ Use `images.findImage()` or `images.matchTemplate()` frequently
-- ✅ Manually search UI dump XML for resource-id or text attributes
-- ✅ Want to see template matching results without running on device every time
+- ✅ Test scripts on multiple Android devices with different resolutions
+- ✅ Use image recognition features frequently
+- ✅ Need to manually search UI tree for widget attributes
+- ✅ Want to preview matching results without running on device
 
 **You DON'T need this if:**
-- ❌ You only use simple `click(x, y)` with hardcoded coordinates
-- ❌ You never use image-based or selector-based automation
-- ❌ You enjoy manually cropping screenshots 20 times per feature
+- ❌ You only use simple fixed-coordinate clicks
+- ❌ You never use image matching or widget selectors
+- ❌ You enjoy manually debugging 20 times per feature
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- **💻 OS**: Windows 10/11 (Build 22621.0+)
+- **⚙️ Runtime**: .NET 8 SDK
+- **🛠️ IDE**: Visual Studio 2022/2026 with WinUI 3 workload
+- **📱 Tools**: Android Debug Bridge (ADB) in PATH
+
+### 1️⃣ Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/autojs6-dev-tools.git
+cd autojs6-dev-tools
+```
+
+### 2️⃣ Install Dependencies
+
+```bash
+# Restore NuGet packages
+dotnet restore
+```
+
+### 3️⃣ Configure Environment Variables
+
+Edit `AGENTS.md` to set your local paths:
+
+```bash
+YXS_DAY_TASK_ROOT="C:\path\to\your\yxs-day-task"
+AUTOJS6_DOCS_ROOT="C:\path\to\AutoJs6-Documentation"
+AUTOJS6_SOURCE_ROOT="C:\path\to\AutoJs6"
+```
+
+### 4️⃣ Build and Run
+
+```bash
+# Build solution
+dotnet build
+
+# Run application
+dotnet run --project src/App
+```
+
+Or open `autojs6-dev-tools.slnx` in Visual Studio and press F5.
 
 ---
 
@@ -134,53 +183,6 @@ if (widget) {
 - **✅ UiSelector Validation**: Test selectors against current UI tree
 - **📐 Coordinate Alignment Check**: Verify widget bounds match screenshot pixels
 - **📊 Batch Testing**: Load multiple templates, generate summary report
-
----
-
-## 🚀 Prerequisites
-
-- **💻 OS**: Windows 10/11 (Build 22621.0+)
-- **⚙️ Runtime**: .NET 8 SDK
-- **🛠️ IDE**: Visual Studio 2022/2026 with WinUI 3 workload
-- **📱 Tools**: Android Debug Bridge (ADB) in PATH
-
-## 📦 Quick Start
-
-### 1️⃣ Clone the Repository
-
-```bash
-git clone https://github.com/yourusername/autojs6-dev-tools.git
-cd autojs6-dev-tools
-```
-
-### 2️⃣ Install Dependencies
-
-```bash
-# Restore NuGet packages
-dotnet restore
-```
-
-### 3️⃣ Configure Environment Variables
-
-Edit `AGENTS.md` to set your local paths:
-
-```bash
-YXS_DAY_TASK_ROOT="C:\path\to\your\yxs-day-task"
-AUTOJS6_DOCS_ROOT="C:\path\to\AutoJs6-Documentation"
-AUTOJS6_SOURCE_ROOT="C:\path\to\AutoJs6"
-```
-
-### 4️⃣ Build and Run
-
-```bash
-# Build solution
-dotnet build
-
-# Run application
-dotnet run --project src/App
-```
-
-Or open `autojs6-dev-tools.slnx` in Visual Studio and press F5.
 
 ---
 

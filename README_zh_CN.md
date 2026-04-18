@@ -1,11 +1,13 @@
 # AutoJS6 可视化开发工具包
 
+> **⚠️ 项目开发中** - 当前处于早期开发阶段，功能尚未完善，请勿用于生产环境。
+
 [English](README.md) | [简体中文](README_zh_CN.md)
 
-🎯 基于 ADB 的 AutoJS6 脚本开发辅助工具，提供可视化截图分析、模板匹配预览和代码生成。
+🎯 AutoJS6 脚本开发辅助工具，提供可视化截图分析、UI 控件解析、图像匹配预览和 AutoJS6 脚本代码生成。
 
-> **别再浪费几小时手动截图裁剪和猜坐标了**  
-> 实时模板匹配预览 • 一键坐标拾取 • 自动生成 AutoJS6 代码
+> **图像识别调试 20 次才跑通？换台设备又失效？**  
+> 用这个工具：实时预览匹配结果 • 可视化调整阈值和区域 • 自动生成 AutoJS6 代码
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![WinUI 3](https://img.shields.io/badge/WinUI-3-0078D4?logo=windows)](https://microsoft.github.io/microsoft-ui-xaml/)
@@ -17,7 +19,7 @@
 
 **没有这个工具开发 AutoJS6 脚本时：**
 
-1. 📸 截图设备 → 打开 PS/画图 → 手动裁剪模板 → 保存
+1. 📸 截图 → 手动裁剪模板 → 保存 → 写代码 → 跑真机测试
 2. 📝 猜坐标（x: 500？520？540？）→ 写代码 → 跑真机测试
 3. ❌ 模板没找到 → 调整裁剪 2 像素 → 再跑一次
 4. 🔄 重复 20 次直到能用
@@ -61,15 +63,62 @@
 
 **你需要这个工具，如果：**
 - ✅ 每天花 >30 分钟裁剪截图和调整坐标
-- ✅ 在多台不同分辨率的 Android 设备上测试 AutoJS6 脚本
-- ✅ 频繁使用 `images.findImage()` 或 `images.matchTemplate()`
-- ✅ 手动搜索 UI dump XML 找 resource-id 或 text 属性
-- ✅ 想在不跑真机的情况下看到模板匹配结果
+- ✅ 在多台不同分辨率的 Android 设备上测试脚本
+- ✅ 频繁使用图像识别功能
+- ✅ 需要手动搜索 UI 树找控件属性
+- ✅ 想在不跑真机的情况下预览匹配结果
 
 **你不需要这个工具，如果：**
-- ❌ 只用简单的 `click(x, y)` 硬编码坐标
-- ❌ 从不使用图像匹配或选择器自动化
-- ❌ 享受每个功能手动裁剪截图 20 次的乐趣
+- ❌ 只用简单的固定坐标点击
+- ❌ 从不使用图像匹配或控件选择器
+- ❌ 享受每个功能手动调试 20 次的乐趣
+
+---
+
+## 🚀 快速开始
+
+### 前置要求
+
+- **💻 操作系统**：Windows 10/11（Build 22621.0+）
+- **⚙️ 运行时**：.NET 8 SDK
+- **🛠️ IDE**：Visual Studio 2022/2026 带 WinUI 3 工作负载
+- **📱 工具**：Android Debug Bridge (ADB) 在 PATH 中
+
+### 1️⃣ 克隆仓库
+
+```bash
+git clone https://github.com/yourusername/autojs6-dev-tools.git
+cd autojs6-dev-tools
+```
+
+### 2️⃣ 安装依赖
+
+```bash
+# 恢复 NuGet 包
+dotnet restore
+```
+
+### 3️⃣ 配置环境变量
+
+编辑 `AGENTS.md` 设置本地路径：
+
+```bash
+YXS_DAY_TASK_ROOT="C:\path\to\your\yxs-day-task"
+AUTOJS6_DOCS_ROOT="C:\path\to\AutoJs6-Documentation"
+AUTOJS6_SOURCE_ROOT="C:\path\to\AutoJs6"
+```
+
+### 4️⃣ 构建并运行
+
+```bash
+# 构建解决方案
+dotnet build
+
+# 运行应用
+dotnet run --project src/App
+```
+
+或在 Visual Studio 中打开 `autojs6-dev-tools.slnx` 并按 F5。
 
 ---
 
@@ -134,53 +183,6 @@ if (widget) {
 - **✅ UiSelector 验证**：对当前 UI 树测试选择器
 - **📐 坐标对齐检查**：验证控件边界与截图像素是否匹配
 - **📊 批量测试**：加载多个模板，生成汇总报告
-
----
-
-## 🚀 前置要求
-
-- **💻 操作系统**：Windows 10/11（Build 22621.0+）
-- **⚙️ 运行时**：.NET 8 SDK
-- **🛠️ IDE**：Visual Studio 2022/2026 带 WinUI 3 工作负载
-- **📱 工具**：Android Debug Bridge (ADB) 在 PATH 中
-
-## 📦 快速开始
-
-### 1️⃣ 克隆仓库
-
-```bash
-git clone https://github.com/yourusername/autojs6-dev-tools.git
-cd autojs6-dev-tools
-```
-
-### 2️⃣ 安装依赖
-
-```bash
-# 恢复 NuGet 包
-dotnet restore
-```
-
-### 3️⃣ 配置环境变量
-
-编辑 `AGENTS.md` 设置本地路径：
-
-```bash
-YXS_DAY_TASK_ROOT="C:\path\to\your\yxs-day-task"
-AUTOJS6_DOCS_ROOT="C:\path\to\AutoJs6-Documentation"
-AUTOJS6_SOURCE_ROOT="C:\path\to\AutoJs6"
-```
-
-### 4️⃣ 构建并运行
-
-```bash
-# 构建解决方案
-dotnet build
-
-# 运行应用
-dotnet run --project src/App
-```
-
-或在 Visual Studio 中打开 `autojs6-dev-tools.slnx` 并按 F5。
 
 ---
 
