@@ -2,6 +2,8 @@
 
 现有 AutoJS6 开发工具依赖低效的命令行脚本工作流（capture-current.cmd / capture-loop.cmd / generate-region-ref / matchReferenceTemplate），缺乏可视化交互界面，导致截图裁剪、坐标拾取、模板匹配调试效率极低。需要构建 Windows 原生可视化开发工具包，提供像素级图像处理与控件级 UI 图层分析的双引擎并行能力，彻底替代手动调试流程。
 
+**核心受益项目：** C:\Users\Administrator\Documents\myscripts\yxs-day-task（英雄杀日常任务自动化脚本），该项目是本工具的直接使用方，其开发流程、模板管理、坐标调试需求直接驱动本工具设计。
+
 ## What Changes
 
 - 新增 WinUI 3 桌面应用，提供 ADB 设备管理、实时截图拉取、交互式裁剪、坐标拾取功能
@@ -32,3 +34,9 @@
 - 新增 NuGet 依赖：Microsoft.Graphics.Win2D、OpenCvSharp4.Windows、SixLabors.ImageSharp、SharpAdbClient、CommunityToolkit.Mvvm
 - 依赖外部工具：ADB（Android Debug Bridge）需预先配置环境变量
 - 兼容性要求：Windows 10/11 (10.0.22621.0+)、.NET 8、VS 2022/2026
+
+**关键参考资源（实施前必须完整理解）：**
+- 现有脚本工作流：C:\Users\Administrator\Documents\myscripts\yxs-day-task（capture-current.cmd、capture-loop.cmd、generate-region-ref、matchReferenceTemplate）
+- 受益项目文档：C:\Users\Administrator\Documents\myscripts\yxs-day-task\AGENTS.md（AutoJS6 开发约束、API 规则、业务逻辑）
+- AutoJS6 官方文档：C:\Users\Administrator\Documents\opensouce\AutoJs6-Documentation（json/、api/、docs/）
+- AutoJS6 源码：C:\Users\Administrator\Documents\opensouce\AutoJs6（runtime/api/、core/）
