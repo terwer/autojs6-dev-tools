@@ -361,3 +361,15 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# ReCode local database
+.recode
+
+# Oh my claude code
+.omc
+
+# VS Code directories
+.vscode/
+
+# JetBrains Rider directories
+.idea/
