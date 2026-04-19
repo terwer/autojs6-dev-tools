@@ -43,4 +43,21 @@ public interface IAdbService
     /// <param name="cancellationToken">取消令牌</param>
     /// <returns>连接结果</returns>
     Task<string> ConnectDeviceAsync(string address, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 配对网络设备（使用配对码）
+    /// </summary>
+    /// <param name="address">设备地址（如 192.168.1.100:41581）</param>
+    /// <param name="pairingCode">6位配对码</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>配对结果</returns>
+    Task<string> PairDeviceAsync(string address, string pairingCode, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// 通过 mDNS 自动发现局域网内的 ADB 设备
+    /// </summary>
+    /// <param name="timeoutSeconds">扫描超时时间（秒）</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>发现的设备列表（设备名、IP、端口）</returns>
+    Task<List<(string DeviceName, string Address)>> DiscoverDevicesAsync(int timeoutSeconds = 5, CancellationToken cancellationToken = default);
 }

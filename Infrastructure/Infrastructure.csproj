@@ -12,5 +12,6 @@
 
   <ItemGroup>
     <PackageReference Include="AdvancedSharpAdbClient" Version="3.6.16" />
+    <PackageReference Include="Zeroconf" Version="3.6.11" />
   </ItemGroup>
 </Project>
