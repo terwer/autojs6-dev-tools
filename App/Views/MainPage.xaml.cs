@@ -377,4 +377,34 @@ public sealed partial class MainPage : Page
         }
     }
 
+    /// <summary>
+    /// 清空日志按钮点击
+    /// </summary>
+    private void ClearLogButton_Click(object sender, RoutedEventArgs e)
+    {
+        DebugLogText.Text = string.Empty;
+    }
+
+    /// <summary>
+    /// 全选日志按钮点击
+    /// </summary>
+    private void SelectAllLogButton_Click(object sender, RoutedEventArgs e)
+    {
+        DebugLogText.SelectAll();
+    }
+
+    /// <summary>
+    /// 复制日志按钮点击
+    /// </summary>
+    private void CopyLogButton_Click(object sender, RoutedEventArgs e)
+    {
+        var selectedText = DebugLogText.SelectedText;
+        if (!string.IsNullOrEmpty(selectedText))
+        {
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(selectedText);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+        }
+    }
+
 }

@@ -107,7 +107,28 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <TextBox x:Name="DebugLogText" Padding="8" FontFamily="Consolas" FontSize="11"
                              TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0"
-                             Background="Transparent" AcceptsReturn="True"/>
+                             Background="Transparent" AcceptsReturn="True">
+                        <TextBox.ContextFlyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem Text="清空日志" Click="ClearLogButton_Click">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE74D;"/>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutSeparator/>
+                                <MenuFlyoutItem Text="全选" Click="SelectAllLogButton_Click">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE8B3;"/>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="复制" Click="CopyLogButton_Click">
+                                    <MenuFlyoutItem.Icon>
+                                        <FontIcon Glyph="&#xE8C8;"/>
+                                    </MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                            </MenuFlyout>
+                        </TextBox.ContextFlyout>
+                    </TextBox>
                 </ScrollViewer>
             </Border>
         </Grid>
