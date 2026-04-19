@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Core.Abstractions;
 using Core.Models;
@@ -99,8 +100,13 @@ public sealed partial class MainPage : Page
         {
             StatusText.Text = "正在拉取 UI 树...";
 
+            // 获取旋转角度
+            var rotation = await _adbService.GetScreenRotationAsync(_currentDevice);
+            Services.LogService.Instance.Log($"[DumpUI] 设备旋转角度: {rotation}°");
+
             // 拉取 UI 树
             var xmlContent = await _adbService.DumpUiHierarchyAsync(_currentDevice);
+            Services.LogService.Instance.Log($"[DumpUI] XML 长度: {xmlContent.Length} 字符");
 
             // 解析 UI 树
             var parser = new Core.Services.UiDumpParser();
@@ -108,17 +114,76 @@ public sealed partial class MainPage : Page
 
             if (root != null)
             {
+                Services.LogService.Instance.Log($"[DumpUI] 根节点: {root.ClassName}, Bounds={root.BoundsRect}");
+
+                // 统计所有节点数量（包括子节点）
+                int totalNodes = CountAllNodes(root);
+                Services.LogService.Instance.Log($"[DumpUI] 总节点数（含子节点）: {totalNodes}");
+
                 // 过滤节点
                 var nodes = parser.FilterNodes(root);
+                Services.LogService.Instance.Log($"[DumpUI] 过滤后节点数: {nodes.Count}");
+
+                // 如果过滤后节点太少，使用所有节点
+                if (nodes.Count < 5)
+                {
+                    Services.LogService.Instance.Log($"[DumpUI] 过滤后节点太少，使用所有节点");
+                    nodes = GetAllNodes(root);
+                    Services.LogService.Instance.Log($"[DumpUI] 所有节点数: {nodes.Count}");
+                }
+
+                // UI Dump 返回的坐标是逻辑坐标（横屏 1280x720）
+                // 但截图是物理坐标（竖屏 720x1280，旋转 90°）
+                // 需要根据旋转角度转换坐标系统
+                if (rotation == 90)
+                {
+                    Services.LogService.Instance.Log($"[DumpUI] 检测到旋转 90°，转换坐标系统");
+
+                    // UI Dump 的逻辑尺寸（横屏）
+                    var logicalWidth = root.BoundsRect.Width;   // 1280
+                    var logicalHeight = root.BoundsRect.Height; // 720
+
+                    foreach (var node in nodes)
+                    {
+                        var (x, y, w, h) = node.BoundsRect;
+
+                        // 顺时针旋转 90°: (x, y, w, h) → (y, logicalWidth-x-w, h, w)
+                        int newX = y;
+                        int newY = logicalWidth - x - w;
+                        int newW = h;
+                        int newH = w;
+
+                        node.BoundsRect = (newX, newY, newW, newH);
+
+                        if (nodes.IndexOf(node) < 3)
+                        {
+                            Services.LogService.Instance.Log($"[DumpUI] 转换: ({x}, {y}, {w}, {h}) → ({newX}, {newY}, {newW}, {newH})");
+                        }
+                    }
+                }
+
+                // 打印前 5 个节点的边界
+                for (int i = 0; i < Math.Min(5, nodes.Count); i++)
+                {
+                    var node = nodes[i];
+                    Services.LogService.Instance.Log($"[DumpUI] 节点 {i}: {node.ClassName}, Bounds=({node.BoundsRect.X}, {node.BoundsRect.Y}, {node.BoundsRect.Width}, {node.BoundsRect.Height})");
+                }
 
                 // 显示到画布
                 Canvas.SetWidgetNodes(nodes);
+                Services.LogService.Instance.Log($"[DumpUI] 已调用 Canvas.SetWidgetNodes");
 
                 StatusText.Text = $"UI 树拉取完成，共 {nodes.Count} 个控件";
+            }
+            else
+            {
+                Services.LogService.Instance.Log($"[DumpUI] 解析失败：root 为 null");
+                StatusText.Text = "UI 树解析失败";
             }
         }
         catch (Exception ex)
         {
+            Services.LogService.Instance.Log($"[DumpUI] 异常: {ex.Message}");
             await ShowErrorAsync($"拉取 UI 树失败：{ex.Message}");
             StatusText.Text = "拉取 UI 树失败";
         }
@@ -201,6 +266,32 @@ public sealed partial class MainPage : Page
         DebugPanel.Visibility = DebugPanel.Visibility == Visibility.Visible
             ? Visibility.Collapsed
             : Visibility.Visible;
+    }
+
+    /// <summary>
+    /// 统计所有节点数量（递归）
+    /// </summary>
+    private int CountAllNodes(WidgetNode node)
+    {
+        int count = 1;
+        foreach (var child in node.Children)
+        {
+            count += CountAllNodes(child);
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// 获取所有节点（递归）
+    /// </summary>
+    private List<WidgetNode> GetAllNodes(WidgetNode node)
+    {
+        var result = new List<WidgetNode> { node };
+        foreach (var child in node.Children)
+        {
+            result.AddRange(GetAllNodes(child));
+        }
+        return result;
     }
 
 }

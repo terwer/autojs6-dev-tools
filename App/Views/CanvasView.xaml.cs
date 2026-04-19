@@ -364,6 +364,8 @@ public sealed partial class CanvasView : Page
     {
         var ds = args.DrawingSession;
 
+        Services.LogService.Instance.Log($"[Canvas_Draw] 画布尺寸: {sender.ActualWidth:F1}x{sender.ActualHeight:F1}, 缩放: {_scale:F3}, 偏移: ({_offsetX:F1}, {_offsetY:F1})");
+
         // === 图像层（底层）===
         var bitmap = _imageBitmap; // 本地副本，避免多线程竞争
         if (bitmap != null)
@@ -387,10 +389,16 @@ public sealed partial class CanvasView : Page
         var overlayTransform = Matrix3x2.CreateScale(_scale) * Matrix3x2.CreateTranslation(_offsetX, _offsetY);
         ds.Transform = overlayTransform;
 
+        Services.LogService.Instance.Log($"[Canvas_Draw] Overlay 层状态: WidgetBounds={_showWidgetBounds}, MatchResults={_showMatchResults}, CropRegion={_showCropRegion}");
+
         // 绘制控件边界框
         if (_showWidgetBounds)
         {
             DrawWidgetBounds(ds);
+        }
+        else
+        {
+            Services.LogService.Instance.Log($"[Canvas_Draw] 跳过 WidgetBounds 绘制（_showWidgetBounds=false）");
         }
 
         // 绘制匹配结果框
@@ -414,10 +422,17 @@ public sealed partial class CanvasView : Page
     /// </summary>
     private void DrawWidgetBounds(Microsoft.Graphics.Canvas.CanvasDrawingSession ds)
     {
+        Services.LogService.Instance.Log($"[DrawWidgetBounds] 开始绘制，节点数: {_widgetNodes.Count}, 显示状态: {_showWidgetBounds}");
+
+        int drawnCount = 0;
         foreach (var node in _widgetNodes)
         {
             var (x, y, w, h) = node.BoundsRect;
-            if (w <= 0 || h <= 0) continue;
+            if (w <= 0 || h <= 0)
+            {
+                Services.LogService.Instance.Log($"[DrawWidgetBounds] 跳过无效节点: {node.ClassName}, Bounds=({x}, {y}, {w}, {h})");
+                continue;
+            }
 
             // 按类型着色
             var color = GetWidgetColor(node.ClassName);
@@ -429,7 +444,15 @@ public sealed partial class CanvasView : Page
             );
 
             ds.DrawRectangle(x, y, w, h, colorWithAlpha, 2);
+            drawnCount++;
+
+            if (drawnCount <= 3)
+            {
+                Services.LogService.Instance.Log($"[DrawWidgetBounds] 绘制节点 {drawnCount}: {node.ClassName}, Bounds=({x}, {y}, {w}, {h}), Color=({colorWithAlpha.R}, {colorWithAlpha.G}, {colorWithAlpha.B}, {colorWithAlpha.A})");
+            }
         }
+
+        Services.LogService.Instance.Log($"[DrawWidgetBounds] 完成绘制，共绘制 {drawnCount} 个节点");
     }
 
     /// <summary>

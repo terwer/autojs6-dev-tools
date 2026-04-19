@@ -38,7 +38,7 @@ public class WidgetNode
     /// <summary>
     /// 边界框矩形（x, y, width, height）
     /// </summary>
-    public (int X, int Y, int Width, int Height) BoundsRect { get; init; }
+    public (int X, int Y, int Width, int Height) BoundsRect { get; set; }
 
     /// <summary>
     /// 包名
