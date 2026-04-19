@@ -54,63 +54,63 @@
 
 ## 2. Core 层：数据模型定义
 
-- [ ] 2.1 创建 Models/AdbDevice.cs（设备序列号、型号、状态、连接类型）
-- [ ] 2.2 创建 Models/WidgetNode.cs（控件节点：resource-id、text、content-desc、class、clickable、bounds、package、子节点列表）
-- [ ] 2.3 创建 Models/CropRegion.cs（裁剪区域：x、y、width、height）
-- [ ] 2.4 创建 Models/MatchResult.cs（匹配结果：位置、置信度、耗时）
-- [ ] 2.5 创建 Models/AutoJS6CodeOptions.cs（代码生成选项：模式、阈值、重试次数、超时时间、变量名）
+- [x] 2.1 创建 Models/AdbDevice.cs（设备序列号、型号、状态、连接类型）
+- [x] 2.2 创建 Models/WidgetNode.cs（控件节点：resource-id、text、content-desc、class、clickable、bounds、package、子节点列表）
+- [x] 2.3 创建 Models/CropRegion.cs（裁剪区域：x、y、width、height）
+- [x] 2.4 创建 Models/MatchResult.cs（匹配结果：位置、置信度、耗时）
+- [x] 2.5 创建 Models/AutoJS6CodeOptions.cs（代码生成选项：模式、阈值、重试次数、超时时间、变量名）
 
 ## 3. Core 层：服务接口定义
 
-- [ ] 3.1 创建 Abstractions/IAdbService.cs（设备扫描、命令执行、截图拉取、UI Dump 拉取）
-- [ ] 3.2 创建 Abstractions/IUiDumpParser.cs（XML 解析、节点过滤、坐标映射）
-- [ ] 3.3 创建 Abstractions/IOpenCVMatchService.cs（模板匹配、阈值过滤）
-- [ ] 3.4 创建 Abstractions/ICodeGenerator.cs（图像模式代码生成、控件模式代码生成）
+- [x] 3.1 创建 Abstractions/IAdbService.cs（设备扫描、命令执行、截图拉取、UI Dump 拉取）
+- [x] 3.2 创建 Abstractions/IUiDumpParser.cs（XML 解析、节点过滤、坐标映射）
+- [x] 3.3 创建 Abstractions/IOpenCVMatchService.cs（模板匹配、阈值过滤）
+- [x] 3.4 创建 Abstractions/ICodeGenerator.cs（图像模式代码生成、控件模式代码生成）
 
 ## 4. Infrastructure 层：ADB 通信实现
 
-- [ ] 4.1 创建 Adb/AdbServiceImpl.cs 实现 IAdbService
-- [ ] 4.2 实现设备扫描功能（adb devices -l 解析）
-- [ ] 4.3 实现异步截图拉取（adb shell screencap -p 流式读取 PNG）
-- [ ] 4.4 实现异步 UI Dump 拉取（adb shell uiautomator dump /dev/tty 流式读取 XML）
-- [ ] 4.5 实现命令执行封装（Process 封装、超时控制、异常捕获、重试机制）
-- [ ] 4.6 实现日志输出流（stdout/stderr 实时流式输出）
+- [x] 4.1 创建 Adb/AdbServiceImpl.cs 实现 IAdbService
+- [x] 4.2 实现设备扫描功能（adb devices -l 解析）
+- [x] 4.3 实现异步截图拉取（adb shell screencap -p 流式读取 PNG）
+- [x] 4.4 实现异步 UI Dump 拉取（adb shell uiautomator dump /dev/tty 流式读取 XML）
+- [x] 4.5 实现命令执行封装（Process 封装、超时控制、异常捕获、重试机制）
+- [x] 4.6 实现日志输出流（stdout/stderr 实时流式输出）
 
 ## 5. Infrastructure 层：图像处理封装
 
-- [ ] 5.1 创建 Imaging/ImageProcessor.cs（PNG 解码、降采样、裁剪、导出）
-- [ ] 5.2 实现 PNG 解码为 byte[] 或 Stream
-- [ ] 5.3 实现高分辨率图像降采样（最大 1920x1080，保持宽高比）
-- [ ] 5.4 实现裁剪区域导出为独立 PNG 文件
-- [ ] 5.5 实现 JSON 元数据生成（记录偏移量与原图尺寸）
+- [x] 5.1 创建 Imaging/ImageProcessor.cs（PNG 解码、降采样、裁剪、导出）
+- [x] 5.2 实现 PNG 解码为 byte[] 或 Stream
+- [x] 5.3 实现高分辨率图像降采样（最大 1920x1080，保持宽高比）
+- [x] 5.4 实现裁剪区域导出为独立 PNG 文件
+- [x] 5.5 实现 JSON 元数据生成（记录偏移量与原图尺寸）
 
 ## 6. Core 层：UI 树解析实现
 
-- [ ] 6.1 创建 Services/UiDumpParser.cs 实现 IUiDumpParser
-- [ ] 6.2 实现 XML 解析（System.Xml.Linq 或轻量级解析器）
-- [ ] 6.3 实现布局容器过滤规则（class 包含 Layout 且无 clickable/text/content-desc → 跳过）
-- [ ] 6.4 实现 bounds 坐标解析（"[x1,y1][x2,y2]" → Rect(x1, y1, x2-x1, y2-y1)）
-- [ ] 6.5 实现控件节点树构建（递归解析子节点）
-- [ ] 6.6 实现容错解析（跳过无效节点、记录警告日志）
+- [x] 6.1 创建 Services/UiDumpParser.cs 实现 IUiDumpParser
+- [x] 6.2 实现 XML 解析（System.Xml.Linq 或轻量级解析器）
+- [x] 6.3 实现布局容器过滤规则（class 包含 Layout 且无 clickable/text/content-desc → 跳过）
+- [x] 6.4 实现 bounds 坐标解析（"[x1,y1][x2,y2]" → Rect(x1, y1, x2-x1, y2-y1)）
+- [x] 6.5 实现控件节点树构建（递归解析子节点）
+- [x] 6.6 实现容错解析（跳过无效节点、记录警告日志）
 
 ## 7. Core 层：OpenCV 模板匹配实现
 
-- [ ] 7.1 创建 Services/OpenCVMatchService.cs 实现 IOpenCVMatchService
-- [ ] 7.2 实现 TM_CCOEFF_NORMED 算法封装
-- [ ] 7.3 实现异步模板匹配（Task.Run 后台线程计算）
-- [ ] 7.4 实现多模板匹配（返回所有置信度高于阈值的结果）
-- [ ] 7.5 实现阈值过滤（仅返回置信度 ≥ 阈值的匹配结果）
-- [ ] 7.6 实现匹配耗时统计
+- [x] 7.1 创建 Services/OpenCVMatchService.cs 实现 IOpenCVMatchService
+- [x] 7.2 实现 TM_CCOEFF_NORMED 算法封装
+- [x] 7.3 实现异步模板匹配（Task.Run 后台线程计算）
+- [x] 7.4 实现多模板匹配（返回所有置信度高于阈值的结果）
+- [x] 7.5 实现阈值过滤（仅返回置信度 ≥ 阈值的匹配结果）
+- [x] 7.6 实现匹配耗时统计
 
 ## 8. Core 层：AutoJS6 代码生成实现
 
-- [ ] 8.1 创建 Services/AutoJS6CodeGenerator.cs 实现 ICodeGenerator
-- [ ] 8.2 实现图像模式代码生成（requestScreenCapture + images.read + images.findImage + click）
-- [ ] 8.3 实现控件模式代码生成（UiSelector 链：优先 id()，降级 text()/desc()，补充 boundsInside()）
-- [ ] 8.4 实现路径兼容处理（assets/相对/绝对路径自动切换）
-- [ ] 8.5 实现重试机制代码生成（for 循环 + sleep）
-- [ ] 8.6 实现超时机制代码生成（setTimeout）
-- [ ] 8.7 实现 JS 代码格式化（缩进、换行、注释）
+- [x] 8.1 创建 Services/AutoJS6CodeGenerator.cs 实现 ICodeGenerator
+- [x] 8.2 实现图像模式代码生成（requestScreenCapture + images.read + images.findImage + click）
+- [x] 8.3 实现控件模式代码生成（UiSelector 链：优先 id()，降级 text()/desc()，补充 boundsInside()）
+- [x] 8.4 实现路径兼容处理（assets/相对/绝对路径自动切换）
+- [x] 8.5 实现重试机制代码生成（for 循环 + sleep）
+- [x] 8.6 实现超时机制代码生成（setTimeout）
+- [x] 8.7 实现 JS 代码格式化（缩进、换行、注释）
 
 ## 9. App 层：Win2D 画布控件实现
 
