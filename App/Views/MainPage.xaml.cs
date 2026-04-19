@@ -27,6 +27,17 @@ public sealed partial class MainPage : Page
 
         // 订阅设备选择事件
         DeviceList.DeviceSelected += DeviceList_DeviceSelected;
+
+        // 订阅日志服务
+        Services.LogService.Instance.LogMessageReceived += OnLogMessageReceived;
+    }
+
+    /// <summary>
+    /// 接收日志消息并显示到 UI
+    /// </summary>
+    private void OnLogMessageReceived(string logLine)
+    {
+        DebugLogText.Text += logLine + "\n";
     }
 
     /// <summary>
@@ -56,14 +67,15 @@ public sealed partial class MainPage : Page
             // 拉取截图
             var screenshot = await _adbService.CaptureScreenshotAsync(_currentDevice);
 
-            // 获取分辨率
+            // 获取分辨率和旋转角度
             var (width, height) = await _adbService.GetScreenResolutionAsync(_currentDevice);
+            var rotation = await _adbService.GetScreenRotationAsync(_currentDevice);
 
             // 加载到画布
-            Canvas.LoadImage(screenshot, width, height);
+            Canvas.LoadImage(screenshot, width, height, rotation);
 
             StatusText.Text = "截图完成";
-            ResolutionText.Text = $"分辨率: {width}x{height}";
+            ResolutionText.Text = $"分辨率: {width}x{height}, 旋转: {rotation}°";
         }
         catch (Exception ex)
         {
@@ -150,7 +162,10 @@ public sealed partial class MainPage : Page
     private void FitToWindowButton_Click(object sender, RoutedEventArgs e)
     {
         Canvas.FitToWindow();
-        StatusText.Text = "已切换到适应窗口模式";
+        var scale = Canvas.GetScale();
+        var (offsetX, offsetY) = Canvas.GetOffset();
+        StatusText.Text = $"已切换到适应窗口模式 (缩放: {scale * 100:F0}%)";
+        ScaleText.Text = $"缩放: {scale * 100:F0}%";
     }
 
     /// <summary>
@@ -160,6 +175,7 @@ public sealed partial class MainPage : Page
     {
         Canvas.ResetView();
         StatusText.Text = "已切换到原图模式 (1:1)";
+        ScaleText.Text = "缩放: 100%";
     }
 
     /// <summary>
@@ -176,4 +192,15 @@ public sealed partial class MainPage : Page
         };
         await dialog.ShowAsync();
     }
+
+    /// <summary>
+    /// 切换调试日志面板
+    /// </summary>
+    private void ToggleDebugButton_Click(object sender, RoutedEventArgs e)
+    {
+        DebugPanel.Visibility = DebugPanel.Visibility == Visibility.Visible
+            ? Visibility.Collapsed
+            : Visibility.Visible;
+    }
+
 }

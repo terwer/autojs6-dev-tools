@@ -31,6 +31,7 @@ public sealed partial class CanvasView : Page
     private byte[]? _imageData;
     private int _imageWidth;
     private int _imageHeight;
+    private int _imageRotation; // 设备旋转角度 (0, 90, 180, 270)
     private string? _imageHash; // 用于缓存验证
 
     // CanvasBitmap 缓存池
@@ -158,11 +159,12 @@ public sealed partial class CanvasView : Page
     /// 参考 MVP3: CanvasBitmap.CreateFromBytes
     /// 使用缓存池避免重复创建纹理
     /// </summary>
-    public async void LoadImage(byte[] imageData, int width, int height)
+    public async void LoadImage(byte[] imageData, int width, int height, int rotation = 0)
     {
         _imageData = imageData;
         _imageWidth = width;
         _imageHeight = height;
+        _imageRotation = rotation;
 
         // 计算图像哈希（用于缓存键）
         _imageHash = ComputeImageHash(imageData, width, height);
@@ -280,17 +282,54 @@ public sealed partial class CanvasView : Page
 
             if (canvasWidth > 0 && canvasHeight > 0)
             {
-                // 计算缩放比例（取宽高比例的最小值，确保图像完整显示）
+                // 计算缩放比例
                 float scaleX = (float)(canvasWidth / _imageWidth);
                 float scaleY = (float)(canvasHeight / _imageHeight);
-                _scale = Math.Min(scaleX, scaleY);
+
+                // 根据设备旋转角度判断实际显示方向
+                // 0° 或 180°: 保持原方向
+                // 90° 或 270°: 旋转 90 度
+                bool isRotated = (_imageRotation == 90 || _imageRotation == 270);
+
+                // 判断实际显示方向
+                bool imageIsLandscape;
+                if (isRotated)
+                {
+                    // 旋转后，宽高互换
+                    imageIsLandscape = _imageHeight > _imageWidth;
+                }
+                else
+                {
+                    imageIsLandscape = _imageWidth > _imageHeight;
+                }
+
+                // 根据图像实际显示方向选择适应策略
+                if (imageIsLandscape)
+                {
+                    // 横屏：适应宽度
+                    _scale = scaleX;
+                }
+                else
+                {
+                    // 竖屏：适应高度
+                    _scale = scaleY;
+                }
 
                 // 限制缩放范围 10%-500%
                 _scale = Math.Clamp(_scale, 0.1f, 5.0f);
 
+                // 计算缩放后的图像尺寸
+                float scaledWidth = _imageWidth * _scale;
+                float scaledHeight = _imageHeight * _scale;
+
                 // 居中显示：计算偏移量
-                _offsetX = (float)((canvasWidth - _imageWidth * _scale) / 2);
-                _offsetY = (float)((canvasHeight - _imageHeight * _scale) / 2);
+                _offsetX = (float)((canvasWidth - scaledWidth) / 2);
+                _offsetY = (float)((canvasHeight - scaledHeight) / 2);
+
+                // 调试日志
+                Services.LogService.Instance.Log($"[FitToWindow] Canvas=({canvasWidth:F1}x{canvasHeight:F1}), Image=({_imageWidth}x{_imageHeight}), Rotation={_imageRotation}°");
+                Services.LogService.Instance.Log($"[FitToWindow] 实际方向={(imageIsLandscape ? "横屏" : "竖屏")}, 适应={(imageIsLandscape ? "宽度" : "高度")}, ScaleX={scaleX:F3}, ScaleY={scaleY:F3}, Final={_scale:F3}");
+                Services.LogService.Instance.Log($"[FitToWindow] Scaled=({scaledWidth:F1}x{scaledHeight:F1}), Offset=({_offsetX:F1}, {_offsetY:F1})");
 
                 Canvas.Invalidate();
             }
@@ -342,14 +381,10 @@ public sealed partial class CanvasView : Page
         {
             try
             {
-                // 应用变换矩阵（缩放 + 平移）
+                // 应用变换矩阵：先缩放，再平移
                 var transform = Matrix3x2.CreateScale(_scale) * Matrix3x2.CreateTranslation(_offsetX, _offsetY);
                 ds.Transform = transform;
-
-                // 绘制位图
                 ds.DrawImage(bitmap);
-
-                // 重置变换
                 ds.Transform = Matrix3x2.Identity;
             }
             catch (ObjectDisposedException)

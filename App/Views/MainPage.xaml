@@ -76,18 +76,40 @@
             </Grid>
         </Grid>
 
-        <!-- 底部状态栏 -->
-        <Grid Grid.Row="2" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <!-- 底部状态栏 + 调试日志 -->
+        <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-            <TextBlock x:Name="StatusText" Grid.Column="0" Text="就绪" Margin="0,0,16,0"/>
-            <TextBlock x:Name="ScaleText" Grid.Column="1" Text="缩放: 100%" Margin="0,0,16,0"/>
-            <TextBlock x:Name="ResolutionText" Grid.Column="2" Text="分辨率: -" Margin="0,0,16,0"/>
+            <!-- 状态栏 -->
+            <Grid Grid.Row="0" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="StatusText" Grid.Column="0" Text="就绪" Margin="0,0,16,0"/>
+                <TextBlock x:Name="ScaleText" Grid.Column="1" Text="缩放: 100%" Margin="0,0,16,0"/>
+                <TextBlock x:Name="ResolutionText" Grid.Column="2" Text="分辨率: -" Margin="0,0,16,0"/>
+                <Button x:Name="ToggleDebugButton" Grid.Column="4" Content="调试日志" Click="ToggleDebugButton_Click"
+                        Background="Transparent" BorderThickness="0" Padding="8,4"/>
+            </Grid>
+
+            <!-- 调试日志面板（默认折叠）-->
+            <Border Grid.Row="1" x:Name="DebugPanel" Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,1,0,0"
+                    MaxHeight="200" Visibility="Collapsed">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBox x:Name="DebugLogText" Padding="8" FontFamily="Consolas" FontSize="11"
+                             TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0"
+                             Background="Transparent" AcceptsReturn="True"/>
+                </ScrollViewer>
+            </Border>
         </Grid>
     </Grid>
 </Page>

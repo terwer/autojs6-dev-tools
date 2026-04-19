@@ -172,6 +172,55 @@ public class AdbServiceImpl : IAdbService
         throw new InvalidOperationException($"Failed to parse screen resolution: {output}");
     }
 
+    public async Task<int> GetScreenRotationAsync(Core.Models.AdbDevice device, CancellationToken cancellationToken = default)
+    {
+        var adbDevice = FindDeviceBySerial(device.Serial);
+        if (adbDevice == null)
+        {
+            throw new InvalidOperationException($"Device {device.Serial} not found");
+        }
+
+        // 使用 dumpsys window 获取 mCurrentRotation
+        var receiver = new ConsoleOutputReceiver();
+        await _adbClient.ExecuteRemoteCommandAsync("dumpsys window | grep mCurrentRotation", adbDevice, receiver, cancellationToken);
+        var output = receiver.ToString();
+
+        // 解析输出: "mCurrentRotation=ROTATION_90"
+        // ROTATION_0=0°, ROTATION_90=90°, ROTATION_180=180°, ROTATION_270=270°
+        if (output.Contains("ROTATION_90"))
+        {
+            return 90;
+        }
+        else if (output.Contains("ROTATION_180"))
+        {
+            return 180;
+        }
+        else if (output.Contains("ROTATION_270"))
+        {
+            return 270;
+        }
+        else if (output.Contains("ROTATION_0"))
+        {
+            return 0;
+        }
+
+        // 备用方案：使用 dumpsys input 获取 SurfaceOrientation
+        receiver = new ConsoleOutputReceiver();
+        await _adbClient.ExecuteRemoteCommandAsync("dumpsys input | grep 'SurfaceOrientation:'", adbDevice, receiver, cancellationToken);
+        output = receiver.ToString();
+
+        // 解析输出: "SurfaceOrientation: 1" (0=0°, 1=90°, 2=180°, 3=270°)
+        var match = System.Text.RegularExpressions.Regex.Match(output, @"SurfaceOrientation:\s*(\d+)");
+        if (match.Success)
+        {
+            int orientation = int.Parse(match.Groups[1].Value);
+            return orientation * 90;
+        }
+
+        // 默认返回 0 度
+        return 0;
+    }
+
     public async Task<bool> IsDeviceOnlineAsync(Core.Models.AdbDevice device)
     {
         var adbDevice = FindDeviceBySerial(device.Serial);

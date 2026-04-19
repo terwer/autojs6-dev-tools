@@ -55,6 +55,14 @@ public interface IAdbService
     Task<(int Width, int Height)> GetScreenResolutionAsync(AdbDevice device, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 获取设备屏幕旋转角度
+    /// </summary>
+    /// <param name="device">目标设备</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>旋转角度 (0, 90, 180, 270)</returns>
+    Task<int> GetScreenRotationAsync(AdbDevice device, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 检查设备连接状态
     /// </summary>
     /// <param name="device">目标设备</param>
