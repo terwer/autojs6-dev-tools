@@ -16,11 +16,27 @@
 
         <!-- 顶部工具栏 -->
         <CommandBar Grid.Row="0" DefaultLabelPosition="Right">
-            <AppBarButton x:Name="CaptureButton" Icon="Camera" Label="截图" Click="CaptureButton_Click"/>
-            <AppBarButton x:Name="DumpUiButton" Icon="ViewAll" Label="拉取 UI 树" Click="DumpUiButton_Click"/>
-            <AppBarButton x:Name="GenerateCodeButton" Icon="Code" Label="生成代码" Click="GenerateCodeButton_Click"/>
+            <AppBarButton x:Name="CaptureButton" Label="截图" Click="CaptureButton_Click">
+                <AppBarButton.Icon>
+                    <SymbolIcon Symbol="Camera"/>
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton x:Name="DumpUiButton" Label="拉取 UI 树" Click="DumpUiButton_Click">
+                <AppBarButton.Icon>
+                    <SymbolIcon Symbol="ViewAll"/>
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton x:Name="GenerateCodeButton" Label="生成代码" Click="GenerateCodeButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE943;"/>
+                </AppBarButton.Icon>
+            </AppBarButton>
             <AppBarSeparator/>
-            <AppBarButton x:Name="MatchTestButton" Icon="Find" Label="匹配测试" Click="MatchTestButton_Click"/>
+            <AppBarButton x:Name="MatchTestButton" Label="匹配测试" Click="MatchTestButton_Click">
+                <AppBarButton.Icon>
+                    <SymbolIcon Symbol="Find"/>
+                </AppBarButton.Icon>
+            </AppBarButton>
         </CommandBar>
 
         <!-- 主内容区域 -->
