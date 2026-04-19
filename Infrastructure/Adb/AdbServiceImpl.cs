@@ -69,20 +69,7 @@ public class AdbServiceImpl : IAdbService
         return await Task.FromResult(result);
     }
 
-    public async Task<string> ExecuteCommandAsync(Core.Models.AdbDevice device, string command, CancellationToken cancellationToken = default)
-    {
-        var adbDevice = FindDeviceBySerial(device.Serial);
-        if (adbDevice == null)
-        {
-            throw new InvalidOperationException($"Device {device.Serial} not found");
-        }
-
-        var receiver = new ConsoleOutputReceiver();
-        await _adbClient.ExecuteRemoteCommandAsync(command, adbDevice, receiver, cancellationToken);
-        return receiver.ToString();
-    }
-
-    public async Task<byte[]> CaptureScreenshotAsync(Core.Models.AdbDevice device, CancellationToken cancellationToken = default)
+    public async Task<(byte[] Data, int Width, int Height)> CaptureScreenshotAsync(Core.Models.AdbDevice device, CancellationToken cancellationToken = default)
     {
         var adbDevice = FindDeviceBySerial(device.Serial);
         if (adbDevice == null)
@@ -127,7 +114,7 @@ public class AdbServiceImpl : IAdbService
 
         using var ms = new MemoryStream();
         await image.SaveAsync(ms, new PngEncoder(), cancellationToken);
-        return ms.ToArray();
+        return (ms.ToArray(), (int)width, (int)height);
     }
 
     public async Task<string> DumpUiHierarchyAsync(Core.Models.AdbDevice device, CancellationToken cancellationToken = default)
@@ -150,81 +137,27 @@ public class AdbServiceImpl : IAdbService
         return xmlDoc.OuterXml;
     }
 
-    public async Task<(int Width, int Height)> GetScreenResolutionAsync(Core.Models.AdbDevice device, CancellationToken cancellationToken = default)
-    {
-        var adbDevice = FindDeviceBySerial(device.Serial);
-        if (adbDevice == null)
-        {
-            throw new InvalidOperationException($"Device {device.Serial} not found");
-        }
-
-        var receiver = new ConsoleOutputReceiver();
-        await _adbClient.ExecuteRemoteCommandAsync("wm size", adbDevice, receiver, cancellationToken);
-        var output = receiver.ToString();
-
-        // 解析输出: "Physical size: 1080x1920"
-        var match = System.Text.RegularExpressions.Regex.Match(output, @"(\d+)x(\d+)");
-        if (match.Success)
-        {
-            return (int.Parse(match.Groups[1].Value), int.Parse(match.Groups[2].Value));
-        }
-
-        throw new InvalidOperationException($"Failed to parse screen resolution: {output}");
-    }
-
-    public async Task<int> GetScreenRotationAsync(Core.Models.AdbDevice device, CancellationToken cancellationToken = default)
-    {
-        var adbDevice = FindDeviceBySerial(device.Serial);
-        if (adbDevice == null)
-        {
-            throw new InvalidOperationException($"Device {device.Serial} not found");
-        }
-
-        // 使用 dumpsys window 获取 mCurrentRotation
-        var receiver = new ConsoleOutputReceiver();
-        await _adbClient.ExecuteRemoteCommandAsync("dumpsys window | grep mCurrentRotation", adbDevice, receiver, cancellationToken);
-        var output = receiver.ToString();
-
-        // 解析输出: "mCurrentRotation=ROTATION_90"
-        // ROTATION_0=0°, ROTATION_90=90°, ROTATION_180=180°, ROTATION_270=270°
-        if (output.Contains("ROTATION_90"))
-        {
-            return 90;
-        }
-        else if (output.Contains("ROTATION_180"))
-        {
-            return 180;
-        }
-        else if (output.Contains("ROTATION_270"))
-        {
-            return 270;
-        }
-        else if (output.Contains("ROTATION_0"))
-        {
-            return 0;
-        }
-
-        // 备用方案：使用 dumpsys input 获取 SurfaceOrientation
-        receiver = new ConsoleOutputReceiver();
-        await _adbClient.ExecuteRemoteCommandAsync("dumpsys input | grep 'SurfaceOrientation:'", adbDevice, receiver, cancellationToken);
-        output = receiver.ToString();
-
-        // 解析输出: "SurfaceOrientation: 1" (0=0°, 1=90°, 2=180°, 3=270°)
-        var match = System.Text.RegularExpressions.Regex.Match(output, @"SurfaceOrientation:\s*(\d+)");
-        if (match.Success)
-        {
-            int orientation = int.Parse(match.Groups[1].Value);
-            return orientation * 90;
-        }
-
-        // 默认返回 0 度
-        return 0;
-    }
-
     public async Task<bool> IsDeviceOnlineAsync(Core.Models.AdbDevice device)
     {
         var adbDevice = FindDeviceBySerial(device.Serial);
         return await Task.FromResult(adbDevice?.State == DeviceState.Online);
+    }
+
+    /// <summary>
+    /// 连接到网络设备（TCP/IP）
+    /// 使用底层 API：AdbClient.Connect
+    /// </summary>
+    public async Task<string> ConnectDeviceAsync(string address, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var result = await Task.Run(() => _adbClient.Connect(address), cancellationToken);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"连接设备失败：{ex.Message}", ex);
+        }
     }
 
     private DeviceData? FindDeviceBySerial(string serial)
@@ -282,45 +215,5 @@ public class AdbServiceImpl : IAdbService
         }
 
         return null;
-    }
-
-    /// <summary>
-    /// 执行全局 ADB 命令（不需要设备）
-    /// 例如：adb connect、adb disconnect
-    /// </summary>
-    public async Task<string> ExecuteGlobalCommandAsync(string command, CancellationToken cancellationToken = default)
-    {
-        return await Task.Run(() =>
-        {
-            if (_adbPath == null)
-            {
-                throw new InvalidOperationException("ADB 路径未找到");
-            }
-
-            var process = new System.Diagnostics.Process
-            {
-                StartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = _adbPath,
-                    Arguments = command,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-
-            process.Start();
-            var output = process.StandardOutput.ReadToEnd();
-            var error = process.StandardError.ReadToEnd();
-            process.WaitForExit();
-
-            if (process.ExitCode != 0 && !string.IsNullOrEmpty(error))
-            {
-                throw new Exception($"ADB 命令执行失败：{error}");
-            }
-
-            return output;
-        }, cancellationToken);
     }
 }

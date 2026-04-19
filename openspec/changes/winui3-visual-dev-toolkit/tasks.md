@@ -12,6 +12,7 @@
 - [x] 0.10 理解 AutoJS6 API 约束：images.findImage()、images.matchTemplate()、UiSelector、requestScreenCapture()、线程限制、权限要求
 - [x] 0.11 确认已完整理解 AutoJS6 文档和源码，生成 PHASE0_REFERENCE.md 作为 API 权威参考
 - [x] 0.12 MVP 验证完成确认：所有 4 个 MVP 项目已通过编译和运行测试，核心技术栈验证通过，可直接用于实施指导
+- [x] 0.13 **架构原则确立**：禁止使用 ADB 命令，必须使用 AdvancedSharpAdbClient 底层 API（已记录至 feedback_adb_api_only.md 和 project_architecture_principles.md 第 8 节）
 
 **MVP 验证项目参考路径：**
 - MVP1.AdbScreencap: `C:\Users\Administrator\Documents\myproject\autojs6-dev-tools-mvp\MVP1.AdbScreencap\Program.cs`
@@ -35,12 +36,14 @@
   - 实施参考：异步模板匹配（Task.Run）、实时阈值调整、控件初始化空检查、DispatcherQueue.TryEnqueue
 
 **关键技术要点总结：**
-1. 所有 ADB 操作必须使用异步 API（GetFrameBufferAsync、DumpScreenAsync）
-2. 类型安全优先：使用 uint 匹配原生类型，禁止强制转换
-3. 代码复用：方法返回值设计支持组合调用（SingleCapture 返回 Image，ContinuousCapture 复用）
-4. 性能优化：移除反射、直接属性访问、后台线程计算（Task.Run）
-5. WinUI 3 控件初始化：必须添加空检查防止 NullReferenceException
-6. XML 文档注释：所有公共方法必须添加完整的 `<summary>` 和用法示例
+1. **ADB 底层 API 强制原则**（最高优先级）：禁止使用 ADB 命令，必须使用 AdvancedSharpAdbClient 底层 API（参考 feedback_adb_api_only.md）
+2. 所有 ADB 操作必须使用异步 API（GetFrameBufferAsync、DumpScreenAsync、Connect）
+3. 类型安全优先：使用 uint 匹配原生类型，禁止强制转换
+4. 代码复用：方法返回值设计支持组合调用（SingleCapture 返回 Image，ContinuousCapture 复用）
+5. 性能优化：移除反射、直接属性访问、后台线程计算（Task.Run）
+6. WinUI 3 控件初始化：必须添加空检查防止 NullReferenceException
+7. XML 文档注释：所有公共方法必须添加完整的 `<summary>` 和用法示例
+8. **坐标系统简化**：直接使用 Framebuffer 实际宽高（横屏 1280x720，竖屏 720x1280），UI Dump 坐标直接匹配，无需旋转转换
 
 ## 1. 项目结构与依赖配置
 
@@ -62,19 +65,23 @@
 
 ## 3. Core 层：服务接口定义
 
-- [x] 3.1 创建 Abstractions/IAdbService.cs（设备扫描、命令执行、截图拉取、UI Dump 拉取）
-- [x] 3.2 创建 Abstractions/IUiDumpParser.cs（XML 解析、节点过滤、坐标映射）
+**核心约束：接口设计必须基于底层 API，不暴露命令执行方法（参考 feedback_adb_api_only.md）**
+
+- [x] 3.1 创建 Abstractions/IAdbService.cs（设备扫描、截图拉取返回实际宽高、UI Dump 拉取、TCP/IP 连接，禁止命令执行方法）
+- [x] 3.2 创建 Abstractions/IUiDumpParser.cs（XML 解析、节点过滤、坐标映射，坐标直接匹配 Framebuffer 无需转换）
 - [x] 3.3 创建 Abstractions/IOpenCVMatchService.cs（模板匹配、阈值过滤）
 - [x] 3.4 创建 Abstractions/ICodeGenerator.cs（图像模式代码生成、控件模式代码生成）
 
 ## 4. Infrastructure 层：ADB 通信实现
 
+**核心约束：禁止使用 ADB 命令，必须使用 AdvancedSharpAdbClient 底层 API（参考 feedback_adb_api_only.md）**
+
 - [x] 4.1 创建 Adb/AdbServiceImpl.cs 实现 IAdbService
-- [x] 4.2 实现设备扫描功能（adb devices -l 解析）
-- [x] 4.3 实现异步截图拉取（adb shell screencap -p 流式读取 PNG）
-- [x] 4.4 实现异步 UI Dump 拉取（adb shell uiautomator dump /dev/tty 流式读取 XML）
-- [x] 4.5 实现命令执行封装（Process 封装、超时控制、异常捕获、重试机制）
-- [x] 4.6 实现日志输出流（stdout/stderr 实时流式输出）
+- [x] 4.2 实现设备扫描功能（使用 `AdbClient.GetDevices()` 底层 API，禁止 `adb devices` 命令）
+- [x] 4.3 实现异步截图拉取（使用 `AdbClient.GetFrameBufferAsync()` 底层 API，返回实际宽高，禁止 `adb shell screencap` 命令）
+- [x] 4.4 实现异步 UI Dump 拉取（使用 `DeviceClient.DumpScreenAsync()` 底层 API，禁止 `adb shell uiautomator dump` 命令）
+- [x] 4.5 实现 TCP/IP 设备连接（使用 `AdbClient.Connect(address)` 底层 API，禁止 `adb connect` 命令）
+- [x] 4.6 实现日志输出流（记录 API 调用和结果，不记录命令文本）
 
 ## 5. Infrastructure 层：图像处理封装
 
@@ -86,10 +93,12 @@
 
 ## 6. Core 层：UI 树解析实现
 
+**核心约束：坐标系统基于 Framebuffer 实际宽高，无需旋转转换（参考 project_architecture_principles.md 第 5 节）**
+
 - [x] 6.1 创建 Services/UiDumpParser.cs 实现 IUiDumpParser
 - [x] 6.2 实现 XML 解析（System.Xml.Linq 或轻量级解析器）
 - [x] 6.3 实现布局容器过滤规则（class 包含 Layout 且无 clickable/text/content-desc → 跳过）
-- [x] 6.4 实现 bounds 坐标解析（"[x1,y1][x2,y2]" → Rect(x1, y1, x2-x1, y2-y1)）
+- [x] 6.4 实现 bounds 坐标解析（"[x1,y1][x2,y2]" → Rect(x1, y1, x2-x1, y2-y1)，坐标直接匹配 Framebuffer，无需旋转转换）
 - [x] 6.5 实现控件节点树构建（递归解析子节点）
 - [x] 6.6 实现容错解析（跳过无效节点、记录警告日志）
 
@@ -145,12 +154,14 @@
 
 ## 12. App 层：设备管理 UI
 
+**核心约束：所有 ADB 操作必须使用底层 API，日志记录 API 调用而非命令文本（参考 feedback_adb_api_only.md）**
+
 - [x] 12.1 创建 Views/AdbDeviceList.xaml 与 AdbDeviceList.xaml.cs
 - [x] 12.2 实现设备列表显示（序列号、型号、状态、连接类型）
-- [x] 12.3 实现刷新设备按钮（触发设备扫描）
+- [x] 12.3 实现刷新设备按钮（触发 `AdbClient.GetDevices()` API 调用）
 - [x] 12.4 实现设备选择（点击高亮、设置为默认设备）
-- [x] 12.5 实现 TCP/IP 连接输入框（IP 地址 + 端口）
-- [ ] 12.6 实现日志面板（实时流式输出 ADB 命令结果）
+- [x] 12.5 实现 TCP/IP 连接输入框（IP 地址 + 端口，使用 `AdbClient.Connect()` API）
+- [ ] 12.6 实现日志面板（实时流式输出 API 调用结果，不记录命令文本）
 
 ## 13. App 层：属性面板与代码预览
 
@@ -202,7 +213,9 @@
 
 ## 18. 性能优化与异步架构
 
-- [ ] 18.1 确保所有 ADB 操作使用 async/await（截图拉取、Dump 拉取、命令执行）
+**核心约束：所有 ADB 操作必须异步执行，使用 CancellationToken 支持超时控制（参考 project_architecture_principles.md 第 4 节）**
+
+- [ ] 18.1 确保所有 ADB 操作使用 async/await（`GetFrameBufferAsync`、`DumpScreenAsync`、`Connect` 等底层 API 调用）
 - [ ] 18.2 确保所有 OpenCV 计算使用 Task.Run 后台线程
 - [ ] 18.3 确保所有 UI 树解析使用异步解析
 - [ ] 18.4 实现 CanvasBitmap 缓存池（复用纹理）
@@ -212,23 +225,27 @@
 
 ## 19. 错误处理与日志
 
-- [ ] 19.1 实现 ADB 连接异常捕获与 Toast 提示
-- [ ] 19.2 实现命令执行超时控制（5 秒超时）
+**核心约束：异常处理基于 API 调用失败，使用 CancellationToken 实现超时控制（参考 feedback_adb_api_only.md）**
+
+- [ ] 19.1 实现 ADB 连接异常捕获与 Toast 提示（捕获 API 调用异常，如 `AdbClient.Connect()` 失败）
+- [ ] 19.2 实现操作超时控制（通过 CancellationToken 实现 10 秒超时，参考 adb-device-management/spec.md）
 - [ ] 19.3 实现重试机制（最多 3 次）
 - [ ] 19.4 实现 UI 树解析容错（跳过无效节点、记录警告日志）
 - [ ] 19.5 实现 OpenCV 匹配异常捕获
-- [ ] 19.6 实现日志面板输出（所有 ADB 命令结果、错误信息）
+- [ ] 19.6 实现日志面板输出（记录所有 API 调用结果、执行耗时、错误信息，不记录命令文本）
 
 ## 20. 测试与验证
 
+**核心约束：测试必须验证底层 API 调用的正确性，不测试命令执行（参考 feedback_adb_api_only.md）**
+
 - [ ] 20.1 创建 Core.Tests 单元测试项目
-- [ ] 20.2 测试 UiDumpParser 解析逻辑（布局容器过滤、坐标映射）
+- [ ] 20.2 测试 UiDumpParser 解析逻辑（布局容器过滤、坐标映射，验证坐标直接匹配 Framebuffer）
 - [ ] 20.3 测试 OpenCVMatchService 匹配算法
 - [ ] 20.4 测试 AutoJS6CodeGenerator 代码生成逻辑
-- [ ] 20.5 真机联调测试（USB 连接、TCP/IP 连接）
-- [ ] 20.6 测试截图拉取与 UI Dump 拉取
+- [ ] 20.5 真机联调测试（USB 连接使用 `GetDevices()`、TCP/IP 连接使用 `Connect(address)`）
+- [ ] 20.6 测试截图拉取（验证 `GetFrameBufferAsync()` 返回实际宽高）与 UI Dump 拉取（验证 `DumpScreenAsync()` 返回 XML）
 - [ ] 20.7 测试交互式裁剪与坐标拾取
-- [ ] 20.8 测试控件边界框渲染与双向联动
+- [ ] 20.8 测试控件边界框渲染与双向联动（验证坐标系对齐，横屏 1280x720，竖屏 720x1280）
 - [ ] 20.9 测试代码生成与匹配测试
 - [ ] 20.10 性能测试（5000+ 节点控件树、60FPS 渲染）
 

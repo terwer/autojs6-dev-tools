@@ -104,8 +104,8 @@ public sealed partial class AdbDeviceListView : UserControl
 
         try
         {
-            // 执行 adb connect 命令
-            await _adbService.ExecuteGlobalCommandAsync($"connect {address}");
+            // 使用底层 API 连接设备
+            await _adbService.ConnectDeviceAsync(address);
 
             // 刷新设备列表
             await RefreshDevicesAsync();

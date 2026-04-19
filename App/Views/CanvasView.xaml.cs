@@ -159,12 +159,12 @@ public sealed partial class CanvasView : Page
     /// 参考 MVP3: CanvasBitmap.CreateFromBytes
     /// 使用缓存池避免重复创建纹理
     /// </summary>
-    public async void LoadImage(byte[] imageData, int width, int height, int rotation = 0)
+    public async void LoadImage(byte[] imageData, int width, int height)
     {
         _imageData = imageData;
         _imageWidth = width;
         _imageHeight = height;
-        _imageRotation = rotation;
+        _imageRotation = 0; // 不再使用旋转角度
 
         // 计算图像哈希（用于缓存键）
         _imageHash = ComputeImageHash(imageData, width, height);
@@ -282,22 +282,11 @@ public sealed partial class CanvasView : Page
 
             if (canvasWidth > 0 && canvasHeight > 0)
             {
-                // 根据旋转角度确定实际显示尺寸
-                int displayWidth, displayHeight;
-                if (_imageRotation == 90 || _imageRotation == 270)
-                {
-                    // 旋转90°或270°：宽高互换
-                    displayWidth = _imageHeight;
-                    displayHeight = _imageWidth;
-                }
-                else
-                {
-                    // 旋转0°或180°：保持原尺寸
-                    displayWidth = _imageWidth;
-                    displayHeight = _imageHeight;
-                }
+                // 直接使用图像的实际宽高
+                int displayWidth = _imageWidth;
+                int displayHeight = _imageHeight;
 
-                // 计算缩放比例（基于实际显示尺寸）
+                // 计算缩放比例
                 float scaleX = (float)(canvasWidth / displayWidth);
                 float scaleY = (float)(canvasHeight / displayHeight);
 
@@ -307,7 +296,7 @@ public sealed partial class CanvasView : Page
                 // 限制缩放范围 10%-500%
                 _scale = Math.Clamp(_scale, 0.1f, 5.0f);
 
-                // 计算缩放后的图像尺寸（使用实际显示尺寸）
+                // 计算缩放后的图像尺寸
                 float scaledWidth = displayWidth * _scale;
                 float scaledHeight = displayHeight * _scale;
 
@@ -315,15 +304,19 @@ public sealed partial class CanvasView : Page
                 _offsetX = (float)((canvasWidth - scaledWidth) / 2);
                 _offsetY = (float)((canvasHeight - scaledHeight) / 2);
 
-                // 调试日志
-                Services.LogService.Instance.Log($"[FitToWindow] Canvas=({canvasWidth:F1}x{canvasHeight:F1}), Image=({_imageWidth}x{_imageHeight}), Rotation={_imageRotation}°");
-                Services.LogService.Instance.Log($"[FitToWindow] Display=({displayWidth}x{displayHeight}), ScaleX={scaleX:F3}, ScaleY={scaleY:F3}, Final={_scale:F3}");
+                Services.LogService.Instance.Log($"[FitToWindow] Canvas=({canvasWidth:F1}x{canvasHeight:F1}), Image=({_imageWidth}x{_imageHeight})");
+                Services.LogService.Instance.Log($"[FitToWindow] ScaleX={scaleX:F3}, ScaleY={scaleY:F3}, Final={_scale:F3}");
                 Services.LogService.Instance.Log($"[FitToWindow] Scaled=({scaledWidth:F1}x{scaledHeight:F1}), Offset=({_offsetX:F1}, {_offsetY:F1})");
 
                 Canvas.Invalidate();
             }
         }
     }
+
+    /// <summary>
+    /// 获取当前旋转角度
+    /// </summary>
+    public int GetRotation() => _imageRotation;
 
     /// <summary>
     /// 获取当前缩放比例

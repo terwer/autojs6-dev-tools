@@ -14,29 +14,12 @@ public interface IAdbService
     Task<List<AdbDevice>> ScanDevicesAsync();
 
     /// <summary>
-    /// 执行 ADB 命令
-    /// </summary>
-    /// <param name="device">目标设备</param>
-    /// <param name="command">命令</param>
-    /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>命令输出</returns>
-    Task<string> ExecuteCommandAsync(AdbDevice device, string command, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 执行全局 ADB 命令（不需要设备）
-    /// </summary>
-    /// <param name="command">命令</param>
-    /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>命令输出</returns>
-    Task<string> ExecuteGlobalCommandAsync(string command, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// 异步拉取设备截图
     /// </summary>
     /// <param name="device">目标设备</param>
     /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>PNG 图像字节流</returns>
-    Task<byte[]> CaptureScreenshotAsync(AdbDevice device, CancellationToken cancellationToken = default);
+    /// <returns>(PNG 图像字节流, 宽度, 高度)</returns>
+    Task<(byte[] Data, int Width, int Height)> CaptureScreenshotAsync(AdbDevice device, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// 异步拉取 UI Dump（XML）
@@ -47,25 +30,17 @@ public interface IAdbService
     Task<string> DumpUiHierarchyAsync(AdbDevice device, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// 获取设备分辨率
-    /// </summary>
-    /// <param name="device">目标设备</param>
-    /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>(宽度, 高度)</returns>
-    Task<(int Width, int Height)> GetScreenResolutionAsync(AdbDevice device, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// 获取设备屏幕旋转角度
-    /// </summary>
-    /// <param name="device">目标设备</param>
-    /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>旋转角度 (0, 90, 180, 270)</returns>
-    Task<int> GetScreenRotationAsync(AdbDevice device, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// 检查设备连接状态
     /// </summary>
     /// <param name="device">目标设备</param>
     /// <returns>是否在线</returns>
     Task<bool> IsDeviceOnlineAsync(AdbDevice device);
+
+    /// <summary>
+    /// 连接到网络设备（TCP/IP）
+    /// </summary>
+    /// <param name="address">设备地址（如 192.168.1.100:5555）</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>连接结果</returns>
+    Task<string> ConnectDeviceAsync(string address, CancellationToken cancellationToken = default);
 }
