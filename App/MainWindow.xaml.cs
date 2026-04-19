@@ -12,6 +12,8 @@ using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Microsoft.UI.Windowing;
+using Microsoft.UI;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -26,6 +28,25 @@ namespace App
         public MainWindow()
         {
             InitializeComponent();
+
+            // 启动时最大化窗口
+            MaximizeWindow();
+        }
+
+        private void MaximizeWindow()
+        {
+            IntPtr hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            WindowId windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
+            AppWindow appWindow = AppWindow.GetFromWindowId(windowId);
+
+            if (appWindow != null)
+            {
+                var presenter = appWindow.Presenter as OverlappedPresenter;
+                if (presenter != null)
+                {
+                    presenter.Maximize();
+                }
+            }
         }
     }
 }

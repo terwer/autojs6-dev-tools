@@ -21,6 +21,9 @@ namespace App.Views;
 /// </summary>
 public sealed partial class CanvasView : Page
 {
+    // 缩放变化事件
+    public event EventHandler<float>? ScaleChanged;
+
     // 画布状态
     private float _scale = 1.0f;
     private float _offsetX = 0.0f;
@@ -54,8 +57,9 @@ public sealed partial class CanvasView : Page
     // 惯性滑动
     private Vector2 _velocity = Vector2.Zero;
     private DispatcherTimer? _inertiaTimer;
-    private const float InertiaDecay = 0.92f; // 衰减系数
-    private const float MinVelocity = 0.5f; // 最小速度阈值
+    private const float InertiaDecay = 0.80f; // 衰减系数（降低以加快停止）
+    private const float MinVelocity = 2.0f; // 最小速度阈值（提高以更快停止）
+    private const float VelocityScale = 0.3f; // 速度缩放系数（降低初始速度）
 
     public CanvasView()
     {
@@ -539,6 +543,9 @@ public sealed partial class CanvasView : Page
         _offsetX = (float)point.Position.X - mouseX * _scale;
         _offsetY = (float)point.Position.Y - mouseY * _scale;
 
+        // 触发缩放变化事件
+        ScaleChanged?.Invoke(this, _scale);
+
         Canvas.Invalidate();
         e.Handled = true;
     }
@@ -551,8 +558,8 @@ public sealed partial class CanvasView : Page
     {
         var point = e.GetCurrentPoint(Canvas);
 
-        // 右键拖拽平移
-        if (point.Properties.IsRightButtonPressed)
+        // 左键或右键拖拽平移
+        if (point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed)
         {
             _isDragging = true;
             _lastPointerPosition = point.Position;
@@ -569,7 +576,7 @@ public sealed partial class CanvasView : Page
     {
         var point = e.GetCurrentPoint(Canvas);
 
-        if (_isDragging && point.Properties.IsRightButtonPressed)
+        if (_isDragging && (point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed))
         {
             // 计算偏移量
             double deltaX = point.Position.X - _lastPointerPosition.X;
@@ -578,8 +585,8 @@ public sealed partial class CanvasView : Page
             _offsetX += (float)deltaX;
             _offsetY += (float)deltaY;
 
-            // 更新速度（用于惯性滑动）
-            _velocity = new Vector2((float)deltaX, (float)deltaY);
+            // 更新速度（用于惯性滑动，应用速度缩放）
+            _velocity = new Vector2((float)deltaX * VelocityScale, (float)deltaY * VelocityScale);
 
             _lastPointerPosition = point.Position;
             Canvas.Invalidate();

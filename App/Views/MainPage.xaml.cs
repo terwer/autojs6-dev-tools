@@ -34,8 +34,19 @@ public sealed partial class MainPage : Page
         // 订阅日志服务
         Services.LogService.Instance.LogMessageReceived += OnLogMessageReceived;
 
+        // 订阅画布缩放变化事件
+        Canvas.ScaleChanged += Canvas_ScaleChanged;
+
         // 初始化按钮状态
         UpdateButtonStates();
+    }
+
+    /// <summary>
+    /// 画布缩放变化事件处理
+    /// </summary>
+    private void Canvas_ScaleChanged(object? sender, float scale)
+    {
+        ScaleText.Text = $"缩放: {scale * 100:F0}%";
     }
 
     /// <summary>
