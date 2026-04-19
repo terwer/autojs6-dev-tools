@@ -11,6 +11,36 @@
 - [x] 0.9 提取核心业务逻辑：坐标计算公式、路径处理规则、匹配算法参数、横竖屏处理、regionRef 生成规则
 - [x] 0.10 理解 AutoJS6 API 约束：images.findImage()、images.matchTemplate()、UiSelector、requestScreenCapture()、线程限制、权限要求
 - [x] 0.11 确认已完整理解 AutoJS6 文档和源码，生成 PHASE0_REFERENCE.md 作为 API 权威参考
+- [x] 0.12 MVP 验证完成确认：所有 4 个 MVP 项目已通过编译和运行测试，核心技术栈验证通过，可直接用于实施指导
+
+**MVP 验证项目参考路径：**
+- MVP1.AdbScreencap: `C:\Users\Administrator\Documents\myproject\autojs6-dev-tools-mvp\MVP1.AdbScreencap\Program.cs`
+  - 技术验证：AdvancedSharpAdbClient.GetFrameBufferAsync（流式截图）、SixLabors.ImageSharp（图像处理）
+  - 性能指标：271-333ms（接收 + 解码）、0 警告 0 错误
+  - 实施参考：异步截图拉取、Framebuffer stride 处理、uint 类型安全、方法复用模式
+  
+- MVP2.UiDumpParser: `C:\Users\Administrator\Documents\myproject\autojs6-dev-tools-mvp\MVP2.UiDumpParser\Program.cs`
+  - 技术验证：AdvancedSharpAdbClient.DeviceClient.DumpScreenAsync（UI 树抓取）、System.Xml.Linq（XML 解析）
+  - 性能指标：~1270ms（抓取 + 解析）、0 警告 0 错误
+  - 实施参考：异步 UI Dump 拉取、布局容器过滤、bounds 坐标解析、XML 文件保存（带时间戳）
+  
+- MVP3.Win2DCoordinate: `C:\Users\Administrator\Documents\myproject\autojs6-dev-tools-mvp\MVP3.Win2DCoordinate\`
+  - 技术验证：Microsoft.Graphics.Win2D（画布渲染）、WinUI 3（桌面应用）
+  - 测试通过：滚轮缩放、右键拖拽、坐标拾取、视图重置
+  - 实施参考：CanvasControl 初始化、PointerPressed/PointerMoved/PointerWheelChanged 事件处理、坐标系转换
+  
+- MVP4.OpenCVBenchmark: `C:\Users\Administrator\Documents\myproject\autojs6-dev-tools-mvp\MVP4.OpenCVBenchmark\MainWindow.xaml.cs`
+  - 技术验证：OpenCvSharp4（模板匹配）、TM_CCOEFF_NORMED 算法
+  - 性能指标：160-214ms（匹配计算）、置信度 1.0000、0 警告 0 错误
+  - 实施参考：异步模板匹配（Task.Run）、实时阈值调整、控件初始化空检查、DispatcherQueue.TryEnqueue
+
+**关键技术要点总结：**
+1. 所有 ADB 操作必须使用异步 API（GetFrameBufferAsync、DumpScreenAsync）
+2. 类型安全优先：使用 uint 匹配原生类型，禁止强制转换
+3. 代码复用：方法返回值设计支持组合调用（SingleCapture 返回 Image，ContinuousCapture 复用）
+4. 性能优化：移除反射、直接属性访问、后台线程计算（Task.Run）
+5. WinUI 3 控件初始化：必须添加空检查防止 NullReferenceException
+6. XML 文档注释：所有公共方法必须添加完整的 `<summary>` 和用法示例
 
 ## 1. 项目结构与依赖配置
 

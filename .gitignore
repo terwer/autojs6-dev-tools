@@ -367,6 +367,7 @@ FodyWeavers.xsd
 
 # Oh my claude code
 .omc
+./.claude/*.local.json
 
 # VS Code directories
 .vscode/

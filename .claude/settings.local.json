@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(openspec instructions *)",
-      "Bash(openspec status *)",
-      "Bash(grep \"\\\\.md$\")"
-    ]
-  }
-}
