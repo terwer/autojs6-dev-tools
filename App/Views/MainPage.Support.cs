@@ -1,0 +1,134 @@
+using Microsoft.UI.Xaml.Controls;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Core.Models;
+
+namespace App.Views;
+
+public sealed partial class MainPage
+{
+    private async Task<string> ExportCroppedTemplate(CropRegion cropRegion, string templateName)
+    {
+        var templatePath = Path.Combine(_saveFolderPath, $"{templateName}.png");
+        await Canvas.SaveCropRegionAsync(cropRegion, templatePath);
+        return templatePath;
+    }
+
+    private int[] GenerateRegionRef(CropRegion cropRegion, int padding)
+    {
+        var x = Math.Max(0, cropRegion.X - padding);
+        var y = Math.Max(0, cropRegion.Y - padding);
+        var right = Math.Min(
+            cropRegion.OriginalWidth ?? cropRegion.X + cropRegion.Width,
+            cropRegion.X + cropRegion.Width + padding);
+        var bottom = Math.Min(
+            cropRegion.OriginalHeight ?? cropRegion.Y + cropRegion.Height,
+            cropRegion.Y + cropRegion.Height + padding);
+        var width = right - x;
+        var height = bottom - y;
+
+        var screenWidth = cropRegion.OriginalWidth ?? 1280;
+        var screenHeight = cropRegion.OriginalHeight ?? 720;
+        var isLandscape = screenWidth >= screenHeight;
+
+        var refWidth = isLandscape ? 1280 : 720;
+        var refHeight = isLandscape ? 720 : 1280;
+        var widthRatio = (double)refWidth / screenWidth;
+        var heightRatio = (double)refHeight / screenHeight;
+
+        return
+        [
+            (int)Math.Round(x * widthRatio),
+            (int)Math.Round(y * heightRatio),
+            (int)Math.Round(width * widthRatio),
+            (int)Math.Round(height * heightRatio)
+        ];
+    }
+
+    private string GenerateMatchTemplateCode(string templatePath, int[] regionRef, CropRegion cropRegion)
+    {
+        var templateName = Path.GetFileNameWithoutExtension(templatePath);
+        var orientation = (cropRegion.OriginalWidth ?? 1280) >= (cropRegion.OriginalHeight ?? 720)
+            ? "landscape"
+            : "portrait";
+
+        return $@"// 模板匹配测试代码
+// 模板: {Path.GetFileName(templatePath)}
+// 原始区域: [{cropRegion.X}, {cropRegion.Y}, {cropRegion.Width}, {cropRegion.Height}]
+// regionRef: [{string.Join(", ", regionRef)}]
+
+const screen = captureScreen();
+const result = services.image.matchReferenceTemplate(
+    screen,
+    ""./assets/{Path.GetFileName(templatePath)}"",
+    {{
+        name: ""{templateName}"",
+        orientation: ""{orientation}"",
+        regionRef: [{string.Join(", ", regionRef)}],
+        matchThreshold: 0.25,
+        acceptThreshold: 0.84,
+        useTransparentMask: true
+    }}
+);
+
+if (result && result.matched) {{
+    console.log(""匹配成功！"");
+    console.log(""位置: ("" + result.point.x + "", "" + result.point.y + "")"");
+    console.log(""置信度: "" + result.confidence.toFixed(4));
+
+    click(result.point.x, result.point.y);
+}} else {{
+    console.log(""匹配失败"");
+}}
+
+screen.recycle();";
+    }
+
+    private async Task ShowErrorAsync(string message)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "错误",
+            Content = message,
+            CloseButtonText = "确定",
+            XamlRoot = XamlRoot
+        };
+        await dialog.ShowAsync();
+    }
+
+    private int CountAllNodes(WidgetNode node)
+    {
+        var count = 1;
+        foreach (var child in node.Children)
+        {
+            count += CountAllNodes(child);
+        }
+
+        return count;
+    }
+
+    private List<WidgetNode> GetAllNodes(WidgetNode node)
+    {
+        var result = new List<WidgetNode> { node };
+        foreach (var child in node.Children)
+        {
+            result.AddRange(GetAllNodes(child));
+        }
+
+        return result;
+    }
+
+    private Windows.Storage.Pickers.FileOpenPicker CreateImageFilePicker()
+    {
+        var picker = new Windows.Storage.Pickers.FileOpenPicker();
+        picker.FileTypeFilter.Add(".png");
+        picker.FileTypeFilter.Add(".jpg");
+        picker.FileTypeFilter.Add(".jpeg");
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+        return picker;
+    }
+}

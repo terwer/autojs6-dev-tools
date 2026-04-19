@@ -8,105 +8,180 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- 工具栏 -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Padding="8">
-            <Button x:Name="RefreshButton" Content="刷新" Click="RefreshButton_Click"/>
-            <Button x:Name="DiscoverButton" Content="扫描" Click="DiscoverButton_Click"/>
-        </StackPanel>
-
-        <!-- 设备列表 -->
-        <ListView
-            x:Name="DeviceListView"
-            Grid.Row="1"
-            SelectionMode="Single"
-            SelectionChanged="DeviceListView_SelectionChanged">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <Grid Padding="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="{Binding Serial}" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding Model}" FontSize="12" Opacity="0.7"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="{Binding State}" FontSize="12"/>
-                            <TextBlock Text="{Binding ConnectionType}" FontSize="10" Opacity="0.6"/>
-                        </StackPanel>
-                    </Grid>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
-
-        <!-- 无线调试连接 -->
-        <StackPanel Grid.Row="2" Padding="8" Spacing="12">
-            <TextBlock Text="无线调试连接" FontWeight="SemiBold"/>
-
-            <!-- 步骤 1：首次配对 -->
-            <Expander Header="步骤 1：首次配对（仅第一次需要）" IsExpanded="False">
-                <StackPanel Spacing="8" Padding="8">
-                    <TextBlock Text="手机操作：设置 → 无线调试 → 使用配对码配对设备"
-                               FontSize="11" Opacity="0.7" TextWrapping="Wrap"/>
-
-                    <Grid ColumnSpacing="8" RowSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="80"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="IP 地址" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="0" Grid.Column="1" x:Name="PairIpTextBox" PlaceholderText="192.168.3.4"/>
-
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="配对端口" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" x:Name="PairPortTextBox" PlaceholderText="39063"/>
-
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="配对码" VerticalAlignment="Center"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" x:Name="PairingCodeTextBox" PlaceholderText="123456"/>
-
-                        <Button Grid.Row="3" Grid.Column="1" Content="配对" Click="PairButton_Click" HorizontalAlignment="Stretch"/>
-                    </Grid>
+        <Border Grid.Row="0" Style="{StaticResource WorkbenchCardBorderStyle}" Margin="0,0,0,16">
+            <StackPanel Spacing="12">
+                <TextBlock Text="设备中心" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                <TextBlock Text="管理 ADB 连接、扫描设备并选择当前工作目标。" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Button x:Name="RefreshButton"
+                            Content="刷新设备"
+                            Click="RefreshButton_Click"
+                            Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                    <Button x:Name="DiscoverButton"
+                            Content="扫描无线设备"
+                            Click="DiscoverButton_Click"
+                            Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
                 </StackPanel>
-            </Expander>
+            </StackPanel>
+        </Border>
 
-            <!-- 步骤 2：连接设备 -->
-            <StackPanel Spacing="8">
-                <TextBlock Text="步骤 2：连接设备" FontWeight="SemiBold"/>
-                <TextBlock Text="手机操作：返回无线调试主界面，查看顶部显示的 IP 和端口"
-                           FontSize="11" Opacity="0.7" TextWrapping="Wrap"/>
+        <Border Grid.Row="1" Style="{StaticResource WorkbenchCardBorderStyle}" Margin="0,0,0,16" Padding="0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
-                <Grid ColumnSpacing="8" RowSpacing="8">
+                <StackPanel Grid.Row="0" Padding="16,16,16,12" Spacing="4">
+                    <TextBlock Text="在线设备" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                    <TextBlock Text="点击设备卡片即可设为当前工作目标。" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                </StackPanel>
+
+                <ListView x:Name="DeviceListView"
+                          Grid.Row="1"
+                          Padding="8,0,8,8"
+                          SelectionMode="Single"
+                          SelectionChanged="DeviceListView_SelectionChanged"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,0,0,8"
+                                    Padding="12"
+                                    Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                                    BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="10">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" Spacing="4">
+                                        <TextBlock Text="{Binding Serial}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                        <TextBlock Text="{Binding Model}" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="{Binding State}" HorizontalAlignment="Right" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding ConnectionType}" Style="{StaticResource WorkbenchCaptionTextStyle}" HorizontalAlignment="Right" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Style="{StaticResource WorkbenchCardBorderStyle}" Margin="0,0,0,16">
+            <StackPanel Spacing="12">
+                <TextBlock Text="当前设备" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                <StackPanel Spacing="6">
+                    <TextBlock x:Name="CurrentDeviceSerialText" Text="尚未选择设备" FontWeight="SemiBold" TextWrapping="Wrap" />
+                    <TextBlock x:Name="CurrentDeviceModelText" Text="选择设备后将在这里显示型号信息。" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                </StackPanel>
+                <Grid ColumnSpacing="12">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="80"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="IP 地址" VerticalAlignment="Center"/>
-                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="ConnectIpTextBox" PlaceholderText="192.168.3.4"/>
-
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="连接端口" VerticalAlignment="Center"/>
-                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="ConnectPortTextBox" PlaceholderText="41581"/>
-
-                    <Button Grid.Row="2" Grid.Column="1" Content="连接" Click="ConnectButton_Click" HorizontalAlignment="Stretch"/>
+                    <StackPanel Grid.Column="0" Spacing="4">
+                        <TextBlock Text="连接状态" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                        <TextBlock x:Name="CurrentDeviceStateText" Text="-" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock Text="连接方式" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                        <TextBlock x:Name="CurrentDeviceConnectionText" Text="-" />
+                    </StackPanel>
                 </Grid>
             </StackPanel>
-        </StackPanel>
+        </Border>
+
+        <Border Grid.Row="3" Style="{StaticResource WorkbenchCardBorderStyle}">
+            <Expander Header="无线调试连接" IsExpanded="False">
+                <StackPanel Spacing="16" Padding="0,16,0,0">
+                    <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                            BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="12">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="步骤 1：首次配对（仅第一次需要）" FontWeight="SemiBold" />
+                            <TextBlock Text="手机操作：设置 → 无线调试 → 使用配对码配对设备。"
+                                       Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                            <Grid ColumnSpacing="8" RowSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="88" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="IP 地址" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="0" Grid.Column="1" x:Name="PairIpTextBox" PlaceholderText="192.168.3.4" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="配对端口" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="1" Grid.Column="1" x:Name="PairPortTextBox" PlaceholderText="39063" />
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="配对码" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="2" Grid.Column="1" x:Name="PairingCodeTextBox" PlaceholderText="123456" />
+
+                                <Button Grid.Row="3"
+                                        Grid.Column="1"
+                                        Content="执行配对"
+                                        Click="PairButton_Click"
+                                        Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                            BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Padding="12">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="步骤 2：连接设备" FontWeight="SemiBold" />
+                            <TextBlock Text="手机操作：返回无线调试主界面，查看顶部显示的 IP 和端口。"
+                                       Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                            <Grid ColumnSpacing="8" RowSpacing="10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="88" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="IP 地址" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="0" Grid.Column="1" x:Name="ConnectIpTextBox" PlaceholderText="192.168.3.4" />
+
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="连接端口" VerticalAlignment="Center" />
+                                <TextBox Grid.Row="1" Grid.Column="1" x:Name="ConnectPortTextBox" PlaceholderText="41581" />
+
+                                <Button Grid.Row="2"
+                                        Grid.Column="1"
+                                        Content="连接到设备"
+                                        Click="ConnectButton_Click"
+                                        Style="{StaticResource WorkbenchPrimaryButtonStyle}" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Expander>
+        </Border>
     </Grid>
 </UserControl>

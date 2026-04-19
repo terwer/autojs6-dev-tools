@@ -7,221 +7,528 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid>
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- 顶部工具栏 -->
-        <CommandBar Grid.Row="0" DefaultLabelPosition="Right">
-            <AppBarButton x:Name="CaptureButton" Label="截图" Click="CaptureButton_Click">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Camera"/>
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarButton x:Name="DumpUiButton" Label="拉取 UI 树" Click="DumpUiButton_Click">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="ViewAll"/>
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarSeparator/>
-            <AppBarButton x:Name="FitToWindowButton" Label="适应窗口" Click="FitToWindowButton_Click">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="FullScreen"/>
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarButton x:Name="ResetViewButton" Label="原图 (1:1)" Click="ResetViewButton_Click">
-                <AppBarButton.Icon>
-                    <FontIcon Glyph="&#xE7C4;"/>
-                </AppBarButton.Icon>
-            </AppBarButton>
-        </CommandBar>
-
-        <!-- 主内容区域 -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="250"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-
-            <!-- 左侧：设备列表 -->
-            <local:AdbDeviceListView x:Name="DeviceList" Grid.Column="0"/>
-
-            <!-- 中央：画布 -->
-            <local:CanvasView x:Name="Canvas" Grid.Column="1"/>
-
-            <!-- 右侧：工作流面板 -->
-            <StackPanel Grid.Column="2" Width="320" Padding="6" Spacing="2">
-                <!-- 1️⃣ 裁剪模板 -->
-                <Expander Header="1️⃣ 裁剪模板" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                        <RadioButton x:Name="TemplateSourceCrop" Content="当前" IsChecked="True"
-                                     Checked="TemplateSource_Changed" FontSize="11" Margin="0,0,3,0"/>
-                        <Button x:Name="StartCropButton" Content="裁剪" Click="StartCropButton_Click"
-                                Padding="4,2" FontSize="11" Margin="0,0,6,0"/>
-                        <RadioButton x:Name="TemplateSourceFile" Content="文件"
-                                     Checked="TemplateSource_Changed" FontSize="11" Margin="0,0,3,0"/>
-                        <Button Content="浏览" Click="BrowseTemplateButton_Click"
-                                Padding="4,2" FontSize="11"/>
-                    </StackPanel>
-                </Expander>
-
-                <!-- 2️⃣ 测试截图 -->
-                <Expander Header="2️⃣ 测试截图" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                        <RadioButton x:Name="ScreenshotSourceCurrent" Content="当前" IsChecked="True"
-                                     Checked="ScreenshotSource_Changed" FontSize="11" Margin="0,0,6,0"/>
-                        <RadioButton x:Name="ScreenshotSourceFile" Content="文件"
-                                     Checked="ScreenshotSource_Changed" FontSize="11" Margin="0,0,3,0"/>
-                        <Button Content="浏览" Click="BrowseScreenshotButton_Click"
-                                Padding="4,2" FontSize="11"/>
-                    </StackPanel>
-                </Expander>
-
-                <!-- 3️⃣ 匹配测试 -->
-                <Expander Header="3️⃣ 匹配测试" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                    <StackPanel Spacing="2" Margin="0,2,0,0" HorizontalAlignment="Stretch">
-                        <TextBlock Text="regionRef:" FontSize="10" Margin="0,0,0,0"/>
-                        <TextBox x:Name="RegionRefTextBox" IsReadOnly="True"
-                                 Text="[等待裁剪...]" FontFamily="Consolas" FontSize="9" Padding="2,1"/>
-
-                        <Grid Margin="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="阈值:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
-                            <Slider x:Name="ThresholdSlider" Grid.Column="1"
-                                    Minimum="0.5" Maximum="0.95" Value="0.84"
-                                    StepFrequency="0.01" ValueChanged="ThresholdSlider_ValueChanged" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="ThresholdValueText" Grid.Column="2"
-                                       Text="0.84" Margin="4,0,0,0" VerticalAlignment="Center" FontSize="11" MinWidth="30"/>
-                        </Grid>
-
-                        <Button x:Name="TestMatchButton" Content="🔍 立即测试"
-                                Click="TestMatchButton_Click"
-                                HorizontalAlignment="Stretch" Padding="4,2" FontSize="11"
-                                Style="{StaticResource AccentButtonStyle}" Margin="0,1,0,0"/>
-
-                        <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
-                                Padding="2" CornerRadius="2" Margin="0,1,0,0">
-                            <TextBlock x:Name="MatchResultText" Text="结果: 待测试"
-                                       FontWeight="SemiBold" TextWrapping="Wrap" FontSize="11"/>
-                        </Border>
-                    </StackPanel>
-                </Expander>
-
-                <!-- 4️⃣ 保存 -->
-                <Expander Header="4️⃣ 保存" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                    <StackPanel Spacing="2" Margin="0,2,0,0" HorizontalAlignment="Stretch">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Button Grid.Column="0" Content="选择文件夹" Click="SelectSaveFolderButton_Click"
-                                    Padding="4,2" FontSize="10" Margin="0,0,3,0"/>
-                            <TextBlock x:Name="SaveFolderText" Grid.Column="1" VerticalAlignment="Center"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                       FontSize="9" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
-                        </Grid>
-
-                        <TextBox x:Name="TemplateNameTextBox" PlaceholderText="模板名 (留空自动生成)"
-                                 Padding="2,1" FontSize="11"/>
-
-                        <Button x:Name="SaveTemplateButton" Content="💾 保存模板+代码"
-                                Click="SaveTemplateButton_Click"
-                                HorizontalAlignment="Stretch" Padding="4,2" FontSize="11"
-                                Style="{StaticResource AccentButtonStyle}"/>
-                    </StackPanel>
-                </Expander>
-            </StackPanel>
-        </Grid>
-
-        <!-- 底部状态栏 + 代码预览 + 调试日志 -->
-        <Grid Grid.Row="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-            </Grid.RowDefinitions>
-
-            <!-- 状态栏 -->
-            <Grid Grid.Row="0" Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" Padding="8">
+        <Border Grid.Row="0" Style="{StaticResource WorkbenchCardBorderStyle}" Margin="24,24,24,16">
+            <Grid ColumnSpacing="20">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBlock x:Name="StatusText" Grid.Column="0" Text="就绪" Margin="0,0,16,0"/>
-                <TextBlock x:Name="ScaleText" Grid.Column="1" Text="缩放: 100%" Margin="0,0,16,0"/>
-                <TextBlock x:Name="ResolutionText" Grid.Column="2" Text="分辨率: -" Margin="0,0,16,0"/>
-                <Button x:Name="ToggleDebugButton" Grid.Column="4" Content="调试日志" Click="ToggleDebugButton_Click"
-                        Background="Transparent" BorderThickness="0" Padding="8,4"/>
-            </Grid>
+                <StackPanel Grid.Column="0" Spacing="4" VerticalAlignment="Center">
+                    <TextBlock Text="AutoJS6 可视化工作台" FontSize="22" FontWeight="SemiBold" />
+                    <TextBlock x:Name="CurrentDeviceSummaryText"
+                               Text="当前设备：尚未选择"
+                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                </StackPanel>
 
-            <!-- 代码预览面板（可折叠）-->
-            <Expander Grid.Row="1" x:Name="CodePreviewExpander" Header="▼ 代码预览" IsExpanded="False"
-                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
-                <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
-                        BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
-                        BorderThickness="0,1,0,0" MaxHeight="250">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <TextBox x:Name="CodePreviewTextBox" Padding="8" FontFamily="Consolas" FontSize="11"
-                                 TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0"
-                                 Background="Transparent" AcceptsReturn="True">
+                <Border Grid.Column="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                        BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Padding="4">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <ToggleButton x:Name="ImageModeButton"
+                                      Content="图像模式"
+                                      IsChecked="True"
+                                      Click="ImageModeButton_Click"
+                                      Style="{StaticResource WorkbenchModeButtonStyle}" />
+                        <ToggleButton x:Name="UiModeButton"
+                                      Content="控件模式"
+                                      Click="UiModeButton_Click"
+                                      Style="{StaticResource WorkbenchModeButtonStyle}" />
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <Button x:Name="CaptureButton"
+                            Click="CaptureButton_Click"
+                            Style="{StaticResource WorkbenchPrimaryButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="Camera" />
+                            <TextBlock Text="截图" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="DumpUiButton"
+                            Click="DumpUiButton_Click"
+                            Style="{StaticResource WorkbenchSecondaryButtonStyle}"
+                            Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="ViewAll" />
+                            <TextBlock Text="拉取 UI 树" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="TopFitToWindowButton"
+                            Click="FitToWindowButton_Click"
+                            Style="{StaticResource WorkbenchSecondaryButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="FullScreen" />
+                            <TextBlock Text="适应窗口" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button x:Name="TopResetViewButton"
+                            Click="ResetViewButton_Click"
+                            Style="{StaticResource WorkbenchSecondaryButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE7C4;" />
+                            <TextBlock Text="1:1" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" Margin="24,0,24,16" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="360" />
+            </Grid.ColumnDefinitions>
+
+            <local:AdbDeviceListView x:Name="DeviceList" Grid.Column="0" />
+
+            <Border Grid.Column="1" Style="{StaticResource WorkbenchCardBorderStyle}" Padding="0">
+                <Grid>
+                    <Border Margin="16"
+                            Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                            BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1"
+                            CornerRadius="16" />
+
+                    <local:CanvasView x:Name="Canvas" Margin="16" />
+
+                    <Grid x:Name="StageEmptyStateOverlay"
+                          Margin="16"
+                          Background="#33FFFFFF"
+                          Visibility="Visible">
+                        <Border HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                                BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                                BorderThickness="1"
+                                CornerRadius="16"
+                                Padding="24"
+                                MaxWidth="420">
+                            <StackPanel Spacing="12" HorizontalAlignment="Center">
+                                <TextBlock Text="画布尚未加载截图"
+                                           FontSize="20"
+                                           FontWeight="SemiBold"
+                                           HorizontalAlignment="Center" />
+                                <TextBlock Text="请选择一个设备后点击“截图”，或直接载入本地图片进入图像工作流。"
+                                           Style="{StaticResource WorkbenchCaptionTextStyle}"
+                                           TextAlignment="Center" />
+                                <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Center">
+                                    <Button Content="立即截图"
+                                            Click="CaptureButton_Click"
+                                            Style="{StaticResource WorkbenchPrimaryButtonStyle}" />
+                                    <Button Content="载入本地图片"
+                                            Click="LoadLocalImageButton_Click"
+                                            Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <Border x:Name="CanvasFloatingToolbar"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="0,28,28,0"
+                            Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                            BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="10">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <Button x:Name="FitToWindowButton"
+                                    Content="适应窗口"
+                                    Click="FitToWindowButton_Click"
+                                    Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                            <Button x:Name="ResetViewButton"
+                                    Content="原图 1:1"
+                                    Click="ResetViewButton_Click"
+                                    Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                            <Button x:Name="StartCropButton"
+                                    Content="开启裁剪"
+                                    Click="StartCropButton_Click"
+                                    Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                            <CheckBox x:Name="WidgetBoundsCheckBox"
+                                      Content="控件框"
+                                      IsChecked="True"
+                                      VerticalAlignment="Center"
+                                      Checked="WidgetBoundsCheckBox_Changed"
+                                      Unchecked="WidgetBoundsCheckBox_Changed"
+                                      Visibility="Collapsed" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="StageHudBorder"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Bottom"
+                            Margin="28,0,0,28"
+                            Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                            BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                            BorderThickness="1"
+                            CornerRadius="12"
+                            Padding="12">
+                        <StackPanel Spacing="6">
+                            <TextBlock x:Name="HudModeText" Text="模式：图像模式" FontWeight="SemiBold" />
+                            <TextBlock x:Name="HudResolutionText" Text="分辨率：-" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                            <TextBlock x:Name="HudScaleText" Text="缩放：100%" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                            <TextBlock x:Name="HudCropText" Text="裁剪区域：-" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource WorkbenchCardBorderStyle}" Padding="0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <StackPanel x:Name="ImageInspectorPanel" Padding="16" Spacing="16">
+                            <Border Style="{StaticResource WorkbenchCardBorderStyle}">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="模板来源" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                                    <TextBlock Text="模板可来自当前裁剪区域，或直接选择已有文件。"
+                                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="16">
+                                        <RadioButton x:Name="TemplateSourceCrop"
+                                                     Content="当前裁剪"
+                                                     IsChecked="True"
+                                                     Checked="TemplateSource_Changed" />
+                                        <RadioButton x:Name="TemplateSourceFile"
+                                                     Content="模板文件"
+                                                     Checked="TemplateSource_Changed" />
+                                        <Button Content="浏览模板文件"
+                                                Click="BrowseTemplateButton_Click"
+                                                Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="TemplateSourceSummaryText"
+                                               Text="当前裁剪：尚未创建区域"
+                                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource WorkbenchCardBorderStyle}">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="测试截图来源" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                                    <TextBlock Text="可使用当前画布截图，或选择外部截图文件用于测试。"
+                                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="16">
+                                        <RadioButton x:Name="ScreenshotSourceCurrent"
+                                                     Content="当前画布"
+                                                     IsChecked="True"
+                                                     Checked="ScreenshotSource_Changed" />
+                                        <RadioButton x:Name="ScreenshotSourceFile"
+                                                     Content="截图文件"
+                                                     Checked="ScreenshotSource_Changed" />
+                                        <Button Content="浏览截图文件"
+                                                Click="BrowseScreenshotButton_Click"
+                                                Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="ScreenshotSourceSummaryText"
+                                               Text="当前画布：尚未加载截图"
+                                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource WorkbenchCardBorderStyle}">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="匹配参数" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                                    <TextBlock Text="regionRef 与阈值将作为图像模式代码生成的输入。"
+                                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="RegionRefTextBox"
+                                                 Grid.Column="0"
+                                                 Text="[等待裁剪...]"
+                                                 IsReadOnly="True"
+                                                 Style="{StaticResource WorkbenchMonoTextStyle}" />
+                                        <Button Grid.Column="1"
+                                                Content="复制"
+                                                Click="CopyRegionRefButton_Click"
+                                                Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                                    </Grid>
+                                    <StackPanel Spacing="8">
+                                        <Grid ColumnSpacing="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="阈值" VerticalAlignment="Center" />
+                                            <Slider x:Name="ThresholdSlider"
+                                                    Grid.Column="1"
+                                                    Minimum="0.5"
+                                                    Maximum="0.95"
+                                                    Value="0.84"
+                                                    StepFrequency="0.01"
+                                                    ValueChanged="ThresholdSlider_ValueChanged"
+                                                    VerticalAlignment="Center" />
+                                            <TextBlock x:Name="ThresholdValueText"
+                                                       Grid.Column="2"
+                                                       Text="0.84"
+                                                       VerticalAlignment="Center"
+                                                       MinWidth="36" />
+                                        </Grid>
+                                        <Button x:Name="TestMatchButton"
+                                                Content="执行匹配测试"
+                                                Click="TestMatchButton_Click"
+                                                Style="{StaticResource WorkbenchPrimaryButtonStyle}" />
+                                    </StackPanel>
+                                    <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                                            BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Padding="12">
+                                        <TextBlock x:Name="MatchResultText"
+                                                   Text="结果：匹配执行未接入，当前仅完成界面占位"
+                                                   TextWrapping="Wrap" />
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource WorkbenchCardBorderStyle}">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="保存输出" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                                    <TextBlock Text="保存模板图像与生成代码，输出位置可随时调整。"
+                                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                    <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                                            BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Padding="12">
+                                        <TextBlock x:Name="SaveFolderText"
+                                                   Text="-"
+                                                   TextWrapping="Wrap"
+                                                   Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                    </Border>
+                                    <Button Content="选择保存文件夹"
+                                            Click="SelectSaveFolderButton_Click"
+                                            Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                                    <TextBox x:Name="TemplateNameTextBox"
+                                             PlaceholderText="模板名（留空自动生成）" />
+                                    <Button x:Name="SaveTemplateButton"
+                                            Content="保存模板与代码"
+                                            Click="SaveTemplateButton_Click"
+                                            Style="{StaticResource WorkbenchPrimaryButtonStyle}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <StackPanel x:Name="UiInspectorPanel" Padding="16" Spacing="16" Visibility="Collapsed">
+                            <Border Style="{StaticResource WorkbenchCardBorderStyle}">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="UI 树操作" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                                    <TextBlock Text="仅在控件模式下使用，按既有规则拉取并过滤布局容器节点。"
+                                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                    <Button x:Name="DumpUiInspectorButton"
+                                            Content="拉取当前 UI 树"
+                                            Click="DumpUiButton_Click"
+                                            Style="{StaticResource WorkbenchPrimaryButtonStyle}" />
+                                    <Border Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                                            BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="10"
+                                            Padding="12">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock x:Name="UiTreeSummaryText"
+                                                       Text="尚未拉取 UI 树"
+                                                       FontWeight="SemiBold" />
+                                            <TextBlock Text="默认忽略无业务价值的 Layout 容器，仅保留可识别或可交互节点。"
+                                                       Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource WorkbenchCardBorderStyle}">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="当前选中控件" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                                    <Grid ColumnSpacing="12" RowSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="类名" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                        <TextBlock Grid.Column="1" x:Name="SelectedWidgetClassText" Text="-" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Row="1" Text="文本" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" x:Name="SelectedWidgetTextText" Text="-" TextWrapping="Wrap" />
+                                        <TextBlock Grid.Row="2" Text="ResourceId" Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1" x:Name="SelectedWidgetResourceIdText" Text="-" TextWrapping="Wrap" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource WorkbenchCardBorderStyle}">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="属性检查器" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                                    <local:PropertyPanelView x:Name="PropertyPanel" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource WorkbenchCardBorderStyle}">
+                                <StackPanel Spacing="12">
+                                    <TextBlock Text="输出动作" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                                    <TextBlock Text="将当前控件生成的坐标、选择器或代码片段输出到剪贴板与底部代码预览。"
+                                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                    <Button x:Name="CopyCoordinatesButton"
+                                            Content="复制坐标"
+                                            Click="CopyCoordinatesButton_Click"
+                                            Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                                    <Button x:Name="CopySelectorButton"
+                                            Content="复制 UiSelector"
+                                            Click="CopySelectorButton_Click"
+                                            Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                                    <Button x:Name="PreviewWidgetSnippetButton"
+                                            Content="写入代码预览"
+                                            Click="PreviewWidgetSnippetButton_Click"
+                                            Style="{StaticResource WorkbenchPrimaryButtonStyle}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Border Grid.Row="2"
+                Margin="24,0,24,0"
+                Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                Padding="16,12">
+            <Grid ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="StatusText" Grid.Column="0" Text="就绪" VerticalAlignment="Center" />
+                <TextBlock x:Name="ScaleText" Grid.Column="1" Text="缩放：100%" VerticalAlignment="Center" />
+                <TextBlock x:Name="ResolutionText" Grid.Column="2" Text="分辨率：-" VerticalAlignment="Center" />
+                <TextBlock x:Name="ModeStatusText"
+                           Grid.Column="3"
+                           Text="当前模式：图像模式"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Center"
+                           Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                <Button Grid.Column="4"
+                        Content="代码预览"
+                        Click="ShowCodeDockButton_Click"
+                        Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                <Button Grid.Column="5"
+                        Content="调试日志"
+                        Click="ShowLogDockButton_Click"
+                        Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                <ToggleButton x:Name="ToggleDockButton"
+                              Grid.Column="6"
+                              Content="展开输出"
+                              Click="ToggleDockButton_Click"
+                              Style="{StaticResource WorkbenchSecondaryToggleButtonStyle}" />
+            </Grid>
+        </Border>
+
+        <Border x:Name="BottomDockPanel"
+                Grid.Row="3"
+                Margin="24,12,24,24"
+                Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                BorderBrush="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                BorderThickness="1"
+                CornerRadius="12"
+                MaxHeight="240"
+                Visibility="Collapsed">
+            <TabView x:Name="BottomDockTabView"
+                     IsAddTabButtonVisible="False"
+                     SelectionChanged="BottomDockTabView_SelectionChanged"
+                     TabWidthMode="Equal">
+                <TabViewItem Header="代码预览">
+                    <Grid Padding="0,8,0,0">
+                        <TextBox x:Name="CodePreviewTextBox"
+                                 Padding="12"
+                                 FontFamily="Consolas"
+                                 FontSize="12"
+                                 TextWrapping="Wrap"
+                                 IsReadOnly="True"
+                                 AcceptsReturn="True"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 BorderThickness="0"
+                                 Background="Transparent">
                             <TextBox.ContextFlyout>
                                 <MenuFlyout>
                                     <MenuFlyoutItem Text="复制代码" Click="CopyCodeButton_Click">
                                         <MenuFlyoutItem.Icon>
-                                            <FontIcon Glyph="&#xE8C8;"/>
+                                            <FontIcon Glyph="&#xE8C8;" />
                                         </MenuFlyoutItem.Icon>
                                     </MenuFlyoutItem>
                                 </MenuFlyout>
                             </TextBox.ContextFlyout>
                         </TextBox>
-                    </ScrollViewer>
-                </Border>
-            </Expander>
+                    </Grid>
+                </TabViewItem>
 
-            <!-- 调试日志面板（默认折叠）-->
-            <Border Grid.Row="2" x:Name="DebugPanel" Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
-                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,1,0,0"
-                    MaxHeight="200" Visibility="Collapsed">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <TextBox x:Name="DebugLogText" Padding="8" FontFamily="Consolas" FontSize="11"
-                             TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0"
-                             Background="Transparent" AcceptsReturn="True">
-                        <TextBox.ContextFlyout>
-                            <MenuFlyout>
-                                <MenuFlyoutItem Text="清空日志" Click="ClearLogButton_Click">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE74D;"/>
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                                <MenuFlyoutSeparator/>
-                                <MenuFlyoutItem Text="全选" Click="SelectAllLogButton_Click">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE8B3;"/>
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                                <MenuFlyoutItem Text="复制" Click="CopyLogButton_Click">
-                                    <MenuFlyoutItem.Icon>
-                                        <FontIcon Glyph="&#xE8C8;"/>
-                                    </MenuFlyoutItem.Icon>
-                                </MenuFlyoutItem>
-                            </MenuFlyout>
-                        </TextBox.ContextFlyout>
-                    </TextBox>
-                </ScrollViewer>
-            </Border>
-        </Grid>
+                <TabViewItem Header="调试日志">
+                    <Grid Padding="0,8,0,0">
+                        <TextBox x:Name="DebugLogText"
+                                 Padding="12"
+                                 FontFamily="Consolas"
+                                 FontSize="12"
+                                 TextWrapping="Wrap"
+                                 IsReadOnly="True"
+                                 AcceptsReturn="True"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 BorderThickness="0"
+                                 Background="Transparent">
+                            <TextBox.ContextFlyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem Text="清空日志" Click="ClearLogButton_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE74D;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutSeparator />
+                                    <MenuFlyoutItem Text="全选" Click="SelectAllLogButton_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE8B3;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem Text="复制" Click="CopyLogButton_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE8C8;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                </MenuFlyout>
+                            </TextBox.ContextFlyout>
+                        </TextBox>
+                    </Grid>
+                </TabViewItem>
+            </TabView>
+        </Border>
     </Grid>
 </Page>

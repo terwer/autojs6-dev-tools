@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Windows.ApplicationModel.DataTransfer;
 using Core.Models;
+using Core.Services;
 using System;
 
 namespace App.Views;
@@ -12,8 +12,8 @@ namespace App.Views;
 public sealed partial class PropertyPanelView : UserControl
 {
     private WidgetNode? _currentWidget;
+    private readonly UiDumpParser _uiDumpParser = new();
 
-    // 代码生成事件
     public event EventHandler<string>? CodeGenerated;
 
     public PropertyPanelView()
@@ -21,29 +21,82 @@ public sealed partial class PropertyPanelView : UserControl
         this.InitializeComponent();
     }
 
-    /// <summary>
-    /// 设置当前控件
-    /// </summary>
     public void SetWidget(WidgetNode? widget)
     {
         _currentWidget = widget;
         UpdateProperties();
     }
 
-    /// <summary>
-    /// 更新属性显示
-    /// </summary>
+    public WidgetNode? GetCurrentWidget() => _currentWidget;
+
+    public string? GetCoordinatesText()
+    {
+        if (_currentWidget == null)
+        {
+            return null;
+        }
+
+        var (x, y, w, h) = _currentWidget.BoundsRect;
+        return $"[{x}, {y}, {w}, {h}]";
+    }
+
+    public string? GetUiSelectorText()
+    {
+        if (_currentWidget == null)
+        {
+            return null;
+        }
+
+        return _uiDumpParser.GenerateUiSelector(_currentWidget);
+    }
+
+    public string? GetClickSnippet()
+    {
+        var selector = GetUiSelectorText();
+        if (string.IsNullOrEmpty(selector))
+        {
+            return null;
+        }
+
+return
+$@"// 控件模式：点击当前选中控件
+var target = {selector};
+if (target) {{
+  target.click();
+}} else {{
+  console.log(""未找到控件"");
+}}";
+    }
+
+    public void EmitSnippetPreview()
+    {
+        var snippet = GetClickSnippet();
+        if (!string.IsNullOrEmpty(snippet))
+        {
+            CodeGenerated?.Invoke(this, snippet);
+        }
+    }
+
     private void UpdateProperties()
     {
         PropertiesPanel.Children.Clear();
 
         if (_currentWidget == null)
         {
-            PropertiesPanel.Children.Add(new TextBlock { Text = "未选中控件", Opacity = 0.6 });
+            PropertiesPanel.Children.Add(new Border
+            {
+                Style = (Style)Application.Current.Resources["WorkbenchCardBorderStyle"],
+                Padding = new Thickness(12),
+                Child = new TextBlock
+                {
+                    Text = "尚未选中控件。进入控件模式后，可在中央画布中点击控件边界框查看属性。",
+                    TextWrapping = TextWrapping.Wrap,
+                    Opacity = 0.72
+                }
+            });
             return;
         }
 
-        // 显示所有属性
         AddProperty("ClassName", _currentWidget.ClassName);
         AddProperty("ResourceId", _currentWidget.ResourceId);
         AddProperty("Text", _currentWidget.Text);
@@ -57,85 +110,45 @@ public sealed partial class PropertyPanelView : UserControl
         AddProperty("Enabled", _currentWidget.Enabled.ToString());
 
         var (x, y, w, h) = _currentWidget.BoundsRect;
-        AddProperty("坐标", $"({x}, {y}) - ({x + w}, {y + h})");
+        AddProperty("坐标", $"({x}, {y}, {w}, {h})");
         AddProperty("尺寸", $"{w} x {h}");
+        AddProperty("UiSelector", GetUiSelectorText());
     }
 
-    /// <summary>
-    /// 添加属性行
-    /// </summary>
     private void AddProperty(string name, string? value)
     {
-        if (string.IsNullOrEmpty(value))
+        if (string.IsNullOrWhiteSpace(value))
         {
             return;
         }
 
-        var grid = new Grid
+        var container = new Border
         {
-            ColumnSpacing = 8,
-            Margin = new Thickness(0, 4, 0, 4)
+            Style = (Style)Application.Current.Resources["WorkbenchCardBorderStyle"],
+            Padding = new Thickness(12, 10, 12, 10)
         };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        var nameText = new TextBlock
+        var stack = new StackPanel
         {
-            Text = name + ":",
-            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Opacity = 0.7
+            Spacing = 6
         };
-        Grid.SetColumn(nameText, 0);
 
-        var valueText = new TextBlock
+        stack.Children.Add(new TextBlock
+        {
+            Text = name,
+            FontSize = 12,
+            Opacity = 0.72,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+        });
+
+        stack.Children.Add(new TextBlock
         {
             Text = value,
-            TextWrapping = TextWrapping.Wrap
-        };
-        Grid.SetColumn(valueText, 1);
+            TextWrapping = TextWrapping.Wrap,
+            FontSize = 14
+        });
 
-        grid.Children.Add(nameText);
-        grid.Children.Add(valueText);
-
-        PropertiesPanel.Children.Add(grid);
-    }
-
-    /// <summary>
-    /// 复制坐标按钮点击
-    /// </summary>
-    private void CopyCoordinatesButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_currentWidget == null) return;
-
-        var (x, y, w, h) = _currentWidget.BoundsRect;
-        var coordinates = $"[{x}, {y}, {w}, {h}]";
-
-        var dataPackage = new DataPackage();
-        dataPackage.SetText(coordinates);
-        Clipboard.SetContent(dataPackage);
-
-        // 触发代码生成事件，显示在代码预览框
-        CodeGenerated?.Invoke(this, $"// 控件坐标\nvar bounds = {coordinates};\n");
-    }
-
-    /// <summary>
-    /// 复制 XPath 按钮点击
-    /// TODO: 实现完整的 XPath 生成逻辑
-    /// </summary>
-    private void CopyXPathButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_currentWidget == null) return;
-
-        // 简化版 XPath（仅使用 resource-id）
-        var xpath = !string.IsNullOrEmpty(_currentWidget.ResourceId)
-            ? $"//*[@resource-id='{_currentWidget.ResourceId}']"
-            : $"//*[@class='{_currentWidget.ClassName}']";
-
-        var dataPackage = new DataPackage();
-        dataPackage.SetText(xpath);
-        Clipboard.SetContent(dataPackage);
-
-        // 触发代码生成事件，显示在代码预览框
-        CodeGenerated?.Invoke(this, $"// 控件 XPath\nvar xpath = \"{xpath}\";\n");
+        container.Child = stack;
+        PropertiesPanel.Children.Add(container);
     }
 }

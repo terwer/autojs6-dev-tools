@@ -8,9 +8,62 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
-                <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
-            <!-- Other app resources here -->
+
+            <Style x:Key="WorkbenchCardBorderStyle" TargetType="Border">
+                <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundAltHighBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseLowBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="16" />
+            </Style>
+
+            <Style x:Key="WorkbenchSectionTitleTextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+            </Style>
+
+            <Style x:Key="WorkbenchBodyTextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="14" />
+            </Style>
+
+            <Style x:Key="WorkbenchCaptionTextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+
+            <Style x:Key="WorkbenchMonoTextStyle" TargetType="TextBox">
+                <Setter Property="FontFamily" Value="Consolas" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Padding" Value="10,8" />
+            </Style>
+
+            <Style x:Key="WorkbenchModeButtonStyle" TargetType="ToggleButton">
+                <Setter Property="Padding" Value="18,10" />
+                <Setter Property="MinWidth" Value="120" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="CornerRadius" Value="10" />
+            </Style>
+
+            <Style x:Key="WorkbenchPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+                <Setter Property="MinHeight" Value="38" />
+                <Setter Property="Padding" Value="14,8" />
+                <Setter Property="CornerRadius" Value="10" />
+            </Style>
+
+            <Style x:Key="WorkbenchSecondaryButtonStyle" TargetType="Button">
+                <Setter Property="MinHeight" Value="38" />
+                <Setter Property="Padding" Value="14,8" />
+                <Setter Property="CornerRadius" Value="10" />
+            </Style>
+
+            <Style x:Key="WorkbenchSecondaryToggleButtonStyle" TargetType="ToggleButton">
+                <Setter Property="MinHeight" Value="38" />
+                <Setter Property="Padding" Value="14,8" />
+                <Setter Property="CornerRadius" Value="10" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Storage.Streams;
 using Core.Models;
@@ -166,6 +168,74 @@ public sealed partial class CanvasView : Page
     /// 获取当前裁剪区域
     /// </summary>
     public CropRegion? GetCropRegion() => _cropRegion;
+
+    /// <summary>
+    /// 将当前图像中的裁剪区域导出为 PNG 文件。
+    /// </summary>
+    public async Task SaveCropRegionAsync(CropRegion cropRegion, string outputPath)
+    {
+        if (_imageData == null || _imageData.Length == 0)
+        {
+            throw new InvalidOperationException("当前画布未加载图像，无法导出模板");
+        }
+
+        if (cropRegion.Width <= 0 || cropRegion.Height <= 0)
+        {
+            throw new ArgumentException("裁剪区域无效");
+        }
+
+        using var sourceStream = new InMemoryRandomAccessStream();
+        await sourceStream.WriteAsync(_imageData.AsBuffer());
+        sourceStream.Seek(0);
+
+        var decoder = await Windows.Graphics.Imaging.BitmapDecoder.CreateAsync(sourceStream);
+
+        var x = Math.Clamp(cropRegion.X, 0, Math.Max(0, (int)decoder.PixelWidth - 1));
+        var y = Math.Clamp(cropRegion.Y, 0, Math.Max(0, (int)decoder.PixelHeight - 1));
+        var width = Math.Clamp(cropRegion.Width, 1, (int)decoder.PixelWidth - x);
+        var height = Math.Clamp(cropRegion.Height, 1, (int)decoder.PixelHeight - y);
+
+        var transform = new Windows.Graphics.Imaging.BitmapTransform
+        {
+            Bounds = new Windows.Graphics.Imaging.BitmapBounds
+            {
+                X = (uint)x,
+                Y = (uint)y,
+                Width = (uint)width,
+                Height = (uint)height
+            }
+        };
+
+        var pixelData = await decoder.GetPixelDataAsync(
+            Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8,
+            Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied,
+            transform,
+            Windows.Graphics.Imaging.ExifOrientationMode.IgnoreExifOrientation,
+            Windows.Graphics.Imaging.ColorManagementMode.DoNotColorManage);
+
+        var pixels = pixelData.DetachPixelData();
+
+        using var outputStream = new InMemoryRandomAccessStream();
+        var encoder = await Windows.Graphics.Imaging.BitmapEncoder.CreateAsync(
+            Windows.Graphics.Imaging.BitmapEncoder.PngEncoderId,
+            outputStream);
+        encoder.SetPixelData(
+            Windows.Graphics.Imaging.BitmapPixelFormat.Bgra8,
+            Windows.Graphics.Imaging.BitmapAlphaMode.Premultiplied,
+            (uint)width,
+            (uint)height,
+            decoder.DpiX,
+            decoder.DpiY,
+            pixels);
+        await encoder.FlushAsync();
+
+        outputStream.Seek(0);
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+
+        using var targetStream = File.Create(outputPath);
+        using var managedStream = outputStream.AsStreamForRead();
+        await managedStream.CopyToAsync(targetStream);
+    }
 
     /// <summary>
     /// 启用裁剪模式（仅在 1:1 模式下允许）
