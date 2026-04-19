@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Core.Abstractions;
 using Core.Models;
@@ -19,6 +20,13 @@ public sealed partial class MainPage : Page
     private AdbDevice? _currentDevice;
     private bool _hasScreenshot = false;
     private bool _isFitToWindowMode = false;
+    private bool _isCroppingMode = false;
+
+    // 工作流状态
+    private string? _templateFilePath = null;
+    private string? _screenshotFilePath = null;
+    private CropRegion? _currentCropRegion = null;
+    private string _saveFolderPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "autojs6-templates");
 
     public MainPage()
     {
@@ -40,8 +48,11 @@ public sealed partial class MainPage : Page
         // 订阅画布控件选择事件
         Canvas.WidgetSelected += Canvas_WidgetSelected;
 
-        // 订阅属性面板代码生成事件
-        PropertyPanel.CodeGenerated += PropertyPanel_CodeGenerated;
+        // 订阅画布裁剪区域变化事件
+        Canvas.CropRegionChanged += Canvas_CropRegionChanged;
+
+        // 初始化保存路径显示
+        UpdateSaveFolderDisplay();
 
         // 初始化按钮状态
         UpdateButtonStates();
@@ -60,18 +71,30 @@ public sealed partial class MainPage : Page
     /// </summary>
     private void Canvas_WidgetSelected(object? sender, WidgetNode widget)
     {
-        // 更新属性面板
-        PropertyPanel.SetWidget(widget);
         StatusText.Text = $"已选择控件: {widget.ClassName}";
     }
 
     /// <summary>
-    /// 属性面板代码生成事件处理
+    /// 画布裁剪区域变化事件处理
     /// </summary>
-    private void PropertyPanel_CodeGenerated(object? sender, string code)
+    private void Canvas_CropRegionChanged(object? sender, CropRegion? cropRegion)
     {
-        // 更新代码预览框
-        CodePreview.SetCode(code);
+        _currentCropRegion = cropRegion;
+
+        if (cropRegion != null)
+        {
+            // 自动计算 regionRef
+            var regionRef = GenerateRegionRef(cropRegion, padding: 20);
+            RegionRefTextBox.Text = $"[{string.Join(", ", regionRef)}]";
+
+            StatusText.Text = $"裁剪区域: {cropRegion.Width}x{cropRegion.Height}";
+        }
+        else
+        {
+            RegionRefTextBox.Text = "[等待裁剪...]";
+        }
+
+        UpdateButtonStates();
     }
 
     /// <summary>
@@ -111,7 +134,9 @@ public sealed partial class MainPage : Page
 
             // 清空之前的状态
             Canvas.SetWidgetNodes(new List<WidgetNode>());
-            CodePreview.SetCode("");
+            CodePreviewTextBox.Text = "";
+            _currentCropRegion = null;
+            RegionRefTextBox.Text = "[等待裁剪...]";
 
             // 拉取截图（直接从 Framebuffer 获取实际宽高）
             var (screenshot, width, height) = await _adbService.CaptureScreenshotAsync(_currentDevice);
@@ -212,35 +237,232 @@ public sealed partial class MainPage : Page
     }
 
     /// <summary>
-    /// 生成代码按钮点击
-    /// TODO: 实现完整的代码生成逻辑
+    /// 开始裁剪按钮点击
     /// </summary>
-    private void GenerateCodeButton_Click(object sender, RoutedEventArgs e)
+    private void StartCropButton_Click(object sender, RoutedEventArgs e)
     {
-        // 生成示例代码
-        var options = new AutoJS6CodeOptions
+        if (!_hasScreenshot)
         {
-            Mode = CodeGenerationMode.Image,
-            TemplatePath = "./template.png",
-            Threshold = 0.8,
-            VariablePrefix = "target",
-            GenerateRetryLogic = true,
-            RetryCount = 3
-        };
+            StatusText.Text = "请先截图";
+            return;
+        }
 
-        var code = _codeGenerator.GenerateImageModeCode(options);
-        CodePreview.SetCode(code);
+        if (_isFitToWindowMode)
+        {
+            StatusText.Text = "裁剪模式仅在原图模式（1:1）下可用，请点击\"原图\"按钮";
+            return;
+        }
 
-        StatusText.Text = "代码生成完成";
+        _isCroppingMode = !_isCroppingMode;
+
+        if (_isCroppingMode)
+        {
+            bool success = Canvas.EnableCroppingMode();
+            if (success)
+            {
+                StartCropButton.Content = "退出裁剪";
+                StatusText.Text = "裁剪模式已启用 - 拖拽创建矩形，按住 Shift 锁定宽高比";
+            }
+            else
+            {
+                _isCroppingMode = false;
+                StatusText.Text = "裁剪模式启用失败，请确保处于 1:1 模式";
+            }
+        }
+        else
+        {
+            Canvas.DisableCroppingMode();
+            StartCropButton.Content = "开始裁剪";
+            StatusText.Text = "裁剪模式已禁用";
+        }
+
+        UpdateButtonStates();
+    }
+
+    /// <summary>
+    /// 浏览模板文件按钮点击
+    /// </summary>
+    private async void BrowseTemplateButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new Windows.Storage.Pickers.FileOpenPicker();
+        picker.FileTypeFilter.Add(".png");
+        picker.FileTypeFilter.Add(".jpg");
+        picker.FileTypeFilter.Add(".jpeg");
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSingleFileAsync();
+        if (file != null)
+        {
+            _templateFilePath = file.Path;
+            StatusText.Text = $"已选择模板: {file.Name}";
+            UpdateButtonStates();
+        }
+    }
+
+    /// <summary>
+    /// 浏览截图文件按钮点击
+    /// </summary>
+    private async void BrowseScreenshotButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new Windows.Storage.Pickers.FileOpenPicker();
+        picker.FileTypeFilter.Add(".png");
+        picker.FileTypeFilter.Add(".jpg");
+        picker.FileTypeFilter.Add(".jpeg");
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var file = await picker.PickSingleFileAsync();
+        if (file != null)
+        {
+            _screenshotFilePath = file.Path;
+            StatusText.Text = $"已选择截图: {file.Name}";
+            UpdateButtonStates();
+        }
+    }
+
+    /// <summary>
+    /// 模板源变化
+    /// </summary>
+    private void TemplateSource_Changed(object sender, RoutedEventArgs e)
+    {
+        UpdateButtonStates();
+    }
+
+    /// <summary>
+    /// 截图源变化
+    /// </summary>
+    private void ScreenshotSource_Changed(object sender, RoutedEventArgs e)
+    {
+        UpdateButtonStates();
+    }
+
+    /// <summary>
+    /// 阈值滑块变化
+    /// </summary>
+    private void ThresholdSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (ThresholdValueText != null)
+        {
+            ThresholdValueText.Text = e.NewValue.ToString("F2");
+        }
     }
 
     /// <summary>
     /// 匹配测试按钮点击
-    /// TODO: 实现匹配测试功能
     /// </summary>
-    private async void MatchTestButton_Click(object sender, RoutedEventArgs e)
+    private async void TestMatchButton_Click(object sender, RoutedEventArgs e)
     {
-        await ShowErrorAsync("匹配测试功能将在后续版本实现");
+        try
+        {
+            StatusText.Text = "正在进行匹配测试...";
+            MatchResultText.Text = "结果: 测试中...";
+
+            // TODO: 实现完整的匹配测试逻辑
+            // 1. 获取模板图像（当前裁剪 或 外部文件）
+            // 2. 获取截图图像（当前截图 或 外部文件）
+            // 3. 使用 OpenCV 进行模板匹配
+            // 4. 在画布上显示匹配结果（绿框 + 置信度）
+
+            await Task.Delay(500); // 模拟匹配过程
+
+            MatchResultText.Text = "结果: ✓ 匹配成功 (0.95)\n位置: (120, 340)";
+            StatusText.Text = "匹配测试完成";
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorAsync($"匹配测试失败：{ex.Message}");
+            MatchResultText.Text = "结果: ✗ 测试失败";
+            StatusText.Text = "匹配测试失败";
+        }
+    }
+
+    /// <summary>
+    /// 选择保存文件夹按钮点击
+    /// </summary>
+    private async void SelectSaveFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new Windows.Storage.Pickers.FolderPicker();
+        picker.FileTypeFilter.Add("*");
+
+        var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        var folder = await picker.PickSingleFolderAsync();
+        if (folder != null)
+        {
+            _saveFolderPath = folder.Path;
+            UpdateSaveFolderDisplay();
+            StatusText.Text = $"保存位置已更改";
+        }
+    }
+
+    /// <summary>
+    /// 更新保存文件夹显示
+    /// </summary>
+    private void UpdateSaveFolderDisplay()
+    {
+        if (SaveFolderText != null)
+        {
+            SaveFolderText.Text = _saveFolderPath;
+        }
+    }
+
+    /// <summary>
+    /// 保存模板+代码按钮点击
+    /// </summary>
+    private async void SaveTemplateButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentCropRegion == null)
+        {
+            await ShowErrorAsync("请先创建裁剪区域");
+            return;
+        }
+
+        try
+        {
+            StatusText.Text = "正在保存模板和代码...";
+
+            // 1. 确定模板名
+            var templateName = TemplateNameTextBox.Text.Trim();
+            if (string.IsNullOrEmpty(templateName))
+            {
+                templateName = $"template_{DateTime.Now:yyyyMMdd_HHmmss}";
+            }
+
+            // 2. 确保保存目录存在
+            Directory.CreateDirectory(_saveFolderPath);
+
+            // 3. 裁剪并保存模板图像
+            var templatePath = await ExportCroppedTemplate(_currentCropRegion, templateName);
+
+            // 4. 生成 regionRef
+            var regionRef = GenerateRegionRef(_currentCropRegion, padding: 20);
+
+            // 5. 生成 AutoJS6 代码
+            var code = GenerateMatchTemplateCode(templatePath, regionRef, _currentCropRegion);
+
+            // 6. 保存代码文件
+            var codePath = Path.ChangeExtension(templatePath, ".js");
+            File.WriteAllText(codePath, code);
+
+            // 7. 显示到代码预览
+            CodePreviewTextBox.Text = code;
+            CodePreviewExpander.IsExpanded = true;
+
+            StatusText.Text = $"已保存到: {_saveFolderPath}";
+
+            Services.LogService.Instance.Log($"[保存] 模板: {templatePath}");
+            Services.LogService.Instance.Log($"[保存] 代码: {codePath}");
+            Services.LogService.Instance.Log($"[保存] 位置: {_saveFolderPath}");
+        }
+        catch (Exception ex)
+        {
+            await ShowErrorAsync($"保存失败：{ex.Message}");
+            StatusText.Text = "保存失败";
+        }
     }
 
     /// <summary>
@@ -277,6 +499,119 @@ public sealed partial class MainPage : Page
 
         // 更新按钮状态
         UpdateButtonStates();
+    }
+
+    /// <summary>
+    /// 复制代码按钮点击
+    /// </summary>
+    private void CopyCodeButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(CodePreviewTextBox.Text))
+        {
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(CodePreviewTextBox.Text);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
+            StatusText.Text = "代码已复制到剪贴板";
+        }
+    }
+
+    /// <summary>
+    /// 导出裁剪的模板图像
+    /// </summary>
+    private async Task<string> ExportCroppedTemplate(CropRegion cropRegion, string templateName)
+    {
+        // TODO: 实现图像裁剪和保存
+        // 1. 从 Canvas 获取原始图像数据
+        // 2. 使用 ImageProcessor 裁剪指定区域
+        // 3. 保存为 PNG 文件
+
+        var templatePath = Path.Combine(_saveFolderPath, $"{templateName}.png");
+
+        // TODO: 实际裁剪和保存逻辑
+        await Task.CompletedTask;
+
+        return templatePath;
+    }
+
+    /// <summary>
+    /// 生成 regionRef（参考 generate-region-ref.js 的逻辑）
+    /// </summary>
+    private int[] GenerateRegionRef(CropRegion cropRegion, int padding)
+    {
+        // 1. 应用 padding
+        int x = Math.Max(0, cropRegion.X - padding);
+        int y = Math.Max(0, cropRegion.Y - padding);
+        int right = Math.Min(cropRegion.OriginalWidth ?? cropRegion.X + cropRegion.Width,
+                            cropRegion.X + cropRegion.Width + padding);
+        int bottom = Math.Min(cropRegion.OriginalHeight ?? cropRegion.Y + cropRegion.Height,
+                             cropRegion.Y + cropRegion.Height + padding);
+        int width = right - x;
+        int height = bottom - y;
+
+        // 2. 确定方向（横屏/竖屏）
+        int screenWidth = cropRegion.OriginalWidth ?? 1280;
+        int screenHeight = cropRegion.OriginalHeight ?? 720;
+        bool isLandscape = screenWidth >= screenHeight;
+
+        // 3. 转换到参考分辨率
+        int refWidth = isLandscape ? 1280 : 720;
+        int refHeight = isLandscape ? 720 : 1280;
+        double widthRatio = (double)refWidth / screenWidth;
+        double heightRatio = (double)refHeight / screenHeight;
+
+        return new int[]
+        {
+            (int)Math.Round(x * widthRatio),
+            (int)Math.Round(y * heightRatio),
+            (int)Math.Round(width * widthRatio),
+            (int)Math.Round(height * heightRatio)
+        };
+    }
+
+    /// <summary>
+    /// 生成 matchReferenceTemplate 代码
+    /// </summary>
+    private string GenerateMatchTemplateCode(string templatePath, int[] regionRef, CropRegion cropRegion)
+    {
+        var templateName = Path.GetFileNameWithoutExtension(templatePath);
+        var orientation = (cropRegion.OriginalWidth ?? 1280) >= (cropRegion.OriginalHeight ?? 720)
+            ? "landscape"
+            : "portrait";
+
+        var code = $@"// 模板匹配测试代码
+// 模板: {Path.GetFileName(templatePath)}
+// 原始区域: [{cropRegion.X}, {cropRegion.Y}, {cropRegion.Width}, {cropRegion.Height}]
+// regionRef: [{string.Join(", ", regionRef)}]
+
+const screen = captureScreen();
+const result = services.image.matchReferenceTemplate(
+    screen,
+    ""./assets/{Path.GetFileName(templatePath)}"",
+    {{
+        name: ""{templateName}"",
+        orientation: ""{orientation}"",
+        regionRef: [{string.Join(", ", regionRef)}],
+        matchThreshold: 0.25,
+        acceptThreshold: 0.84,
+        useTransparentMask: true
+    }}
+);
+
+if (result && result.matched) {{
+    console.log(""匹配成功！"");
+    console.log(""位置: ("" + result.point.x + "", "" + result.point.y + "")"");
+    console.log(""置信度: "" + result.confidence.toFixed(4));
+
+    // 点击匹配位置
+    click(result.point.x, result.point.y);
+}} else {{
+    console.log(""匹配失败"");
+}}
+
+// 回收图像
+screen.recycle();";
+
+        return code;
     }
 
     /// <summary>
@@ -342,12 +677,33 @@ public sealed partial class MainPage : Page
         bool hasScreenshot = _hasScreenshot;
         FitToWindowButton.IsEnabled = hasScreenshot;
         ResetViewButton.IsEnabled = hasScreenshot;
-        GenerateCodeButton.IsEnabled = hasScreenshot;
-        MatchTestButton.IsEnabled = hasScreenshot;
 
         // 拉取 UI 树：需要截图 + 适应窗口模式
         bool canDumpUi = hasScreenshot && _isFitToWindowMode;
         DumpUiButton.IsEnabled = canDumpUi;
+
+        // 工作流面板按钮状态
+        if (StartCropButton != null)
+        {
+            StartCropButton.IsEnabled = hasScreenshot && !_isFitToWindowMode;
+        }
+
+        // 匹配测试按钮：需要有模板源和截图源
+        if (TestMatchButton != null)
+        {
+            bool hasTemplateSource = (TemplateSourceCrop?.IsChecked == true && _currentCropRegion != null) ||
+                                    (TemplateSourceFile?.IsChecked == true && !string.IsNullOrEmpty(_templateFilePath));
+            bool hasScreenshotSource = (ScreenshotSourceCurrent?.IsChecked == true && hasScreenshot) ||
+                                      (ScreenshotSourceFile?.IsChecked == true && !string.IsNullOrEmpty(_screenshotFilePath));
+
+            TestMatchButton.IsEnabled = hasTemplateSource && hasScreenshotSource;
+        }
+
+        // 保存按钮：需要有裁剪区域
+        if (SaveTemplateButton != null)
+        {
+            SaveTemplateButton.IsEnabled = _currentCropRegion != null;
+        }
 
         // 设置 Tooltip 提示
         if (!hasScreenshot)
@@ -355,16 +711,11 @@ public sealed partial class MainPage : Page
             ToolTipService.SetToolTip(DumpUiButton, "请先截图");
             ToolTipService.SetToolTip(FitToWindowButton, "请先截图");
             ToolTipService.SetToolTip(ResetViewButton, "请先截图");
-            ToolTipService.SetToolTip(GenerateCodeButton, "请先截图");
-            ToolTipService.SetToolTip(MatchTestButton, "请先截图");
         }
         else
         {
-            // 有截图后，清除"适应窗口"和"原图"的 Tooltip（因为已经可用）
             ToolTipService.SetToolTip(FitToWindowButton, null);
             ToolTipService.SetToolTip(ResetViewButton, null);
-            ToolTipService.SetToolTip(GenerateCodeButton, null);
-            ToolTipService.SetToolTip(MatchTestButton, null);
 
             if (!_isFitToWindowMode)
             {

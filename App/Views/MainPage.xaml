@@ -26,17 +26,6 @@
                     <SymbolIcon Symbol="ViewAll"/>
                 </AppBarButton.Icon>
             </AppBarButton>
-            <AppBarButton x:Name="GenerateCodeButton" Label="生成代码" Click="GenerateCodeButton_Click">
-                <AppBarButton.Icon>
-                    <FontIcon Glyph="&#xE943;"/>
-                </AppBarButton.Icon>
-            </AppBarButton>
-            <AppBarSeparator/>
-            <AppBarButton x:Name="MatchTestButton" Label="匹配测试" Click="MatchTestButton_Click">
-                <AppBarButton.Icon>
-                    <SymbolIcon Symbol="Find"/>
-                </AppBarButton.Icon>
-            </AppBarButton>
             <AppBarSeparator/>
             <AppBarButton x:Name="FitToWindowButton" Label="适应窗口" Click="FitToWindowButton_Click">
                 <AppBarButton.Icon>
@@ -55,7 +44,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <!-- 左侧：设备列表 -->
@@ -64,21 +53,99 @@
             <!-- 中央：画布 -->
             <local:CanvasView x:Name="Canvas" Grid.Column="1"/>
 
-            <!-- 右侧：属性面板 + 代码预览 -->
-            <Grid Grid.Column="2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+            <!-- 右侧：工作流面板 -->
+            <StackPanel Grid.Column="2" Width="320" Padding="6" Spacing="2">
+                <!-- 1️⃣ 裁剪模板 -->
+                <Expander Header="1️⃣ 裁剪模板" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <RadioButton x:Name="TemplateSourceCrop" Content="当前" IsChecked="True"
+                                     Checked="TemplateSource_Changed" FontSize="11" Margin="0,0,3,0"/>
+                        <Button x:Name="StartCropButton" Content="裁剪" Click="StartCropButton_Click"
+                                Padding="4,2" FontSize="11" Margin="0,0,6,0"/>
+                        <RadioButton x:Name="TemplateSourceFile" Content="文件"
+                                     Checked="TemplateSource_Changed" FontSize="11" Margin="0,0,3,0"/>
+                        <Button Content="浏览" Click="BrowseTemplateButton_Click"
+                                Padding="4,2" FontSize="11"/>
+                    </StackPanel>
+                </Expander>
 
-                <local:PropertyPanelView x:Name="PropertyPanel" Grid.Row="0"/>
-                <local:CodePreviewView x:Name="CodePreview" Grid.Row="1"/>
-            </Grid>
+                <!-- 2️⃣ 测试截图 -->
+                <Expander Header="2️⃣ 测试截图" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                        <RadioButton x:Name="ScreenshotSourceCurrent" Content="当前" IsChecked="True"
+                                     Checked="ScreenshotSource_Changed" FontSize="11" Margin="0,0,6,0"/>
+                        <RadioButton x:Name="ScreenshotSourceFile" Content="文件"
+                                     Checked="ScreenshotSource_Changed" FontSize="11" Margin="0,0,3,0"/>
+                        <Button Content="浏览" Click="BrowseScreenshotButton_Click"
+                                Padding="4,2" FontSize="11"/>
+                    </StackPanel>
+                </Expander>
+
+                <!-- 3️⃣ 匹配测试 -->
+                <Expander Header="3️⃣ 匹配测试" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                    <StackPanel Spacing="2" Margin="0,2,0,0" HorizontalAlignment="Stretch">
+                        <TextBlock Text="regionRef:" FontSize="10" Margin="0,0,0,0"/>
+                        <TextBox x:Name="RegionRefTextBox" IsReadOnly="True"
+                                 Text="[等待裁剪...]" FontFamily="Consolas" FontSize="9" Padding="2,1"/>
+
+                        <Grid Margin="0,1,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="阈值:" VerticalAlignment="Center" FontSize="11" Margin="0,0,4,0"/>
+                            <Slider x:Name="ThresholdSlider" Grid.Column="1"
+                                    Minimum="0.5" Maximum="0.95" Value="0.84"
+                                    StepFrequency="0.01" ValueChanged="ThresholdSlider_ValueChanged" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="ThresholdValueText" Grid.Column="2"
+                                       Text="0.84" Margin="4,0,0,0" VerticalAlignment="Center" FontSize="11" MinWidth="30"/>
+                        </Grid>
+
+                        <Button x:Name="TestMatchButton" Content="🔍 立即测试"
+                                Click="TestMatchButton_Click"
+                                HorizontalAlignment="Stretch" Padding="4,2" FontSize="11"
+                                Style="{StaticResource AccentButtonStyle}" Margin="0,1,0,0"/>
+
+                        <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                                Padding="2" CornerRadius="2" Margin="0,1,0,0">
+                            <TextBlock x:Name="MatchResultText" Text="结果: 待测试"
+                                       FontWeight="SemiBold" TextWrapping="Wrap" FontSize="11"/>
+                        </Border>
+                    </StackPanel>
+                </Expander>
+
+                <!-- 4️⃣ 保存 -->
+                <Expander Header="4️⃣ 保存" IsExpanded="True" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                    <StackPanel Spacing="2" Margin="0,2,0,0" HorizontalAlignment="Stretch">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Content="选择文件夹" Click="SelectSaveFolderButton_Click"
+                                    Padding="4,2" FontSize="10" Margin="0,0,3,0"/>
+                            <TextBlock x:Name="SaveFolderText" Grid.Column="1" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="9" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+
+                        <TextBox x:Name="TemplateNameTextBox" PlaceholderText="模板名 (留空自动生成)"
+                                 Padding="2,1" FontSize="11"/>
+
+                        <Button x:Name="SaveTemplateButton" Content="💾 保存模板+代码"
+                                Click="SaveTemplateButton_Click"
+                                HorizontalAlignment="Stretch" Padding="4,2" FontSize="11"
+                                Style="{StaticResource AccentButtonStyle}"/>
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
         </Grid>
 
-        <!-- 底部状态栏 + 调试日志 -->
+        <!-- 底部状态栏 + 代码预览 + 调试日志 -->
         <Grid Grid.Row="2">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
@@ -100,8 +167,32 @@
                         Background="Transparent" BorderThickness="0" Padding="8,4"/>
             </Grid>
 
+            <!-- 代码预览面板（可折叠）-->
+            <Expander Grid.Row="1" x:Name="CodePreviewExpander" Header="▼ 代码预览" IsExpanded="False"
+                      HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+                <Border Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                        BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                        BorderThickness="0,1,0,0" MaxHeight="250">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <TextBox x:Name="CodePreviewTextBox" Padding="8" FontFamily="Consolas" FontSize="11"
+                                 TextWrapping="Wrap" IsReadOnly="True" BorderThickness="0"
+                                 Background="Transparent" AcceptsReturn="True">
+                            <TextBox.ContextFlyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem Text="复制代码" Click="CopyCodeButton_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE8C8;"/>
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                </MenuFlyout>
+                            </TextBox.ContextFlyout>
+                        </TextBox>
+                    </ScrollViewer>
+                </Border>
+            </Expander>
+
             <!-- 调试日志面板（默认折叠）-->
-            <Border Grid.Row="1" x:Name="DebugPanel" Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+            <Border Grid.Row="2" x:Name="DebugPanel" Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
                     BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="0,1,0,0"
                     MaxHeight="200" Visibility="Collapsed">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">

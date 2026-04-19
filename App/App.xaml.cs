@@ -29,6 +29,11 @@ namespace App
         private Window? _window;
 
         /// <summary>
+        /// 获取主窗口实例
+        /// </summary>
+        public static Window? MainWindow { get; private set; }
+
+        /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
         /// </summary>
@@ -44,6 +49,7 @@ namespace App
         protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
             _window = new MainWindow();
+            MainWindow = _window;
             _window.Activate();
         }
     }

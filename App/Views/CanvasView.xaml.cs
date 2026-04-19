@@ -27,6 +27,9 @@ public sealed partial class CanvasView : Page
     // 控件选择事件
     public event EventHandler<WidgetNode>? WidgetSelected;
 
+    // 裁剪区域变化事件
+    public event EventHandler<CropRegion?>? CropRegionChanged;
+
     // 画布状态
     private float _scale = 1.0f;
     private float _offsetX = 0.0f;
@@ -59,6 +62,33 @@ public sealed partial class CanvasView : Page
     private Point _pointerPressedPosition; // 记录按下位置，用于区分点击和拖拽
     private const double ClickThreshold = 5.0; // 移动距离小于此值视为点击
 
+    // 裁剪交互状态
+    private bool _isCroppingMode = false; // 是否处于裁剪模式
+    private bool _isCreatingCrop = false; // 是否正在创建裁剪区域
+    private bool _isResizingCrop = false; // 是否正在调整裁剪区域
+    private Point _cropStartPoint; // 裁剪起始点（图像坐标）
+    private Point _cropCurrentPoint; // 裁剪当前点（图像坐标）
+    private ResizeHandle _activeResizeHandle = ResizeHandle.None; // 当前激活的调整手柄
+    private bool _isShiftPressed = false; // Shift 键是否按下（锁定宽高比）
+    private double _lockedAspectRatio = 1.0; // 锁定的宽高比
+
+    // 调整手柄枚举
+    private enum ResizeHandle
+    {
+        None,
+        TopLeft,
+        TopRight,
+        BottomLeft,
+        BottomRight,
+        Top,
+        Bottom,
+        Left,
+        Right
+    }
+
+    // 手柄大小（画布坐标）
+    private const double HandleSize = 8.0;
+
     // 惯性滑动
     private Vector2 _velocity = Vector2.Zero;
     private DispatcherTimer? _inertiaTimer;
@@ -76,6 +106,10 @@ public sealed partial class CanvasView : Page
             Interval = TimeSpan.FromMilliseconds(16) // ~60 FPS
         };
         _inertiaTimer.Tick += InertiaTimer_Tick;
+
+        // 监听键盘事件（Shift 键）
+        this.KeyDown += CanvasView_KeyDown;
+        this.KeyUp += CanvasView_KeyUp;
     }
 
     /// <summary>
@@ -125,6 +159,51 @@ public sealed partial class CanvasView : Page
     {
         _cropRegion = region;
         Canvas?.Invalidate();
+        CropRegionChanged?.Invoke(this, region);
+    }
+
+    /// <summary>
+    /// 获取当前裁剪区域
+    /// </summary>
+    public CropRegion? GetCropRegion() => _cropRegion;
+
+    /// <summary>
+    /// 启用裁剪模式（仅在 1:1 模式下允许）
+    /// </summary>
+    public bool EnableCroppingMode()
+    {
+        // 检查是否为 1:1 模式
+        if (Math.Abs(_scale - 1.0f) > 0.001f)
+        {
+            Services.LogService.Instance.Log($"[Crop] 裁剪模式仅在 1:1 模式下可用，当前缩放: {_scale:F3}");
+            return false;
+        }
+
+        _isCroppingMode = true;
+        Services.LogService.Instance.Log($"[Crop] 裁剪模式已启用");
+        return true;
+    }
+
+    /// <summary>
+    /// 禁用裁剪模式
+    /// </summary>
+    public void DisableCroppingMode()
+    {
+        _isCroppingMode = false;
+        _isCreatingCrop = false;
+        _isResizingCrop = false;
+        _activeResizeHandle = ResizeHandle.None;
+        Services.LogService.Instance.Log($"[Crop] 裁剪模式已禁用");
+    }
+
+    /// <summary>
+    /// 清除裁剪区域
+    /// </summary>
+    public void ClearCropRegion()
+    {
+        _cropRegion = null;
+        Canvas?.Invalidate();
+        CropRegionChanged?.Invoke(this, null);
     }
 
     /// <summary>
@@ -485,7 +564,7 @@ public sealed partial class CanvasView : Page
     }
 
     /// <summary>
-    /// 绘制裁剪区域框（虚线）
+    /// 绘制裁剪区域框（虚线 + 调整手柄）
     /// </summary>
     private void DrawCropRegion(Microsoft.Graphics.Canvas.CanvasDrawingSession ds)
     {
@@ -508,6 +587,58 @@ public sealed partial class CanvasView : Page
                 color,
                 2,
                 strokeStyle
+            );
+        }
+
+        // 如果处于裁剪模式，绘制调整手柄
+        if (_isCroppingMode)
+        {
+            DrawResizeHandles(ds, _cropRegion);
+        }
+    }
+
+    /// <summary>
+    /// 绘制调整手柄（8个：4个顶点 + 4个边中点）
+    /// </summary>
+    private void DrawResizeHandles(Microsoft.Graphics.Canvas.CanvasDrawingSession ds, CropRegion region)
+    {
+        var handleColor = Windows.UI.Color.FromArgb(255, 255, 255, 255); // 白色
+        var handleBorderColor = Windows.UI.Color.FromArgb(255, 0, 0, 0); // 黑色边框
+
+        // 计算手柄在图像坐标系中的大小
+        float handleSizeInImage = (float)(HandleSize / _scale);
+
+        // 8个手柄位置（图像坐标）
+        var handles = new[]
+        {
+            new { X = region.X, Y = region.Y, Handle = ResizeHandle.TopLeft }, // 左上
+            new { X = region.X + region.Width, Y = region.Y, Handle = ResizeHandle.TopRight }, // 右上
+            new { X = region.X, Y = region.Y + region.Height, Handle = ResizeHandle.BottomLeft }, // 左下
+            new { X = region.X + region.Width, Y = region.Y + region.Height, Handle = ResizeHandle.BottomRight }, // 右下
+            new { X = region.X + region.Width / 2, Y = region.Y, Handle = ResizeHandle.Top }, // 上中
+            new { X = region.X + region.Width / 2, Y = region.Y + region.Height, Handle = ResizeHandle.Bottom }, // 下中
+            new { X = region.X, Y = region.Y + region.Height / 2, Handle = ResizeHandle.Left }, // 左中
+            new { X = region.X + region.Width, Y = region.Y + region.Height / 2, Handle = ResizeHandle.Right } // 右中
+        };
+
+        foreach (var handle in handles)
+        {
+            // 绘制手柄（白色填充 + 黑色边框）
+            float halfSize = handleSizeInImage / 2;
+            ds.FillRectangle(
+                handle.X - halfSize,
+                handle.Y - halfSize,
+                handleSizeInImage,
+                handleSizeInImage,
+                handleColor
+            );
+            ds.DrawRectangle(
+                handle.X - halfSize,
+                handle.Y - halfSize,
+                handleSizeInImage,
+                handleSizeInImage,
+                handleBorderColor,
+                1.0f / _scale // 边框宽度适应缩放
             );
         }
     }
@@ -556,7 +687,7 @@ public sealed partial class CanvasView : Page
     }
 
     /// <summary>
-    /// 鼠标按下（开始拖拽）
+    /// 鼠标按下（开始拖拽或裁剪）
     /// 参考 MVP3: PointerPressed
     /// </summary>
     private void Canvas_PointerPressed(object sender, PointerRoutedEventArgs e)
@@ -565,6 +696,51 @@ public sealed partial class CanvasView : Page
 
         // 记录按下位置
         _pointerPressedPosition = point.Position;
+
+        // 如果处于裁剪模式且按下左键
+        if (_isCroppingMode && point.Properties.IsLeftButtonPressed)
+        {
+            // 转换为图像坐标
+            var (imageX, imageY) = CanvasToImage((float)point.Position.X, (float)point.Position.Y);
+
+            // 检查是否点击了调整手柄
+            if (_cropRegion != null)
+            {
+                var handle = GetResizeHandleAt(imageX, imageY);
+                if (handle != ResizeHandle.None)
+                {
+                    // 开始调整裁剪区域
+                    _isResizingCrop = true;
+                    _activeResizeHandle = handle;
+                    _cropStartPoint = new Point(imageX, imageY);
+
+                    // 如果按下 Shift，锁定宽高比
+                    if (_isShiftPressed && _cropRegion.Width > 0 && _cropRegion.Height > 0)
+                    {
+                        _lockedAspectRatio = (double)_cropRegion.Width / _cropRegion.Height;
+                    }
+
+                    Canvas.CapturePointer(e.Pointer);
+                    e.Handled = true;
+                    return;
+                }
+            }
+
+            // 开始创建新的裁剪区域
+            _isCreatingCrop = true;
+            _cropStartPoint = new Point(imageX, imageY);
+            _cropCurrentPoint = new Point(imageX, imageY);
+
+            // 如果按下 Shift，锁定宽高比为 1:1
+            if (_isShiftPressed)
+            {
+                _lockedAspectRatio = 1.0;
+            }
+
+            Canvas.CapturePointer(e.Pointer);
+            e.Handled = true;
+            return;
+        }
 
         // 左键或右键拖拽平移
         if (point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed)
@@ -577,12 +753,40 @@ public sealed partial class CanvasView : Page
     }
 
     /// <summary>
-    /// 鼠标移动（拖拽平移）
+    /// 鼠标移动（拖拽平移或裁剪）
     /// 参考 MVP3: PointerMoved
     /// </summary>
     private void Canvas_PointerMoved(object sender, PointerRoutedEventArgs e)
     {
         var point = e.GetCurrentPoint(Canvas);
+
+        // 如果正在创建裁剪区域
+        if (_isCreatingCrop && point.Properties.IsLeftButtonPressed)
+        {
+            var (imageX, imageY) = CanvasToImage((float)point.Position.X, (float)point.Position.Y);
+            _cropCurrentPoint = new Point(imageX, imageY);
+
+            // 计算裁剪区域
+            UpdateCropRegionFromPoints(_cropStartPoint, _cropCurrentPoint);
+
+            Canvas.Invalidate();
+            e.Handled = true;
+            return;
+        }
+
+        // 如果正在调整裁剪区域
+        if (_isResizingCrop && point.Properties.IsLeftButtonPressed)
+        {
+            var (imageX, imageY) = CanvasToImage((float)point.Position.X, (float)point.Position.Y);
+            _cropCurrentPoint = new Point(imageX, imageY);
+
+            // 根据手柄调整裁剪区域
+            ResizeCropRegion(_activeResizeHandle, imageX, imageY);
+
+            Canvas.Invalidate();
+            e.Handled = true;
+            return;
+        }
 
         if (_isDragging && (point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed))
         {
@@ -603,11 +807,47 @@ public sealed partial class CanvasView : Page
     }
 
     /// <summary>
-    /// 鼠标释放（结束拖拽，启动惯性滑动）
+    /// 鼠标释放（结束拖拽、裁剪或调整）
     /// </summary>
     private void Canvas_PointerReleased(object sender, PointerRoutedEventArgs e)
     {
         var point = e.GetCurrentPoint(Canvas);
+
+        // 如果正在创建裁剪区域
+        if (_isCreatingCrop)
+        {
+            _isCreatingCrop = false;
+            Canvas.ReleasePointerCapture(e.Pointer);
+
+            // 确保裁剪区域有效（宽高至少 5 像素）
+            if (_cropRegion != null && (_cropRegion.Width < 5 || _cropRegion.Height < 5))
+            {
+                _cropRegion = null;
+                Services.LogService.Instance.Log($"[Crop] 裁剪区域太小，已取消");
+            }
+            else if (_cropRegion != null)
+            {
+                Services.LogService.Instance.Log($"[Crop] 裁剪区域创建完成: ({_cropRegion.X}, {_cropRegion.Y}, {_cropRegion.Width}, {_cropRegion.Height})");
+            }
+
+            Canvas.Invalidate();
+            e.Handled = true;
+            return;
+        }
+
+        // 如果正在调整裁剪区域
+        if (_isResizingCrop)
+        {
+            _isResizingCrop = false;
+            _activeResizeHandle = ResizeHandle.None;
+            Canvas.ReleasePointerCapture(e.Pointer);
+
+            Services.LogService.Instance.Log($"[Crop] 裁剪区域调整完成: ({_cropRegion?.X}, {_cropRegion?.Y}, {_cropRegion?.Width}, {_cropRegion?.Height})");
+
+            Canvas.Invalidate();
+            e.Handled = true;
+            return;
+        }
 
         if (_isDragging)
         {
@@ -683,5 +923,242 @@ public sealed partial class CanvasView : Page
                x <= widget.BoundsRect.X + widget.BoundsRect.Width &&
                y >= widget.BoundsRect.Y &&
                y <= widget.BoundsRect.Y + widget.BoundsRect.Height;
+    }
+
+    /// <summary>
+    /// 键盘按下事件（监听 Shift 键）
+    /// </summary>
+    private void CanvasView_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Shift)
+        {
+            _isShiftPressed = true;
+            Services.LogService.Instance.Log($"[Crop] Shift 键按下，宽高比锁定");
+        }
+    }
+
+    /// <summary>
+    /// 键盘释放事件（监听 Shift 键）
+    /// </summary>
+    private void CanvasView_KeyUp(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Shift)
+        {
+            _isShiftPressed = false;
+            Services.LogService.Instance.Log($"[Crop] Shift 键释放，宽高比解锁");
+        }
+    }
+
+    /// <summary>
+    /// 根据两点更新裁剪区域
+    /// </summary>
+    private void UpdateCropRegionFromPoints(Point start, Point current)
+    {
+        // 计算矩形（确保左上角为起点）
+        int x = (int)Math.Min(start.X, current.X);
+        int y = (int)Math.Min(start.Y, current.Y);
+        int width = (int)Math.Abs(current.X - start.X);
+        int height = (int)Math.Abs(current.Y - start.Y);
+
+        // 如果按下 Shift，锁定宽高比
+        if (_isShiftPressed)
+        {
+            // 以较小的边为基准，调整另一边
+            if (width < height)
+            {
+                height = (int)(width / _lockedAspectRatio);
+            }
+            else
+            {
+                width = (int)(height * _lockedAspectRatio);
+            }
+        }
+
+        // 限制在图像范围内
+        x = Math.Clamp(x, 0, _imageWidth);
+        y = Math.Clamp(y, 0, _imageHeight);
+        width = Math.Clamp(width, 0, _imageWidth - x);
+        height = Math.Clamp(height, 0, _imageHeight - y);
+
+        _cropRegion = new CropRegion
+        {
+            X = x,
+            Y = y,
+            Width = width,
+            Height = height,
+            OriginalWidth = _imageWidth,
+            OriginalHeight = _imageHeight
+        };
+
+        // 触发裁剪区域变化事件
+        CropRegionChanged?.Invoke(this, _cropRegion);
+    }
+
+    /// <summary>
+    /// 获取指定位置的调整手柄
+    /// </summary>
+    private ResizeHandle GetResizeHandleAt(float imageX, float imageY)
+    {
+        if (_cropRegion == null) return ResizeHandle.None;
+
+        // 计算手柄在图像坐标系中的大小
+        float handleSizeInImage = (float)(HandleSize / _scale);
+        float halfSize = handleSizeInImage / 2;
+
+        // 检查 8 个手柄
+        var handles = new[]
+        {
+            new { X = _cropRegion.X, Y = _cropRegion.Y, Handle = ResizeHandle.TopLeft },
+            new { X = _cropRegion.X + _cropRegion.Width, Y = _cropRegion.Y, Handle = ResizeHandle.TopRight },
+            new { X = _cropRegion.X, Y = _cropRegion.Y + _cropRegion.Height, Handle = ResizeHandle.BottomLeft },
+            new { X = _cropRegion.X + _cropRegion.Width, Y = _cropRegion.Y + _cropRegion.Height, Handle = ResizeHandle.BottomRight },
+            new { X = _cropRegion.X + _cropRegion.Width / 2, Y = _cropRegion.Y, Handle = ResizeHandle.Top },
+            new { X = _cropRegion.X + _cropRegion.Width / 2, Y = _cropRegion.Y + _cropRegion.Height, Handle = ResizeHandle.Bottom },
+            new { X = _cropRegion.X, Y = _cropRegion.Y + _cropRegion.Height / 2, Handle = ResizeHandle.Left },
+            new { X = _cropRegion.X + _cropRegion.Width, Y = _cropRegion.Y + _cropRegion.Height / 2, Handle = ResizeHandle.Right }
+        };
+
+        foreach (var handle in handles)
+        {
+            if (Math.Abs(imageX - handle.X) <= halfSize && Math.Abs(imageY - handle.Y) <= halfSize)
+            {
+                return handle.Handle;
+            }
+        }
+
+        return ResizeHandle.None;
+    }
+
+    /// <summary>
+    /// 根据手柄调整裁剪区域
+    /// </summary>
+    private void ResizeCropRegion(ResizeHandle handle, float imageX, float imageY)
+    {
+        if (_cropRegion == null) return;
+
+        int x = _cropRegion.X;
+        int y = _cropRegion.Y;
+        int width = _cropRegion.Width;
+        int height = _cropRegion.Height;
+
+        // 根据手柄类型调整
+        switch (handle)
+        {
+            case ResizeHandle.TopLeft:
+                int newX = (int)imageX;
+                int newY = (int)imageY;
+                width = x + width - newX;
+                height = y + height - newY;
+                x = newX;
+                y = newY;
+                break;
+
+            case ResizeHandle.TopRight:
+                width = (int)imageX - x;
+                int newY2 = (int)imageY;
+                height = y + height - newY2;
+                y = newY2;
+                break;
+
+            case ResizeHandle.BottomLeft:
+                int newX3 = (int)imageX;
+                width = x + width - newX3;
+                x = newX3;
+                height = (int)imageY - y;
+                break;
+
+            case ResizeHandle.BottomRight:
+                width = (int)imageX - x;
+                height = (int)imageY - y;
+                break;
+
+            case ResizeHandle.Top:
+                int newY5 = (int)imageY;
+                height = y + height - newY5;
+                y = newY5;
+                break;
+
+            case ResizeHandle.Bottom:
+                height = (int)imageY - y;
+                break;
+
+            case ResizeHandle.Left:
+                int newX7 = (int)imageX;
+                width = x + width - newX7;
+                x = newX7;
+                break;
+
+            case ResizeHandle.Right:
+                width = (int)imageX - x;
+                break;
+        }
+
+        // 如果按下 Shift，锁定宽高比
+        if (_isShiftPressed && _lockedAspectRatio > 0)
+        {
+            // 根据手柄类型决定以哪个边为基准
+            if (handle == ResizeHandle.Top || handle == ResizeHandle.Bottom)
+            {
+                // 调整高度时，以高度为基准调整宽度
+                int newWidth = (int)(height * _lockedAspectRatio);
+                int widthDiff = newWidth - width;
+                width = newWidth;
+                x -= widthDiff / 2; // 居中调整
+            }
+            else if (handle == ResizeHandle.Left || handle == ResizeHandle.Right)
+            {
+                // 调整宽度时，以宽度为基准调整高度
+                int newHeight = (int)(width / _lockedAspectRatio);
+                int heightDiff = newHeight - height;
+                height = newHeight;
+                y -= heightDiff / 2; // 居中调整
+            }
+            else
+            {
+                // 顶点调整时，以较大的变化为基准
+                double widthRatio = Math.Abs(width) / (double)_cropRegion.Width;
+                double heightRatio = Math.Abs(height) / (double)_cropRegion.Height;
+
+                if (widthRatio > heightRatio)
+                {
+                    height = (int)(width / _lockedAspectRatio);
+                }
+                else
+                {
+                    width = (int)(height * _lockedAspectRatio);
+                }
+            }
+        }
+
+        // 确保宽高为正
+        if (width < 0)
+        {
+            x += width;
+            width = -width;
+        }
+        if (height < 0)
+        {
+            y += height;
+            height = -height;
+        }
+
+        // 限制在图像范围内
+        x = Math.Clamp(x, 0, _imageWidth);
+        y = Math.Clamp(y, 0, _imageHeight);
+        width = Math.Clamp(width, 1, _imageWidth - x);
+        height = Math.Clamp(height, 1, _imageHeight - y);
+
+        _cropRegion = new CropRegion
+        {
+            X = x,
+            Y = y,
+            Width = width,
+            Height = height,
+            OriginalWidth = _imageWidth,
+            OriginalHeight = _imageHeight
+        };
+
+        // 触发裁剪区域变化事件
+        CropRegionChanged?.Invoke(this, _cropRegion);
     }
 }
