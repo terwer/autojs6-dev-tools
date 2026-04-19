@@ -38,6 +38,7 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         InitializeComponent();
+        Loaded += MainPage_Loaded;
 
         _adbService = new Infrastructure.Adb.AdbServiceImpl();
 
@@ -48,9 +49,15 @@ public sealed partial class MainPage : Page
         Canvas.WidgetSelected += Canvas_WidgetSelected;
         Canvas.CropRegionChanged += Canvas_CropRegionChanged;
 
-        PropertyPanel.CodeGenerated += PropertyPanel_CodeGenerated;
-        PropertyPanel.SetWidget(null);
+        if (PropertyPanel != null)
+        {
+            PropertyPanel.CodeGenerated += PropertyPanel_CodeGenerated;
+            PropertyPanel.SetWidget(null);
+        }
+    }
 
+    private void MainPage_Loaded(object sender, RoutedEventArgs e)
+    {
         UpdateSaveFolderDisplay();
         UpdateSourceSummaries();
         UpdateUiTreeSummary();
@@ -69,7 +76,7 @@ public sealed partial class MainPage : Page
     private void Canvas_WidgetSelected(object? sender, WidgetNode widget)
     {
         _selectedWidget = widget;
-        PropertyPanel.SetWidget(widget);
+        PropertyPanel?.SetWidget(widget);
         UpdateSelectedWidgetSummary();
         StatusText.Text = $"已选择控件：{widget.ClassName}";
     }
@@ -96,7 +103,10 @@ public sealed partial class MainPage : Page
 
     private void OnLogMessageReceived(string logLine)
     {
-        DebugLogText.Text += logLine + "\n";
+        if (DebugLogText != null)
+        {
+            DebugLogText.Text += logLine + "\n";
+        }
     }
 
     private void DeviceList_DeviceSelected(object? sender, AdbDevice device)
@@ -293,7 +303,10 @@ public sealed partial class MainPage : Page
 
     private void ThresholdSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
-        ThresholdValueText.Text = e.NewValue.ToString("F2");
+        if (ThresholdValueText != null)
+        {
+            ThresholdValueText.Text = e.NewValue.ToString("F2");
+        }
     }
 
     private Task ShowUnimplementedMatchResultAsync()
@@ -338,7 +351,10 @@ public sealed partial class MainPage : Page
 
     private void UpdateSaveFolderDisplay()
     {
-        SaveFolderText.Text = _saveFolderPath;
+        if (SaveFolderText != null)
+        {
+            SaveFolderText.Text = _saveFolderPath;
+        }
     }
 
     private async void SaveTemplateButton_Click(object sender, RoutedEventArgs e)

@@ -45,6 +45,19 @@ public sealed partial class MainPage
 
     private void UpdateWorkbenchModeUi()
     {
+        if (ImageModeButton == null ||
+            UiModeButton == null ||
+            ImageInspectorPanel == null ||
+            UiInspectorPanel == null ||
+            DumpUiButton == null ||
+            StartCropButton == null ||
+            WidgetBoundsCheckBox == null ||
+            ModeStatusText == null ||
+            HudModeText == null)
+        {
+            return;
+        }
+
         var isImageMode = _workbenchMode == WorkbenchMode.Image;
 
         ImageModeButton.IsChecked = isImageMode;
@@ -63,6 +76,28 @@ public sealed partial class MainPage
 
     private void UpdateButtonStates()
     {
+        if (CaptureButton == null ||
+            FitToWindowButton == null ||
+            ResetViewButton == null ||
+            TopFitToWindowButton == null ||
+            TopResetViewButton == null ||
+            DumpUiButton == null ||
+            DumpUiInspectorButton == null ||
+            StartCropButton == null ||
+            WidgetBoundsCheckBox == null ||
+            TestMatchButton == null ||
+            SaveTemplateButton == null ||
+            CopyCoordinatesButton == null ||
+            CopySelectorButton == null ||
+            PreviewWidgetSnippetButton == null ||
+            TemplateSourceCrop == null ||
+            TemplateSourceFile == null ||
+            ScreenshotSourceCurrent == null ||
+            ScreenshotSourceFile == null)
+        {
+            return;
+        }
+
         var hasScreenshot = _hasScreenshot;
         var canDumpUi = hasScreenshot && _isFitToWindowMode && _currentDevice != null;
         var hasTemplateSource = (TemplateSourceCrop.IsChecked == true && _currentCropRegion != null) ||
@@ -107,6 +142,16 @@ public sealed partial class MainPage
 
     private void UpdateStagePresentation()
     {
+        if (StageEmptyStateOverlay == null ||
+            ScaleText == null ||
+            HudScaleText == null ||
+            HudResolutionText == null ||
+            ResolutionText == null ||
+            HudCropText == null)
+        {
+            return;
+        }
+
         StageEmptyStateOverlay.Visibility = _hasScreenshot ? Visibility.Collapsed : Visibility.Visible;
 
         var scale = Canvas.GetScale();
@@ -120,6 +165,11 @@ public sealed partial class MainPage
 
     private void UpdateCurrentDeviceSummary()
     {
+        if (CurrentDeviceSummaryText == null)
+        {
+            return;
+        }
+
         CurrentDeviceSummaryText.Text = _currentDevice == null
             ? "当前设备：尚未选择"
             : $"当前设备：{_currentDevice.Serial} · {(_currentDevice.Model ?? "未知型号")}";
@@ -127,6 +177,14 @@ public sealed partial class MainPage
 
     private void UpdateSourceSummaries()
     {
+        if (TemplateSourceSummaryText == null ||
+            TemplateSourceCrop == null ||
+            ScreenshotSourceSummaryText == null ||
+            ScreenshotSourceCurrent == null)
+        {
+            return;
+        }
+
         TemplateSourceSummaryText.Text = TemplateSourceCrop.IsChecked == true
             ? _currentCropRegion == null
                 ? "当前裁剪：尚未创建区域"
@@ -146,6 +204,11 @@ public sealed partial class MainPage
 
     private void UpdateUiTreeSummary()
     {
+        if (UiTreeSummaryText == null)
+        {
+            return;
+        }
+
         UiTreeSummaryText.Text = _uiDisplayedNodes <= 0
             ? "尚未拉取 UI 树"
             : $"已显示 {_uiDisplayedNodes} 个控件（原始节点 {_uiTotalNodes}）";
@@ -153,6 +216,13 @@ public sealed partial class MainPage
 
     private void UpdateSelectedWidgetSummary()
     {
+        if (SelectedWidgetClassText == null ||
+            SelectedWidgetTextText == null ||
+            SelectedWidgetResourceIdText == null)
+        {
+            return;
+        }
+
         SelectedWidgetClassText.Text = _selectedWidget?.ClassName ?? "-";
         SelectedWidgetTextText.Text = string.IsNullOrWhiteSpace(_selectedWidget?.Text)
             ? "-"
@@ -164,25 +234,36 @@ public sealed partial class MainPage
 
     private void ResetCanvasRelatedState(bool clearCodePreview)
     {
+        if (Canvas == null)
+        {
+            return;
+        }
+
         Canvas.SetWidgetNodes([]);
         Canvas.SetMatchResults([]);
         Canvas.SetCropRegion(null);
         Canvas.DisableCroppingMode();
 
         _isCroppingMode = false;
-        StartCropButton.Content = "开启裁剪";
+        if (StartCropButton != null)
+        {
+            StartCropButton.Content = "开启裁剪";
+        }
 
         _selectedWidget = null;
-        PropertyPanel.SetWidget(null);
+        PropertyPanel?.SetWidget(null);
         UpdateSelectedWidgetSummary();
 
         _uiTotalNodes = 0;
         _uiDisplayedNodes = 0;
         UpdateUiTreeSummary();
 
-        MatchResultText.Text = "结果：匹配执行未接入，当前仅完成界面占位";
+        if (MatchResultText != null)
+        {
+            MatchResultText.Text = "结果：匹配执行未接入，当前仅完成界面占位";
+        }
 
-        if (clearCodePreview)
+        if (clearCodePreview && CodePreviewTextBox != null)
         {
             CodePreviewTextBox.Text = string.Empty;
         }
@@ -211,6 +292,11 @@ public sealed partial class MainPage
 
     private void OpenBottomDock(BottomDockTab tab)
     {
+        if (BottomDockPanel == null || BottomDockTabView == null || ToggleDockButton == null)
+        {
+            return;
+        }
+
         _bottomDockTab = tab;
         _isBottomDockOpen = true;
 
@@ -223,6 +309,11 @@ public sealed partial class MainPage
 
     private void CloseBottomDock()
     {
+        if (BottomDockPanel == null || ToggleDockButton == null)
+        {
+            return;
+        }
+
         _isBottomDockOpen = false;
         BottomDockPanel.Visibility = Visibility.Collapsed;
 
@@ -232,6 +323,11 @@ public sealed partial class MainPage
 
     private void BottomDockTabView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (BottomDockTabView == null)
+        {
+            return;
+        }
+
         _bottomDockTab = BottomDockTabView.SelectedIndex == (int)BottomDockTab.Log
             ? BottomDockTab.Log
             : BottomDockTab.Code;
@@ -239,6 +335,11 @@ public sealed partial class MainPage
 
     private void WidgetBoundsCheckBox_Changed(object sender, RoutedEventArgs e)
     {
+        if (WidgetBoundsCheckBox == null || Canvas == null)
+        {
+            return;
+        }
+
         Canvas.ToggleWidgetBounds(WidgetBoundsCheckBox.IsChecked == true);
     }
 
