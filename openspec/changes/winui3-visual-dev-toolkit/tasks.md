@@ -44,13 +44,13 @@
 
 ## 1. 项目结构与依赖配置
 
-- [ ] 1.1 创建 src/Core 类库项目（.NET 8，无 UI 依赖）
-- [ ] 1.2 创建 src/Infrastructure 类库项目（.NET 8）
-- [ ] 1.3 配置项目依赖关系：App → Infrastructure → Core
-- [ ] 1.4 添加 NuGet 依赖到 Core 项目：OpenCvSharp4.Windows、SixLabors.ImageSharp
-- [ ] 1.5 添加 NuGet 依赖到 Infrastructure 项目：SharpAdbClient
-- [ ] 1.6 添加 NuGet 依赖到 App 项目：Microsoft.Graphics.Win2D、CommunityToolkit.Mvvm
-- [ ] 1.7 创建目录结构：Core/{Abstractions,Models,Services,Helpers}、Infrastructure/{Adb,Imaging}、App/{Views,ViewModels,Resources}
+- [x] 1.1 创建 src/Core 类库项目（.NET 8，无 UI 依赖）
+- [x] 1.2 创建 src/Infrastructure 类库项目（.NET 8）
+- [x] 1.3 配置项目依赖关系：App → Infrastructure → Core
+- [x] 1.4 添加 NuGet 依赖到 Core 项目：OpenCvSharp4.Windows、SixLabors.ImageSharp
+- [x] 1.5 添加 NuGet 依赖到 Infrastructure 项目：SharpAdbClient
+- [x] 1.6 添加 NuGet 依赖到 App 项目：Microsoft.Graphics.Win2D、CommunityToolkit.Mvvm
+- [x] 1.7 创建目录结构：Core/{Abstractions,Models,Services,Helpers}、Infrastructure/{Adb,Imaging}、App/{Views,ViewModels,Resources}
 
 ## 2. Core 层：数据模型定义
 
