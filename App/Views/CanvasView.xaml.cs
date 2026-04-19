@@ -24,6 +24,9 @@ public sealed partial class CanvasView : Page
     // 缩放变化事件
     public event EventHandler<float>? ScaleChanged;
 
+    // 控件选择事件
+    public event EventHandler<WidgetNode>? WidgetSelected;
+
     // 画布状态
     private float _scale = 1.0f;
     private float _offsetX = 0.0f;
@@ -53,6 +56,8 @@ public sealed partial class CanvasView : Page
     // 交互状态
     private bool _isDragging = false;
     private Point _lastPointerPosition;
+    private Point _pointerPressedPosition; // 记录按下位置，用于区分点击和拖拽
+    private const double ClickThreshold = 5.0; // 移动距离小于此值视为点击
 
     // 惯性滑动
     private Vector2 _velocity = Vector2.Zero;
@@ -558,6 +563,9 @@ public sealed partial class CanvasView : Page
     {
         var point = e.GetCurrentPoint(Canvas);
 
+        // 记录按下位置
+        _pointerPressedPosition = point.Position;
+
         // 左键或右键拖拽平移
         if (point.Properties.IsLeftButtonPressed || point.Properties.IsRightButtonPressed)
         {
@@ -599,18 +607,81 @@ public sealed partial class CanvasView : Page
     /// </summary>
     private void Canvas_PointerReleased(object sender, PointerRoutedEventArgs e)
     {
+        var point = e.GetCurrentPoint(Canvas);
+
         if (_isDragging)
         {
             _isDragging = false;
             Canvas.ReleasePointerCapture(e.Pointer);
 
-            // 如果有速度，启动惯性滑动
-            if (Math.Abs(_velocity.X) > MinVelocity || Math.Abs(_velocity.Y) > MinVelocity)
+            // 计算移动距离
+            double distance = Math.Sqrt(
+                Math.Pow(point.Position.X - _pointerPressedPosition.X, 2) +
+                Math.Pow(point.Position.Y - _pointerPressedPosition.Y, 2)
+            );
+
+            // 如果移动距离小于阈值，视为点击
+            if (distance < ClickThreshold)
             {
-                _inertiaTimer?.Start();
+                // 左键点击选择控件
+                if (point.Properties.PointerUpdateKind == Microsoft.UI.Input.PointerUpdateKind.LeftButtonReleased)
+                {
+                    HandleWidgetClick(point.Position);
+                }
+            }
+            else
+            {
+                // 如果有速度，启动惯性滑动
+                if (Math.Abs(_velocity.X) > MinVelocity || Math.Abs(_velocity.Y) > MinVelocity)
+                {
+                    _inertiaTimer?.Start();
+                }
             }
 
             e.Handled = true;
         }
+    }
+
+    /// <summary>
+    /// 处理控件点击（选择控件）
+    /// </summary>
+    private void HandleWidgetClick(Point canvasPosition)
+    {
+        // 转换为图像坐标
+        var (imageX, imageY) = CanvasToImage((float)canvasPosition.X, (float)canvasPosition.Y);
+
+        // 查找点击位置的控件（从最小的开始，优先选择子控件）
+        WidgetNode? selectedWidget = null;
+        double minArea = double.MaxValue;
+
+        foreach (var widget in _widgetNodes)
+        {
+            if (IsPointInWidget(imageX, imageY, widget))
+            {
+                double area = widget.BoundsRect.Width * widget.BoundsRect.Height;
+                if (area < minArea)
+                {
+                    minArea = area;
+                    selectedWidget = widget;
+                }
+            }
+        }
+
+        // 触发控件选择事件
+        if (selectedWidget != null)
+        {
+            WidgetSelected?.Invoke(this, selectedWidget);
+        }
+    }
+
+    /// <summary>
+    /// 判断点是否在控件内
+    /// </summary>
+    private bool IsPointInWidget(float x, float y, WidgetNode widget)
+    {
+        return x >= widget.BoundsRect.X &&
+               x <= widget.BoundsRect.X + widget.BoundsRect.Width &&
+               y >= widget.BoundsRect.Y &&
+               y <= widget.BoundsRect.Y + widget.BoundsRect.Height;
     }
 }

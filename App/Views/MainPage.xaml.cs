@@ -37,6 +37,12 @@ public sealed partial class MainPage : Page
         // 订阅画布缩放变化事件
         Canvas.ScaleChanged += Canvas_ScaleChanged;
 
+        // 订阅画布控件选择事件
+        Canvas.WidgetSelected += Canvas_WidgetSelected;
+
+        // 订阅属性面板代码生成事件
+        PropertyPanel.CodeGenerated += PropertyPanel_CodeGenerated;
+
         // 初始化按钮状态
         UpdateButtonStates();
     }
@@ -47,6 +53,25 @@ public sealed partial class MainPage : Page
     private void Canvas_ScaleChanged(object? sender, float scale)
     {
         ScaleText.Text = $"缩放: {scale * 100:F0}%";
+    }
+
+    /// <summary>
+    /// 画布控件选择事件处理
+    /// </summary>
+    private void Canvas_WidgetSelected(object? sender, WidgetNode widget)
+    {
+        // 更新属性面板
+        PropertyPanel.SetWidget(widget);
+        StatusText.Text = $"已选择控件: {widget.ClassName}";
+    }
+
+    /// <summary>
+    /// 属性面板代码生成事件处理
+    /// </summary>
+    private void PropertyPanel_CodeGenerated(object? sender, string code)
+    {
+        // 更新代码预览框
+        CodePreview.SetCode(code);
     }
 
     /// <summary>

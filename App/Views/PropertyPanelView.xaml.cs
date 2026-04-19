@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Windows.ApplicationModel.DataTransfer;
 using Core.Models;
+using System;
 
 namespace App.Views;
 
@@ -11,6 +12,9 @@ namespace App.Views;
 public sealed partial class PropertyPanelView : UserControl
 {
     private WidgetNode? _currentWidget;
+
+    // 代码生成事件
+    public event EventHandler<string>? CodeGenerated;
 
     public PropertyPanelView()
     {
@@ -60,7 +64,7 @@ public sealed partial class PropertyPanelView : UserControl
     /// <summary>
     /// 添加属性行
     /// </summary>
-    private void AddProperty(string name, string value)
+    private void AddProperty(string name, string? value)
     {
         if (string.IsNullOrEmpty(value))
         {
@@ -109,6 +113,9 @@ public sealed partial class PropertyPanelView : UserControl
         var dataPackage = new DataPackage();
         dataPackage.SetText(coordinates);
         Clipboard.SetContent(dataPackage);
+
+        // 触发代码生成事件，显示在代码预览框
+        CodeGenerated?.Invoke(this, $"// 控件坐标\nvar bounds = {coordinates};\n");
     }
 
     /// <summary>
@@ -127,5 +134,8 @@ public sealed partial class PropertyPanelView : UserControl
         var dataPackage = new DataPackage();
         dataPackage.SetText(xpath);
         Clipboard.SetContent(dataPackage);
+
+        // 触发代码生成事件，显示在代码预览框
+        CodeGenerated?.Invoke(this, $"// 控件 XPath\nvar xpath = \"{xpath}\";\n");
     }
 }
