@@ -23,6 +23,14 @@ public interface IAdbService
     Task<string> ExecuteCommandAsync(AdbDevice device, string command, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// 执行全局 ADB 命令（不需要设备）
+    /// </summary>
+    /// <param name="command">命令</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>命令输出</returns>
+    Task<string> ExecuteGlobalCommandAsync(string command, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// 异步拉取设备截图
     /// </summary>
     /// <param name="device">目标设备</param>

@@ -234,4 +234,44 @@ public class AdbServiceImpl : IAdbService
 
         return null;
     }
+
+    /// <summary>
+    /// 执行全局 ADB 命令（不需要设备）
+    /// 例如：adb connect、adb disconnect
+    /// </summary>
+    public async Task<string> ExecuteGlobalCommandAsync(string command, CancellationToken cancellationToken = default)
+    {
+        return await Task.Run(() =>
+        {
+            if (_adbPath == null)
+            {
+                throw new InvalidOperationException("ADB 路径未找到");
+            }
+
+            var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = _adbPath,
+                    Arguments = command,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            var output = process.StandardOutput.ReadToEnd();
+            var error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+
+            if (process.ExitCode != 0 && !string.IsNullOrEmpty(error))
+            {
+                throw new Exception($"ADB 命令执行失败：{error}");
+            }
+
+            return output;
+        }, cancellationToken);
+    }
 }
