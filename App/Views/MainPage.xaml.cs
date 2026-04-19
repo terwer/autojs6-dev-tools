@@ -145,6 +145,24 @@ public sealed partial class MainPage : Page
     }
 
     /// <summary>
+    /// 适应窗口按钮点击
+    /// </summary>
+    private void FitToWindowButton_Click(object sender, RoutedEventArgs e)
+    {
+        Canvas.FitToWindow();
+        StatusText.Text = "已切换到适应窗口模式";
+    }
+
+    /// <summary>
+    /// 原图按钮点击
+    /// </summary>
+    private void ResetViewButton_Click(object sender, RoutedEventArgs e)
+    {
+        Canvas.ResetView();
+        StatusText.Text = "已切换到原图模式 (1:1)";
+    }
+
+    /// <summary>
     /// 显示错误对话框
     /// </summary>
     private async Task ShowErrorAsync(string message)

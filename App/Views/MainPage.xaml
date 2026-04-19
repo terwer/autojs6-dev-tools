@@ -37,6 +37,17 @@
                     <SymbolIcon Symbol="Find"/>
                 </AppBarButton.Icon>
             </AppBarButton>
+            <AppBarSeparator/>
+            <AppBarButton x:Name="FitToWindowButton" Label="适应窗口" Click="FitToWindowButton_Click">
+                <AppBarButton.Icon>
+                    <SymbolIcon Symbol="FullScreen"/>
+                </AppBarButton.Icon>
+            </AppBarButton>
+            <AppBarButton x:Name="ResetViewButton" Label="原图 (1:1)" Click="ResetViewButton_Click">
+                <AppBarButton.Icon>
+                    <FontIcon Glyph="&#xE7C4;"/>
+                </AppBarButton.Icon>
+            </AppBarButton>
         </CommandBar>
 
         <!-- 主内容区域 -->

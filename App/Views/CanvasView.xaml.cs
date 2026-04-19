@@ -5,9 +5,11 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using Windows.Foundation;
+using Windows.Storage.Streams;
 using Core.Models;
 
 namespace App.Views;
@@ -156,7 +158,7 @@ public sealed partial class CanvasView : Page
     /// 参考 MVP3: CanvasBitmap.CreateFromBytes
     /// 使用缓存池避免重复创建纹理
     /// </summary>
-    public void LoadImage(byte[] imageData, int width, int height)
+    public async void LoadImage(byte[] imageData, int width, int height)
     {
         _imageData = imageData;
         _imageWidth = width;
@@ -172,13 +174,54 @@ public sealed partial class CanvasView : Page
         }
         else
         {
-            // 释放旧位图（如果不在缓存中）
-            if (_imageBitmap != null && !_bitmapCache.ContainsValue(_imageBitmap))
-            {
-                _imageBitmap.Dispose();
-            }
+            // 保存旧位图引用
+            var oldBitmap = _imageBitmap;
+
+            // 先清空 _imageBitmap，避免 Canvas_Draw 访问即将释放的对象
             _imageBitmap = null;
+
+            // 立即加载位图（在这里完成，而不是在 Canvas_Draw 中）
+            if (Canvas != null)
+            {
+                try
+                {
+                    using (var stream = new System.IO.MemoryStream(imageData))
+                    {
+                        _imageBitmap = await CanvasBitmap.LoadAsync(Canvas, stream.AsRandomAccessStream());
+
+                        // 加入缓存
+                        _bitmapCache[_imageHash] = _imageBitmap;
+
+                        // 如果缓存超过限制，移除最旧的
+                        if (_bitmapCache.Count > MaxCacheSize)
+                        {
+                            var oldestKey = _bitmapCache.Keys.First();
+                            var oldestBitmap = _bitmapCache[oldestKey];
+                            oldestBitmap.Dispose();
+                            _bitmapCache.Remove(oldestKey);
+                        }
+                    } // stream 在这里释放，确保所有操作完成
+                }
+                catch
+                {
+                    // 加载失败，清空数据
+                    _imageData = null;
+                    _imageBitmap = null;
+                    return;
+                }
+            }
+
+            // 释放旧位图（如果不在缓存中）
+            if (oldBitmap != null && !_bitmapCache.ContainsValue(oldBitmap))
+            {
+                oldBitmap.Dispose();
+            }
         }
+
+        // 默认使用原图模式（1:1 显示，左上角对齐）
+        _scale = 1.0f;
+        _offsetX = 0.0f;
+        _offsetY = 0.0f;
 
         // 触发重绘
         Canvas?.Invalidate();
@@ -226,6 +269,35 @@ public sealed partial class CanvasView : Page
     }
 
     /// <summary>
+    /// 适应窗口（自动缩放使图像完整显示）
+    /// </summary>
+    public void FitToWindow()
+    {
+        if (Canvas != null && _imageWidth > 0 && _imageHeight > 0)
+        {
+            double canvasWidth = Canvas.ActualWidth;
+            double canvasHeight = Canvas.ActualHeight;
+
+            if (canvasWidth > 0 && canvasHeight > 0)
+            {
+                // 计算缩放比例（取宽高比例的最小值，确保图像完整显示）
+                float scaleX = (float)(canvasWidth / _imageWidth);
+                float scaleY = (float)(canvasHeight / _imageHeight);
+                _scale = Math.Min(scaleX, scaleY);
+
+                // 限制缩放范围 10%-500%
+                _scale = Math.Clamp(_scale, 0.1f, 5.0f);
+
+                // 居中显示：计算偏移量
+                _offsetX = (float)((canvasWidth - _imageWidth * _scale) / 2);
+                _offsetY = (float)((canvasHeight - _imageHeight * _scale) / 2);
+
+                Canvas.Invalidate();
+            }
+        }
+    }
+
+    /// <summary>
     /// 获取当前缩放比例
     /// </summary>
     public float GetScale() => _scale;
@@ -264,47 +336,26 @@ public sealed partial class CanvasView : Page
     {
         var ds = args.DrawingSession;
 
-        // 如果有图像数据但位图未创建，创建位图并加入缓存
-        if (_imageData != null && _imageWidth > 0 && _imageHeight > 0 && _imageBitmap == null && _imageHash != null)
-        {
-            // 检查缓存
-            if (!_bitmapCache.TryGetValue(_imageHash, out _imageBitmap))
-            {
-                // 创建新位图
-                _imageBitmap = CanvasBitmap.CreateFromBytes(
-                    sender,
-                    _imageData,
-                    _imageWidth,
-                    _imageHeight,
-                    Windows.Graphics.DirectX.DirectXPixelFormat.B8G8R8A8UIntNormalized
-                );
-
-                // 加入缓存
-                _bitmapCache[_imageHash] = _imageBitmap;
-
-                // 如果缓存超过限制，移除最旧的
-                if (_bitmapCache.Count > MaxCacheSize)
-                {
-                    var oldestKey = _bitmapCache.Keys.First();
-                    var oldestBitmap = _bitmapCache[oldestKey];
-                    oldestBitmap.Dispose();
-                    _bitmapCache.Remove(oldestKey);
-                }
-            }
-        }
-
         // === 图像层（底层）===
-        if (_imageBitmap != null)
+        var bitmap = _imageBitmap; // 本地副本，避免多线程竞争
+        if (bitmap != null)
         {
-            // 应用变换矩阵（缩放 + 平移）
-            var transform = Matrix3x2.CreateScale(_scale) * Matrix3x2.CreateTranslation(_offsetX, _offsetY);
-            ds.Transform = transform;
+            try
+            {
+                // 应用变换矩阵（缩放 + 平移）
+                var transform = Matrix3x2.CreateScale(_scale) * Matrix3x2.CreateTranslation(_offsetX, _offsetY);
+                ds.Transform = transform;
 
-            // 绘制位图
-            ds.DrawImage(_imageBitmap);
+                // 绘制位图
+                ds.DrawImage(bitmap);
 
-            // 重置变换
-            ds.Transform = Matrix3x2.Identity;
+                // 重置变换
+                ds.Transform = Matrix3x2.Identity;
+            }
+            catch (ObjectDisposedException)
+            {
+                // 位图已被释放，跳过本次绘制
+            }
         }
 
         // === Overlay 层（上层）===
