@@ -282,45 +282,34 @@ public sealed partial class CanvasView : Page
 
             if (canvasWidth > 0 && canvasHeight > 0)
             {
-                // 计算缩放比例
-                float scaleX = (float)(canvasWidth / _imageWidth);
-                float scaleY = (float)(canvasHeight / _imageHeight);
-
-                // 根据设备旋转角度判断实际显示方向
-                // 0° 或 180°: 保持原方向
-                // 90° 或 270°: 旋转 90 度
-                bool isRotated = (_imageRotation == 90 || _imageRotation == 270);
-
-                // 判断实际显示方向
-                bool imageIsLandscape;
-                if (isRotated)
+                // 根据旋转角度确定实际显示尺寸
+                int displayWidth, displayHeight;
+                if (_imageRotation == 90 || _imageRotation == 270)
                 {
-                    // 旋转后，宽高互换
-                    imageIsLandscape = _imageHeight > _imageWidth;
+                    // 旋转90°或270°：宽高互换
+                    displayWidth = _imageHeight;
+                    displayHeight = _imageWidth;
                 }
                 else
                 {
-                    imageIsLandscape = _imageWidth > _imageHeight;
+                    // 旋转0°或180°：保持原尺寸
+                    displayWidth = _imageWidth;
+                    displayHeight = _imageHeight;
                 }
 
-                // 根据图像实际显示方向选择适应策略
-                if (imageIsLandscape)
-                {
-                    // 横屏：适应宽度
-                    _scale = scaleX;
-                }
-                else
-                {
-                    // 竖屏：适应高度
-                    _scale = scaleY;
-                }
+                // 计算缩放比例（基于实际显示尺寸）
+                float scaleX = (float)(canvasWidth / displayWidth);
+                float scaleY = (float)(canvasHeight / displayHeight);
+
+                // 取较小的缩放比例，确保图像完整显示在窗口内
+                _scale = Math.Min(scaleX, scaleY);
 
                 // 限制缩放范围 10%-500%
                 _scale = Math.Clamp(_scale, 0.1f, 5.0f);
 
-                // 计算缩放后的图像尺寸
-                float scaledWidth = _imageWidth * _scale;
-                float scaledHeight = _imageHeight * _scale;
+                // 计算缩放后的图像尺寸（使用实际显示尺寸）
+                float scaledWidth = displayWidth * _scale;
+                float scaledHeight = displayHeight * _scale;
 
                 // 居中显示：计算偏移量
                 _offsetX = (float)((canvasWidth - scaledWidth) / 2);
@@ -328,7 +317,7 @@ public sealed partial class CanvasView : Page
 
                 // 调试日志
                 Services.LogService.Instance.Log($"[FitToWindow] Canvas=({canvasWidth:F1}x{canvasHeight:F1}), Image=({_imageWidth}x{_imageHeight}), Rotation={_imageRotation}°");
-                Services.LogService.Instance.Log($"[FitToWindow] 实际方向={(imageIsLandscape ? "横屏" : "竖屏")}, 适应={(imageIsLandscape ? "宽度" : "高度")}, ScaleX={scaleX:F3}, ScaleY={scaleY:F3}, Final={_scale:F3}");
+                Services.LogService.Instance.Log($"[FitToWindow] Display=({displayWidth}x{displayHeight}), ScaleX={scaleX:F3}, ScaleY={scaleY:F3}, Final={_scale:F3}");
                 Services.LogService.Instance.Log($"[FitToWindow] Scaled=({scaledWidth:F1}x{scaledHeight:F1}), Offset=({_offsetX:F1}, {_offsetY:F1})");
 
                 Canvas.Invalidate();
