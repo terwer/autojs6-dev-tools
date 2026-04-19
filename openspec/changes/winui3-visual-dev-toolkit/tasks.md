@@ -1,15 +1,16 @@
 ## 0. 前置准备：完整理解现有项目与 AutoJS6 生态
 
-- [ ] 0.1 阅读 C:\Users\Administrator\Documents\myscripts\yxs-day-task\AGENTS.md（AutoJS6 项目上下文、API 规则、开发约束）
-- [ ] 0.2 阅读 yxs-day-task 项目所有文档（README.md、openspec/project.md、task-config.json 等）
-- [ ] 0.3 分析 yxs-day-task\capture-current.cmd（截图拉取逻辑）
-- [ ] 0.4 分析 yxs-day-task\capture-loop.cmd（循环截图逻辑）
-- [ ] 0.5 分析 yxs-day-task\generate-region-ref（区域生成算法、regionRef 计算规则）
-- [ ] 0.6 分析 yxs-day-task\matchReferenceTemplate（OpenCV 匹配参数、阈值、orientation 处理）
-- [ ] 0.7 查阅 AutoJS6 文档：C:\Users\Administrator\Documents\opensouce\AutoJs6-Documentation（json/、api/、docs/）
-- [ ] 0.8 查阅 AutoJS6 源码：C:\Users\Administrator\Documents\opensouce\AutoJs6（runtime/api/、core/）
-- [ ] 0.9 提取核心业务逻辑：坐标计算公式、路径处理规则、匹配算法参数、横竖屏处理、regionRef 生成规则
-- [ ] 0.10 理解 AutoJS6 API 约束：images.findImage()、images.matchTemplate()、UiSelector、requestScreenCapture()、线程限制、权限要求
+- [x] 0.1 阅读 C:\Users\Administrator\Documents\myscripts\yxs-day-task\AGENTS.md（AutoJS6 项目上下文、API 规则、开发约束）
+- [x] 0.2 阅读 yxs-day-task 项目所有文档（README.md、openspec/project.md、task-config.json 等）
+- [x] 0.3 分析 yxs-day-task\capture-current.cmd（截图拉取逻辑）
+- [x] 0.4 分析 yxs-day-task\capture-loop.cmd（循环截图逻辑）
+- [x] 0.5 分析 yxs-day-task\generate-region-ref（区域生成算法、regionRef 计算规则）
+- [x] 0.6 分析 yxs-day-task\matchReferenceTemplate（OpenCV 匹配参数、阈值、orientation 处理）
+- [x] 0.7 查阅 AutoJS6 文档：C:\Users\Administrator\Documents\opensouce\AutoJs6-Documentation（json/、api/、docs/）
+- [x] 0.8 查阅 AutoJS6 源码：C:\Users\Administrator\Documents\opensouce\AutoJs6（runtime/api/、core/）
+- [x] 0.9 提取核心业务逻辑：坐标计算公式、路径处理规则、匹配算法参数、横竖屏处理、regionRef 生成规则
+- [x] 0.10 理解 AutoJS6 API 约束：images.findImage()、images.matchTemplate()、UiSelector、requestScreenCapture()、线程限制、权限要求
+- [x] 0.11 确认已完整理解 AutoJS6 文档和源码，生成 PHASE0_REFERENCE.md 作为 API 权威参考
 
 ## 1. 项目结构与依赖配置
 

@@ -13,6 +13,20 @@
 - 源码：C:\Users\Administrator\Documents\opensouce\AutoJs6（runtime/api/augment/、core/accessibility/、core/activity/ 用于最终定论）
 - 强制规则：文档与源码冲突时以源码为准，涉及 images API、UiSelector、前台应用检测、权限、线程限制时必须查源码
 
+**前置分析报告（任务 0.1-0.11）：**
+- **PHASE0_REFERENCE.md**（最高优先级）：AutoJS6 API 权威参考，定义所有技术约束和 API 边界
+  - 图像生命周期管理（recycle() 规则）
+  - Rhino 引擎限制（循环体内禁止 const/let）
+  - 核心 API 签名和参数（images.findImage、images.matchTemplate、UiSelector）
+  - 源码常量（DEFAULT_COLOR_THRESHOLD=4、DEFAULT_IMAGE_SIMILARITY_METRIC="mssim"）
+  - C# 实现映射表（AutoJS6 API → C# 类/方法）
+- **PHASE0_ANALYSIS.md**（次高优先级）：yxs-day-task 业务逻辑分析，提供算法和设计参考
+  - 锚点构建算法（16 个分散锚点、局部对比度排序）
+  - 多容差搜索策略（[24, 40, 64] 步进）
+  - regionRef 生成规则（padding=20、参考分辨率 1280x720/720x1280）
+  - 双引擎独立架构原则
+- **冲突处理**：API 约束优先于业务逻辑，所有实现必须符合 PHASE0_REFERENCE.md 定义的技术限制
+
 约束条件：
 - 必须严格遵循"双核独立架构"：图像处理引擎与 UI 图层分析引擎完全解耦
 - 项目层依赖关系强制单向：App → Infrastructure → Core ← Infrastructure
