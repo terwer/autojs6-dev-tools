@@ -48,11 +48,11 @@ public sealed partial class MainPage
             Services.LogService.Instance.Log($"[保存] 模板: {templatePath}");
             Services.LogService.Instance.Log($"[保存] 代码: {codePath}");
             Services.LogService.Instance.Log($"[保存] 当前代码模板: {selectedItem.Title}");
-            ShowActionTip($"模板与代码已保存（{selectedItem.Title}）", StatusTone.Success, SaveTemplateButton, "保存成功");
+            ShowActionTip("已保存模板和代码", StatusTone.Success, SaveTemplateButton);
         }
         catch (Exception ex)
         {
-            ShowActionTip($"保存失败：{ex.Message}", StatusTone.Error, SaveTemplateButton, "保存失败");
+            ShowActionTip($"保存失败：{ex.Message}", StatusTone.Error, SaveTemplateButton);
         }
     }
 
@@ -65,19 +65,19 @@ public sealed partial class MainPage
         return new[]
         {
             new CodePreviewTemplateItem(
-                "封装版（gist-ready）",
-                "封装版短调用示例；完整 helper 实现请点上方 GitHub Gist。",
+                "封装版",
+                "已经放好 helper 文件时，直接复制这段最省事。",
                 GenerateImageModeCodeByTemplate(ImageCodeTemplateKind.ReferenceSingleFile, templatePath, regionRef, cropRegion, threshold),
                 ImageCodeTemplateKind.ReferenceSingleFile,
                 ReferenceSingleFileGistUrl),
             new CodePreviewTemplateItem(
-                "原生 matchTemplate",
-                "原生 matchTemplate 3-5 行调用示例，只展示怎么调用。",
+                "图像匹配",
+                "先用最直接的图像匹配，快速验证能不能点中。",
                 GenerateImageModeCodeByTemplate(ImageCodeTemplateKind.MatchTemplateNative, templatePath, regionRef, cropRegion, threshold),
                 ImageCodeTemplateKind.MatchTemplateNative),
             new CodePreviewTemplateItem(
-                "原生 matchFeature",
-                "原生 matchFeature 3-5 行调用示例，只展示怎么调用。",
+                "特征匹配",
+                "模板会缩放或轻微变形时，再切到这一种。",
                 GenerateImageModeCodeByTemplate(ImageCodeTemplateKind.MatchFeatureNative, templatePath, regionRef, cropRegion, threshold),
                 ImageCodeTemplateKind.MatchFeatureNative)
         };

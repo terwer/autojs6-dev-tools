@@ -96,6 +96,7 @@ public sealed partial class MainPage
             ResetViewButton == null ||
             EnterCropButton == null ||
             ExitCropButton == null ||
+            ClearStageButton == null ||
             DumpUiStageButton == null ||
             WidgetBoundsCheckBox == null ||
             TestMatchButton == null ||
@@ -131,6 +132,7 @@ public sealed partial class MainPage
         ResetViewButton.IsEnabled = hasScreenshot;
         EnterCropButton.IsEnabled = hasScreenshot && !_isFitToWindowMode && _workbenchMode == WorkbenchMode.Image && !_isCroppingMode;
         ExitCropButton.IsEnabled = hasScreenshot && _workbenchMode == WorkbenchMode.Image && _isCroppingMode;
+        ClearStageButton.IsEnabled = hasScreenshot;
 
         WidgetBoundsCheckBox.IsEnabled = hasScreenshot && _workbenchMode == WorkbenchMode.Ui;
 
@@ -155,6 +157,7 @@ public sealed partial class MainPage
         ToolTipService.SetToolTip(ResetViewButton, hasScreenshot ? null : "请先截图或载入本地图片");
         ToolTipService.SetToolTip(EnterCropButton, EnterCropButton.IsEnabled ? null : "请先截图并切回 1:1 视图");
         ToolTipService.SetToolTip(ExitCropButton, ExitCropButton.IsEnabled ? null : "当前未处于裁剪模式");
+        ToolTipService.SetToolTip(ClearStageButton, hasScreenshot ? "保留当前图片，清空当前模式里的裁剪、匹配和选择状态" : "请先截图或载入本地图片");
         ToolTipService.SetToolTip(ViewCodeRightButton, hasGeneratedCode ? null : "请先执行保存或生成代码");
         ToolTipService.SetToolTip(CopyCoordinatesButton, hasWidget ? null : "请先在画布或节点树中选择控件");
         ToolTipService.SetToolTip(CopySelectorButton, hasWidget ? null : "请先在画布或节点树中选择控件");
@@ -349,6 +352,22 @@ public sealed partial class MainPage
         RebuildUiNodeTree();
         UpdateSourceSummaries();
         UpdateButtonStates();
+    }
+
+    private void ClearStageButton_Click(object sender, RoutedEventArgs e)
+    {
+        var target = sender as FrameworkElement;
+        if (!_hasScreenshot)
+        {
+            ShowActionTip("请先截图或载入本地图片", StatusTone.Warning, target, "无法清屏");
+            return;
+        }
+
+        ClearModeSpecificStateForSwitch();
+        UpdateStagePresentation();
+
+        var modeText = _workbenchMode == WorkbenchMode.Image ? "图像模式" : "控件模式";
+        ShowActionTip($"已清空{modeText}现场，底图已保留", StatusTone.Success, target);
     }
 
     private void ShowLogDockButton_Click(object sender, RoutedEventArgs e)

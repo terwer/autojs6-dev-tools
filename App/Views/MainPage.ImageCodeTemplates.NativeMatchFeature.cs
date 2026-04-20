@@ -12,11 +12,15 @@ public sealed partial class MainPage
 
         return NormalizeGeneratedCode(
             $$"""
-var screen = captureScreen();
-var template = images.read("{{templateReferencePath}}");
-var frame = images.matchFeatures(images.detectAndComputeFeatures(screen, { region: {{searchRegionText}} }), images.detectAndComputeFeatures(template));
-if (frame) click(Math.round(frame.centerX), Math.round(frame.centerY));
-template.recycle(); screen.recycle();
+const screen = captureScreen()
+const template = images.read("{{templateReferencePath}}")
+var frame = images.matchFeatures(
+  images.detectAndComputeFeatures(screen, { region: {{searchRegionText}} }),
+  images.detectAndComputeFeatures(template)
+)
+if (frame) {
+  click(Math.round(frame.centerX), Math.round(frame.centerY))
+}
 """);
     }
 }

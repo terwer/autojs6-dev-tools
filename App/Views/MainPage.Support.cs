@@ -11,7 +11,7 @@ public sealed partial class MainPage
 {
     private async Task<string> ExportCroppedTemplate(CropRegion cropRegion, string templateName)
     {
-        var templatePath = Path.Combine(_saveFolderPath, "assets", $"{templateName}.png");
+        var templatePath = Path.Combine(_saveFolderPath, $"{templateName}.png");
         await Canvas.SaveCropRegionAsync(cropRegion, templatePath);
         return templatePath;
     }

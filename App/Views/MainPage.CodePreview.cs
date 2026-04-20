@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using App.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 
 namespace App.Views;
 
@@ -45,7 +47,7 @@ public sealed partial class MainPage
         var target = sender as FrameworkElement;
         if (_workbenchMode == WorkbenchMode.Image && _latestImageCodePreviewItems.Count > 0)
         {
-            await ShowCodePreviewDialogAsync(_latestImageCodePreviewItems, "图像代码调用模板预览");
+            await ShowCodePreviewDialogAsync(_latestImageCodePreviewItems.ToArray(), "图像调用模板");
             return;
         }
 
@@ -74,9 +76,9 @@ public sealed partial class MainPage
             BuildSingleCodePreviewItems(
                 snippet,
                 "控件代码",
-                "当前选中控件生成的纯 AutoJS6 控件模式代码片段。"),
+                "直接复制这段代码，就能测试当前选中的控件。"),
             "代码预览");
-        ShowActionTip("控件代码已生成", StatusTone.Success, target);
+        ShowActionTip("已生成控件代码", StatusTone.Success, target);
     }
 
     private void PropertyPanel_CodeGenerated(object? sender, string code)
@@ -87,25 +89,25 @@ public sealed partial class MainPage
 
     private void CodePreviewDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
     {
-        var code = GetCurrentCodePreviewItem()?.Code ?? CodePreviewDialogView?.GetCode();
+        var code = _currentCodePreviewItem?.Code ?? CodePreviewDialogView?.GetCode();
         if (string.IsNullOrWhiteSpace(code))
         {
-            ShowActionTip("当前没有可复制的代码", StatusTone.Warning, null, "无法复制代码");
+            ShowActionTip("当前没有可复制的代码", StatusTone.Warning, CodePreviewDialogView);
             args.Cancel = true;
             return;
         }
 
         CopyToClipboard(code);
-        ShowActionTip("代码已复制到剪贴板", StatusTone.Success);
+        ShowActionTip("已复制代码", StatusTone.Success, CodePreviewDialogView);
         args.Cancel = true;
     }
 
     private async void CodePreviewGistButton_Click(object sender, RoutedEventArgs e)
     {
-        var url = GetCurrentCodePreviewItem()?.ExternalUrl;
+        var url = _currentCodePreviewItem?.ExternalUrl;
         if (string.IsNullOrWhiteSpace(url))
         {
-            ShowActionTip("当前模板没有可打开的 Gist 链接", StatusTone.Warning, null, "无法打开链接");
+            ShowActionTip("当前模板没有可打开的完整实现链接", StatusTone.Warning, CodePreviewGistButton);
             return;
         }
 
@@ -113,32 +115,36 @@ public sealed partial class MainPage
         ShowActionTip(
             launched ? "已打开 GitHub Gist" : "打开 GitHub Gist 失败",
             launched ? StatusTone.Success : StatusTone.Error,
-            null,
-            launched ? "已打开链接" : "打开失败");
+            CodePreviewGistButton,
+            launched ? null : null);
     }
 
-    private void CodePreviewTabView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void CodePreviewReferenceTabButton_Click(object sender, RoutedEventArgs e)
     {
-        ApplySelectedCodePreviewItem(GetCurrentCodePreviewItem());
+        SelectCodePreviewTemplate(ImageCodeTemplateKind.ReferenceSingleFile);
     }
 
-    private Task ShowCodePreviewDialogAsync(string code)
+    private void CodePreviewMatchTemplateTabButton_Click(object sender, RoutedEventArgs e)
     {
-        return ShowCodePreviewDialogAsync(BuildSingleCodePreviewItems(code), "代码预览");
+        SelectCodePreviewTemplate(ImageCodeTemplateKind.MatchTemplateNative);
+    }
+
+    private void CodePreviewMatchFeatureTabButton_Click(object sender, RoutedEventArgs e)
+    {
+        SelectCodePreviewTemplate(ImageCodeTemplateKind.MatchFeatureNative);
     }
 
     private async Task ShowCodePreviewDialogAsync(IReadOnlyList<CodePreviewTemplateItem> items, string title)
     {
         if (items.Count == 0)
         {
-            ShowActionTip("当前没有可查看的代码", StatusTone.Warning, null, "无法查看代码");
+            ShowActionTip("当前没有可查看的代码", StatusTone.Warning, ViewCodeRightButton);
             return;
         }
 
         CodePreviewDialog.Title = title;
         CodePreviewDialog.XamlRoot = XamlRoot;
-        ConfigureCodePreviewTabs(items);
-        ApplySelectedCodePreviewItem(GetCurrentCodePreviewItem());
+        ConfigureCodePreviewTemplates(items);
         await CodePreviewDialog.ShowAsync();
     }
 
@@ -153,71 +159,109 @@ public sealed partial class MainPage
         };
     }
 
-    private void ConfigureCodePreviewTabs(IReadOnlyList<CodePreviewTemplateItem> items)
+    private void ConfigureCodePreviewTemplates(IReadOnlyList<CodePreviewTemplateItem> items)
     {
-        CodePreviewTabView.TabItems.Clear();
-
-        TabViewItem? selectedTab = null;
-        foreach (var item in items)
+        var snapshot = items.ToList();
+        if (snapshot.Count == 0)
         {
-            var tab = new TabViewItem
-            {
-                Header = item.Title,
-                Tag = item,
-                IsClosable = false
-            };
-            CodePreviewTabView.TabItems.Add(tab);
-
-            if (selectedTab == null && ShouldSelectCodePreviewItem(item, items.Count))
-            {
-                selectedTab = tab;
-            }
+            _currentCodePreviewItem = null;
+            CodePreviewTemplateStrip.Visibility = Visibility.Collapsed;
+            CodePreviewDialogView.SetCode(string.Empty);
+            CodePreviewDialog.IsPrimaryButtonEnabled = false;
+            CodePreviewTemplateDescriptionText.Text = string.Empty;
+            CodePreviewTemplateDescriptionText.Visibility = Visibility.Collapsed;
+            CodePreviewGistButton.Visibility = Visibility.Collapsed;
+            CodePreviewMetaPanel.Visibility = Visibility.Collapsed;
+            UpdateCodePreviewTemplateButtons();
+            return;
         }
 
-        CodePreviewTabView.Visibility = items.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
-        CodePreviewTabView.SelectedItem = selectedTab ?? CodePreviewTabView.TabItems[0];
-    }
+        var isImageTemplates = snapshot.Count == 3 && snapshot.All(item => item.TemplateKind.HasValue);
+        CodePreviewTemplateStrip.Visibility = isImageTemplates ? Visibility.Visible : Visibility.Collapsed;
 
-    private bool ShouldSelectCodePreviewItem(CodePreviewTemplateItem item, int itemCount)
-    {
-        if (item.TemplateKind.HasValue)
+        if (isImageTemplates)
         {
-            return item.TemplateKind.Value == _selectedImageCodeTemplateKind;
+            _latestImageCodePreviewItems.Clear();
+            _latestImageCodePreviewItems.AddRange(snapshot);
+
+            var selectedItem = snapshot.FirstOrDefault(item => item.TemplateKind == _selectedImageCodeTemplateKind)
+                               ?? snapshot[0];
+            _selectedImageCodeTemplateKind = selectedItem.TemplateKind ?? ImageCodeTemplateKind.ReferenceSingleFile;
+            ApplySelectedCodePreviewItem(selectedItem);
+            UpdateCodePreviewTemplateButtons();
+            return;
         }
 
-        return itemCount == 1;
+        ApplySelectedCodePreviewItem(snapshot[0]);
+        UpdateCodePreviewTemplateButtons();
     }
 
-    private CodePreviewTemplateItem? GetCurrentCodePreviewItem()
+    private CodePreviewTemplateItem? FindImageCodePreviewItem(ImageCodeTemplateKind kind)
     {
-        return CodePreviewTabView.SelectedItem is TabViewItem tab
-            ? tab.Tag as CodePreviewTemplateItem
-            : _currentCodePreviewItem;
+        return _latestImageCodePreviewItems.FirstOrDefault(item => item.TemplateKind == kind);
     }
 
-    private void ApplySelectedCodePreviewItem(CodePreviewTemplateItem? item)
+    private void SelectCodePreviewTemplate(ImageCodeTemplateKind kind)
+    {
+        var item = FindImageCodePreviewItem(kind);
+        if (item == null)
+        {
+            return;
+        }
+
+        _selectedImageCodeTemplateKind = kind;
+        ApplySelectedCodePreviewItem(item);
+        UpdateCodePreviewTemplateButtons();
+    }
+
+    private void UpdateCodePreviewTemplateButtons()
+    {
+        if (CodePreviewReferenceTabButton == null ||
+            CodePreviewMatchTemplateTabButton == null ||
+            CodePreviewMatchFeatureTabButton == null)
+        {
+            return;
+        }
+
+        var isImageTemplates = CodePreviewTemplateStrip.Visibility == Visibility.Visible;
+        if (!isImageTemplates)
+        {
+            CodePreviewReferenceTabButton.IsChecked = false;
+            CodePreviewMatchTemplateTabButton.IsChecked = false;
+            CodePreviewMatchFeatureTabButton.IsChecked = false;
+            return;
+        }
+
+        CodePreviewReferenceTabButton.IsChecked = _selectedImageCodeTemplateKind == ImageCodeTemplateKind.ReferenceSingleFile;
+        CodePreviewMatchTemplateTabButton.IsChecked = _selectedImageCodeTemplateKind == ImageCodeTemplateKind.MatchTemplateNative;
+        CodePreviewMatchFeatureTabButton.IsChecked = _selectedImageCodeTemplateKind == ImageCodeTemplateKind.MatchFeatureNative;
+    }
+
+    private static void SetCodePreviewMetaLinkVisible(HyperlinkButton button, bool visible)
+    {
+        button.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        button.Opacity = visible ? 1 : 0;
+        button.IsHitTestVisible = visible;
+    }
+
+    private void ApplySelectedCodePreviewItem(CodePreviewTemplateItem item)
     {
         _currentCodePreviewItem = item;
 
-        var code = item?.Code ?? string.Empty;
+        var code = item.Code ?? string.Empty;
         CodePreviewDialogView.SetCode(code);
         CodePreviewDialog.IsPrimaryButtonEnabled = !string.IsNullOrWhiteSpace(code);
 
-        var description = item?.Description ?? string.Empty;
-        CodePreviewTemplateDescriptionText.Text = description;
-        CodePreviewTemplateDescriptionText.Visibility = string.IsNullOrWhiteSpace(description)
-            ? Visibility.Collapsed
-            : Visibility.Visible;
+        CodePreviewTemplateDescriptionText.Text = item.Description ?? string.Empty;
+        var hasDescription = !string.IsNullOrWhiteSpace(item.Description);
+        CodePreviewTemplateDescriptionText.Visibility = hasDescription ? Visibility.Visible : Visibility.Collapsed;
 
-        var hasExternalUrl = !string.IsNullOrWhiteSpace(item?.ExternalUrl);
-        CodePreviewGistButton.Visibility = hasExternalUrl ? Visibility.Visible : Visibility.Collapsed;
-        CodePreviewMetaPanel.Visibility = (CodePreviewTemplateDescriptionText.Visibility == Visibility.Visible || hasExternalUrl)
+        var hasExternalUrl = !string.IsNullOrWhiteSpace(item.ExternalUrl);
+        SetCodePreviewMetaLinkVisible(CodePreviewGistButton, hasExternalUrl);
+
+        var shouldKeepMetaStable = CodePreviewTemplateStrip.Visibility == Visibility.Visible;
+        CodePreviewMetaPanel.Visibility = shouldKeepMetaStable || hasDescription || hasExternalUrl
             ? Visibility.Visible
             : Visibility.Collapsed;
-
-        if (item?.TemplateKind is ImageCodeTemplateKind kind)
-        {
-            _selectedImageCodeTemplateKind = kind;
-        }
     }
 }

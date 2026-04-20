@@ -88,6 +88,16 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="CodePreviewTabToggleButtonStyle"
+               TargetType="ToggleButton"
+               BasedOn="{StaticResource WorkbenchSecondaryToggleButtonStyle}">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Padding" Value="0,8" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
     </Page.Resources>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
@@ -173,8 +183,16 @@
                 </Grid.RowDefinitions>
 
                 <Border Grid.Row="0" Style="{StaticResource WorkbenchCardBorderStyle}" Padding="8,6">
-                    <Grid>
-                        <StackPanel x:Name="ImageToolbarPanel" Orientation="Horizontal" Spacing="8">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel x:Name="ImageToolbarPanel"
+                                    Grid.Column="0"
+                                    Orientation="Horizontal"
+                                    Spacing="8">
                             <Button x:Name="FitToWindowButton"
                                     Click="FitToWindowButton_Click"
                                     Style="{StaticResource WorkbenchSecondaryButtonStyle}">
@@ -211,6 +229,7 @@
                         </StackPanel>
 
                         <StackPanel x:Name="UiToolbarPanel"
+                                    Grid.Column="0"
                                     Orientation="Horizontal"
                                     Spacing="8"
                                     Visibility="Collapsed">
@@ -229,6 +248,16 @@
                                       Checked="WidgetBoundsCheckBox_Changed"
                                       Unchecked="WidgetBoundsCheckBox_Changed" />
                         </StackPanel>
+
+                        <Button x:Name="ClearStageButton"
+                                Grid.Column="1"
+                                Click="ClearStageButton_Click"
+                                Style="{StaticResource WorkbenchSecondaryButtonStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <SymbolIcon Symbol="Delete" />
+                                <TextBlock Text="清屏" />
+                            </StackPanel>
+                        </Button>
                     </Grid>
                 </Border>
 
@@ -668,56 +697,98 @@
             </TextBox>
         </Border>
 
-        <Border x:Name="ActionFeedbackAnchor"
-                Grid.Row="0"
+        <Border x:Name="ActionFeedbackToast"
+                Grid.RowSpan="4"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
-                Width="1"
-                Height="1"
-                Margin="0,24,24,0"
-                Opacity="0.01" />
-
-        <TeachingTip x:Name="ActionFeedbackTip"
-                     IsOpen="False"
-                     PreferredPlacement="Bottom"
-                     PlacementMargin="12"
-                     CloseButtonContent="知道了" />
+                Margin="0,20,20,0"
+                MaxWidth="380"
+                Padding="12,10"
+                CornerRadius="12"
+                BorderThickness="1"
+                Visibility="Collapsed"
+                Opacity="0"
+                IsHitTestVisible="False"
+                Canvas.ZIndex="20">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <FontIcon x:Name="ActionFeedbackToastIcon"
+                          VerticalAlignment="Top"
+                          Margin="0,2,0,0" />
+                <TextBlock x:Name="ActionFeedbackToastText"
+                           TextWrapping="WrapWholeWords"
+                           MaxLines="2" />
+            </StackPanel>
+        </Border>
 
         <ContentDialog x:Name="CodePreviewDialog"
                        Title="代码预览"
                        PrimaryButtonText="复制代码"
                        PrimaryButtonClick="CodePreviewDialog_PrimaryButtonClick"
                        CloseButtonText="关闭"
-                       DefaultButton="Primary">
-            <Grid RowSpacing="8" MinWidth="900" MinHeight="560">
+                       DefaultButton="Primary"
+                       MinWidth="820"
+                       MaxWidth="820">
+            <Grid RowSpacing="12">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="56" />
+                    <RowDefinition Height="46" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <StackPanel x:Name="CodePreviewMetaPanel"
-                            Grid.Row="0"
-                            Spacing="6"
-                            Visibility="Collapsed">
+                <Grid x:Name="CodePreviewMetaPanel"
+                      Grid.Row="0"
+                      RowSpacing="4"
+                      Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="28" />
+                    </Grid.RowDefinitions>
                     <TextBlock x:Name="CodePreviewTemplateDescriptionText"
+                               Grid.Row="0"
                                TextWrapping="Wrap"
+                               MaxLines="1"
+                               TextTrimming="CharacterEllipsis"
                                Style="{StaticResource WorkbenchCaptionTextStyle}"
                                Visibility="Collapsed" />
                     <HyperlinkButton x:Name="CodePreviewGistButton"
+                                     Grid.Row="1"
                                      Content="打开 GitHub Gist"
                                      Click="CodePreviewGistButton_Click"
                                      Visibility="Collapsed"
+                                     Padding="0"
                                      HorizontalAlignment="Left" />
-                </StackPanel>
+                </Grid>
 
-                <TabView x:Name="CodePreviewTabView"
-                         Grid.Row="1"
-                         CanDragTabs="False"
-                         SelectionChanged="CodePreviewTabView_SelectionChanged"
-                         Visibility="Collapsed" />
+                <Grid x:Name="CodePreviewTemplateStrip"
+                      Grid.Row="1"
+                      ColumnSpacing="8"
+                      Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                <local:CodePreviewView x:Name="CodePreviewDialogView" Grid.Row="2" />
+                    <ToggleButton x:Name="CodePreviewReferenceTabButton"
+                                  Grid.Column="0"
+                                  Content="封装版"
+                                  Click="CodePreviewReferenceTabButton_Click"
+                                  Style="{StaticResource CodePreviewTabToggleButtonStyle}" />
+                    <ToggleButton x:Name="CodePreviewMatchTemplateTabButton"
+                                  Grid.Column="1"
+                                  Content="图像匹配"
+                                  Click="CodePreviewMatchTemplateTabButton_Click"
+                                  Style="{StaticResource CodePreviewTabToggleButtonStyle}" />
+                    <ToggleButton x:Name="CodePreviewMatchFeatureTabButton"
+                                  Grid.Column="2"
+                                  Content="特征匹配"
+                                  Click="CodePreviewMatchFeatureTabButton_Click"
+                                  Style="{StaticResource CodePreviewTabToggleButtonStyle}" />
+                </Grid>
+
+                <local:CodePreviewView x:Name="CodePreviewDialogView"
+                                       Grid.Row="2"
+                                       Height="280" />
             </Grid>
         </ContentDialog>
     </Grid>

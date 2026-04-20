@@ -35,11 +35,18 @@ public sealed partial class MainPage
 
         return NormalizeGeneratedCode(
             $$"""
-var matchReferenceTemplate = require("./autojs6-image-match-helper.js");
-var screen = captureScreen();
-var result = matchReferenceTemplate(screen, "{{templateReferencePath}}", { orientation: "{{orientation}}", regionRef: {{regionRefText}}, matchThreshold: {{matchThreshold}}, acceptThreshold: {{acceptThreshold}}, useTransparentMask: true, enableMatchFeatures: true });
-if (result.found) click(result.clickX, result.clickY);
-screen.recycle();
+const matchReferenceTemplate = require("./autojs6-image-match-helper.js")
+const screen = captureScreen()
+var result = matchReferenceTemplate(screen, "{{templateReferencePath}}", {
+  orientation: "{{orientation}}",
+  regionRef: {{regionRefText}},
+  matchThreshold: {{matchThreshold}},
+  acceptThreshold: {{acceptThreshold}},
+  useTransparentMask: true
+})
+if (result && result.found) {
+  click(result.clickX, result.clickY)
+}
 """);
     }
 }

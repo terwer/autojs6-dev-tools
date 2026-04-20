@@ -54,7 +54,7 @@ public sealed partial class MainPage
 
     private static string BuildGeneratedTemplateReferencePath(string templatePath)
     {
-        return $"./assets/{NormalizeJsPath(Path.GetFileName(templatePath))}";
+        return $"./{NormalizeJsPath(Path.GetFileName(templatePath))}";
     }
 
     private static string BuildUsageSearchRegionText(CropRegion cropRegion)

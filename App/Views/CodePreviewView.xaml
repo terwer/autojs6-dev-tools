@@ -10,12 +10,12 @@
         <TextBox
             x:Name="CodeTextBox"
             AcceptsReturn="True"
-            TextWrapping="NoWrap"
+            TextWrapping="Wrap"
             FontFamily="Consolas"
             FontSize="12"
             Padding="8"
             IsReadOnly="True"
-            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
     </Grid>
 </UserControl>
