@@ -6,6 +6,11 @@
 
 🎯 AutoJS6 脚本开发辅助工具，提供可视化截图分析、UI 控件解析、图像匹配预览和 AutoJS6 脚本代码生成。
 
+> **选择适合你平台策略的版本**  
+> `autojs6-dev-tools` 是 Windows 原生高性能版。  
+> 如果你需要跨平台增强版，请参阅 [`autojs6-dev-tools-plus`](https://github.com/terwer/autojs6-dev-tools-plus)。  
+> 两个项目都由我原创设计并持续维护，作为同一 AutoJS6 工具体系下、面向不同平台目标的产品。
+
 > **图像识别调试 20 次才跑通？换台设备又失效？**  
 > 用这个工具：实时预览匹配结果 • 可视化调整阈值和区域 • 自动生成 AutoJS6 代码
 
