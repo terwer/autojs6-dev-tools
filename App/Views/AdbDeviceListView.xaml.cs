@@ -11,24 +11,22 @@ using Core.Models;
 namespace App.Views;
 
 /// <summary>
-/// ADB 设备列表视图
+/// ADB 设备列表视图。
 /// </summary>
 public sealed partial class AdbDeviceListView : UserControl
 {
     private readonly IAdbService _adbService;
-    private readonly ObservableCollection<AdbDevice> _devices = new();
+    private readonly ObservableCollection<AdbDevice> _devices = [];
     private AdbDevice? _selectedDevice;
 
     public event EventHandler<AdbDevice>? DeviceSelected;
 
     public AdbDeviceListView()
     {
-        this.InitializeComponent();
+        InitializeComponent();
 
         _adbService = new Infrastructure.Adb.AdbServiceImpl();
         DeviceListView.ItemsSource = _devices;
-
-        UpdateCurrentDeviceSummary(null);
 
         _ = RefreshDevicesAsync();
     }
@@ -41,40 +39,18 @@ public sealed partial class AdbDeviceListView : UserControl
     private async void DiscoverButton_Click(object sender, RoutedEventArgs e)
     {
         Services.LogService.Instance.Log("[mDNS] 开始扫描局域网设备（超时 5 秒）...");
-
         DiscoverButton.IsEnabled = false;
         DiscoverButton.Content = "扫描中...";
 
         try
         {
-            Services.LogService.Instance.Log("[mDNS] 调用 DiscoverDevicesAsync...");
             var discoveredDevices = await _adbService.DiscoverDevicesAsync(timeoutSeconds: 5);
-
             Services.LogService.Instance.Log($"[mDNS] 扫描完成，发现 {discoveredDevices.Count} 个设备");
-
-            if (discoveredDevices.Count == 0)
-            {
-                Services.LogService.Instance.Log("[mDNS] 未发现设备");
-                Services.LogService.Instance.Log("[mDNS] 请检查：");
-                Services.LogService.Instance.Log("[mDNS]   1. 设备是否开启无线调试（设置 → 开发者选项 → 无线调试）");
-                Services.LogService.Instance.Log("[mDNS]   2. 设备和电脑是否在同一网络");
-                Services.LogService.Instance.Log("[mDNS]   3. 防火墙是否阻止 mDNS（端口 5353）");
-                return;
-            }
 
             await RefreshDevicesAsync();
 
-            foreach (var device in discoveredDevices)
+            foreach (var device in discoveredDevices.Where(device => _devices.All(item => item.Serial != device.Address)))
             {
-                Services.LogService.Instance.Log($"[mDNS] 发现设备: {device.DeviceName} ({device.Address})");
-
-                var alreadyExists = _devices.Any(d => d.Serial == device.Address);
-                if (alreadyExists)
-                {
-                    Services.LogService.Instance.Log($"[mDNS] 设备已存在: {device.DeviceName}");
-                    continue;
-                }
-
                 _devices.Add(new AdbDevice
                 {
                     Serial = device.Address,
@@ -84,21 +60,25 @@ public sealed partial class AdbDeviceListView : UserControl
                     Product = "无线设备",
                     TransportId = null
                 });
-
-                Services.LogService.Instance.Log($"[mDNS] 已添加到列表: {device.DeviceName}");
             }
+
+            UpdateDeviceCountText();
         }
         catch (Exception ex)
         {
-            Services.LogService.Instance.Log($"[mDNS] 扫描异常: {ex.GetType().Name}");
-            Services.LogService.Instance.Log($"[mDNS] 错误信息: {ex.Message}");
+            Services.LogService.Instance.Log($"[mDNS] 扫描异常: {ex.Message}");
         }
         finally
         {
             DiscoverButton.IsEnabled = true;
-            DiscoverButton.Content = "扫描无线设备";
-            Services.LogService.Instance.Log("[mDNS] 扫描流程结束");
+            DiscoverButton.Content = "扫描";
         }
+    }
+
+    private async void WirelessButton_Click(object sender, RoutedEventArgs e)
+    {
+        WirelessConnectionDialog.XamlRoot = XamlRoot;
+        await WirelessConnectionDialog.ShowAsync();
     }
 
     private async void DeviceListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -106,12 +86,10 @@ public sealed partial class AdbDeviceListView : UserControl
         if (DeviceListView.SelectedItem is not AdbDevice device)
         {
             _selectedDevice = null;
-            UpdateCurrentDeviceSummary(null);
             return;
         }
 
         _selectedDevice = device;
-        UpdateCurrentDeviceSummary(device);
 
         if (device.State == "未连接" && string.Equals(device.ConnectionType, "tcpip", StringComparison.OrdinalIgnoreCase))
         {
@@ -124,12 +102,11 @@ public sealed partial class AdbDeviceListView : UserControl
 
                 await RefreshDevicesAsync(device.Serial);
 
-                var connectedDevice = _devices.FirstOrDefault(d => d.Serial == device.Serial);
+                var connectedDevice = _devices.FirstOrDefault(item => item.Serial == device.Serial);
                 if (connectedDevice != null)
                 {
                     DeviceListView.SelectedItem = connectedDevice;
                     _selectedDevice = connectedDevice;
-                    UpdateCurrentDeviceSummary(connectedDevice);
                     DeviceSelected?.Invoke(this, connectedDevice);
                 }
             }
@@ -150,20 +127,18 @@ public sealed partial class AdbDeviceListView : UserControl
         var port = PairPortTextBox.Text.Trim();
         var pairingCode = PairingCodeTextBox.Text.Trim();
 
-        if (string.IsNullOrEmpty(ipAddress) || string.IsNullOrEmpty(port) || string.IsNullOrEmpty(pairingCode))
+        if (string.IsNullOrWhiteSpace(ipAddress) ||
+            string.IsNullOrWhiteSpace(port) ||
+            string.IsNullOrWhiteSpace(pairingCode))
         {
             Services.LogService.Instance.Log("[配对] IP、端口和配对码不能为空");
             return;
         }
 
-        var address = $"{ipAddress}:{port}";
-        Services.LogService.Instance.Log($"[配对] 开始配对: {address}");
-
         try
         {
-            var pairResult = await _adbService.PairDeviceAsync(address, pairingCode);
-            Services.LogService.Instance.Log($"[配对] 配对成功: {pairResult}");
-            Services.LogService.Instance.Log("[配对] 现在可以使用步骤 2 连接设备了");
+            var result = await _adbService.PairDeviceAsync($"{ipAddress}:{port}", pairingCode);
+            Services.LogService.Instance.Log($"[配对] 配对成功: {result}");
         }
         catch (Exception ex)
         {
@@ -176,15 +151,13 @@ public sealed partial class AdbDeviceListView : UserControl
         var ipAddress = ConnectIpTextBox.Text.Trim();
         var port = ConnectPortTextBox.Text.Trim();
 
-        if (string.IsNullOrEmpty(ipAddress) || string.IsNullOrEmpty(port))
+        if (string.IsNullOrWhiteSpace(ipAddress) || string.IsNullOrWhiteSpace(port))
         {
             Services.LogService.Instance.Log("[连接] IP 地址和端口不能为空");
             return;
         }
 
         var address = $"{ipAddress}:{port}";
-        Services.LogService.Instance.Log($"[连接] 尝试连接: {address}");
-
         try
         {
             var connectResult = await _adbService.ConnectDeviceAsync(address);
@@ -199,7 +172,6 @@ public sealed partial class AdbDeviceListView : UserControl
                 return;
             }
 
-            Services.LogService.Instance.Log("[连接] 连接成功！");
             await RefreshDevicesAsync(address);
         }
         catch (Exception ex)
@@ -238,12 +210,14 @@ public sealed partial class AdbDeviceListView : UserControl
                 _devices.Add(device);
             }
 
-            if (string.IsNullOrEmpty(selectedSerial))
+            UpdateDeviceCountText();
+
+            if (string.IsNullOrWhiteSpace(selectedSerial))
             {
                 return;
             }
 
-            var selectedDevice = _devices.FirstOrDefault(d => d.Serial == selectedSerial);
+            var selectedDevice = _devices.FirstOrDefault(device => device.Serial == selectedSerial);
             if (selectedDevice == null)
             {
                 return;
@@ -251,7 +225,6 @@ public sealed partial class AdbDeviceListView : UserControl
 
             DeviceListView.SelectedItem = selectedDevice;
             _selectedDevice = selectedDevice;
-            UpdateCurrentDeviceSummary(selectedDevice);
         }
         catch (Exception ex)
         {
@@ -259,25 +232,11 @@ public sealed partial class AdbDeviceListView : UserControl
         }
     }
 
-    private void UpdateCurrentDeviceSummary(AdbDevice? device)
+    private void UpdateDeviceCountText()
     {
-        if (device == null)
-        {
-            CurrentDeviceSerialText.Text = "尚未选择设备";
-            CurrentDeviceModelText.Text = "从设备列表中选择一个 ADB 设备后，这里会显示详细信息。";
-            CurrentDeviceStateText.Text = "-";
-            CurrentDeviceConnectionText.Text = "-";
-            return;
-        }
-
-        CurrentDeviceSerialText.Text = device.Serial;
-        CurrentDeviceModelText.Text = string.IsNullOrWhiteSpace(device.Model)
-            ? "未提供型号信息"
-            : device.Model;
-        CurrentDeviceStateText.Text = device.State;
-        CurrentDeviceConnectionText.Text = string.IsNullOrWhiteSpace(device.ConnectionType)
-            ? "未知"
-            : device.ConnectionType;
+        DeviceCountText.Text = _devices.Count == 0
+            ? "当前未发现在线设备，可先点击“扫描”或使用无线连接。"
+            : $"已发现 {_devices.Count} 台设备，点击即可设为当前工作目标。";
     }
 
     public AdbDevice? GetSelectedDevice() => _selectedDevice;

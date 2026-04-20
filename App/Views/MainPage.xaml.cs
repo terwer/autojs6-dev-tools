@@ -6,16 +6,19 @@ using System.IO;
 using System.Threading.Tasks;
 using Core.Abstractions;
 using Core.Models;
+using Core.Services;
+using Infrastructure.Imaging;
 
 namespace App.Views;
 
 /// <summary>
-/// 主页面
-/// 整合设备中心、中央画布和模式化检查器。
+/// 主页面。
 /// </summary>
 public sealed partial class MainPage : Page
 {
     private readonly IAdbService _adbService;
+    private readonly IOpenCVMatchService _openCvMatchService;
+    private readonly ImageProcessor _imageProcessor;
 
     private AdbDevice? _currentDevice;
     private WidgetNode? _selectedWidget;
@@ -35,12 +38,16 @@ public sealed partial class MainPage : Page
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
         "autojs6-templates");
 
+    private const int MatchRegionPadding = 20;
+
     public MainPage()
     {
         InitializeComponent();
         Loaded += MainPage_Loaded;
 
         _adbService = new Infrastructure.Adb.AdbServiceImpl();
+        _openCvMatchService = new OpenCVMatchServiceImpl();
+        _imageProcessor = new ImageProcessor();
 
         DeviceList.DeviceSelected += DeviceList_DeviceSelected;
         Services.LogService.Instance.LogMessageReceived += OnLogMessageReceived;
@@ -48,12 +55,7 @@ public sealed partial class MainPage : Page
         Canvas.ScaleChanged += Canvas_ScaleChanged;
         Canvas.WidgetSelected += Canvas_WidgetSelected;
         Canvas.CropRegionChanged += Canvas_CropRegionChanged;
-
-        if (PropertyPanel != null)
-        {
-            PropertyPanel.CodeGenerated += PropertyPanel_CodeGenerated;
-            PropertyPanel.SetWidget(null);
-        }
+        PropertyPanel.CodeGenerated += PropertyPanel_CodeGenerated;
     }
 
     private void MainPage_Loaded(object sender, RoutedEventArgs e)
@@ -65,6 +67,7 @@ public sealed partial class MainPage : Page
         UpdateWorkbenchModeUi();
         UpdateStagePresentation();
         UpdateButtonStates();
+        SetStatus("就绪", StatusTone.Info);
     }
 
     private void Canvas_ScaleChanged(object? sender, float scale)
@@ -75,10 +78,8 @@ public sealed partial class MainPage : Page
 
     private void Canvas_WidgetSelected(object? sender, WidgetNode widget)
     {
-        _selectedWidget = widget;
-        PropertyPanel?.SetWidget(widget);
-        UpdateSelectedWidgetSummary();
-        StatusText.Text = $"已选择控件：{widget.ClassName}";
+        SelectWidget(widget, syncTreeSelection: true);
+        SetStatus($"已选择控件：{widget.ClassName}", StatusTone.Info);
     }
 
     private void Canvas_CropRegionChanged(object? sender, CropRegion? cropRegion)
@@ -87,9 +88,9 @@ public sealed partial class MainPage : Page
 
         if (cropRegion != null)
         {
-            var regionRef = GenerateRegionRef(cropRegion, padding: 20);
+            var regionRef = GenerateRegionRef(cropRegion, padding: MatchRegionPadding);
             RegionRefTextBox.Text = $"[{string.Join(", ", regionRef)}]";
-            StatusText.Text = $"裁剪区域：{cropRegion.Width}x{cropRegion.Height}";
+            SetStatus($"裁剪区域已更新：{cropRegion.Width}x{cropRegion.Height}", StatusTone.Info);
         }
         else
         {
@@ -112,43 +113,37 @@ public sealed partial class MainPage : Page
     private void DeviceList_DeviceSelected(object? sender, AdbDevice device)
     {
         _currentDevice = device;
-        StatusText.Text = $"已连接设备：{device.Serial}";
         UpdateCurrentDeviceSummary();
         UpdateButtonStates();
+        SetStatus($"已连接设备：{device.Serial}", StatusTone.Success);
     }
 
     private async void CaptureButton_Click(object sender, RoutedEventArgs e)
     {
         if (_currentDevice == null)
         {
+            SetStatus("请先选择设备", StatusTone.Warning);
             await ShowErrorAsync("请先选择设备");
             return;
         }
 
         try
         {
-            StatusText.Text = "正在截图...";
-            ResetCanvasRelatedState(clearCodePreview: true);
+            SetStatus("正在截图...", StatusTone.Info);
 
             var (screenshot, width, height) = await _adbService.CaptureScreenshotAsync(_currentDevice);
             Services.LogService.Instance.Log($"[Capture] Framebuffer 实际尺寸: {width}x{height}");
 
-            Canvas.LoadImage(screenshot, width, height);
+            await LoadImageIntoCanvasAsync(screenshot, width, height, fitToWindow: false);
+            _templateFilePath = null;
+            _screenshotFilePath = null;
 
-            _hasScreenshot = true;
-            _isFitToWindowMode = false;
-
-            StatusText.Text = "截图完成";
-            ResolutionText.Text = $"分辨率：{width}x{height}";
-
-            UpdateSourceSummaries();
-            UpdateStagePresentation();
-            UpdateButtonStates();
+            SetStatus("截图完成", StatusTone.Success);
         }
         catch (Exception ex)
         {
             await ShowErrorAsync($"截图失败：{ex.Message}");
-            StatusText.Text = "截图失败";
+            SetStatus("截图失败", StatusTone.Error);
         }
     }
 
@@ -156,66 +151,58 @@ public sealed partial class MainPage : Page
     {
         if (_currentDevice == null)
         {
+            SetStatus("请先选择设备", StatusTone.Warning);
             await ShowErrorAsync("请先选择设备");
+            return;
+        }
+
+        if (!_hasScreenshot)
+        {
+            SetStatus("请先准备当前截图", StatusTone.Warning);
             return;
         }
 
         try
         {
-            StatusText.Text = "正在拉取 UI 树...";
+            SetStatus("正在拉取 UI 树...", StatusTone.Info);
 
             var xmlContent = await _adbService.DumpUiHierarchyAsync(_currentDevice);
             Services.LogService.Instance.Log($"[DumpUI] XML 长度: {xmlContent.Length} 字符");
 
-            var parser = new Core.Services.UiDumpParser();
+            var parser = new UiDumpParser();
             var root = await parser.ParseAsync(xmlContent);
-
             if (root == null)
             {
-                Services.LogService.Instance.Log("[DumpUI] 解析失败：root 为 null");
-                StatusText.Text = "UI 树解析失败";
+                _uiRootNode = null;
                 _uiTotalNodes = 0;
                 _uiDisplayedNodes = 0;
-                UpdateUiTreeSummary();
+                Canvas.SetWidgetNodes([]);
+                RebuildUiNodeTree();
+                SetStatus("UI 树解析失败", StatusTone.Error);
                 return;
             }
 
-            Services.LogService.Instance.Log($"[DumpUI] 根节点: {root.ClassName}, Bounds={root.BoundsRect}");
-
+            _uiRootNode = root;
             _uiTotalNodes = CountAllNodes(root);
-            Services.LogService.Instance.Log($"[DumpUI] 总节点数（含子节点）: {_uiTotalNodes}");
 
             var nodes = parser.FilterNodes(root);
-            Services.LogService.Instance.Log($"[DumpUI] 过滤后节点数: {nodes.Count}");
-
             if (nodes.Count < 5)
             {
-                Services.LogService.Instance.Log("[DumpUI] 过滤后节点太少，使用所有节点");
                 nodes = GetAllNodes(root);
-                Services.LogService.Instance.Log($"[DumpUI] 所有节点数: {nodes.Count}");
             }
 
             _uiDisplayedNodes = nodes.Count;
-
-            Services.LogService.Instance.Log($"[DumpUI] UI Dump 坐标系统: {root.BoundsRect.Width}x{root.BoundsRect.Height}");
-            for (var index = 0; index < Math.Min(5, nodes.Count); index++)
-            {
-                var node = nodes[index];
-                Services.LogService.Instance.Log(
-                    $"[DumpUI] 节点 {index}: {node.ClassName}, Bounds=({node.BoundsRect.X}, {node.BoundsRect.Y}, {node.BoundsRect.Width}, {node.BoundsRect.Height})");
-            }
-
             Canvas.SetWidgetNodes(nodes);
-            StatusText.Text = $"UI 树拉取完成，共 {nodes.Count} 个控件";
+            Canvas.SetSelectedWidget(null);
+            RebuildUiNodeTree();
 
-            UpdateUiTreeSummary();
-            UpdateButtonStates();
+            SetStatus($"UI 树拉取完成，共 {nodes.Count} 个控件", StatusTone.Success);
         }
         catch (Exception ex)
         {
             Services.LogService.Instance.Log($"[DumpUI] 异常: {ex.Message}");
             await ShowErrorAsync($"拉取 UI 树失败：{ex.Message}");
-            StatusText.Text = "拉取 UI 树失败";
+            SetStatus("拉取 UI 树失败", StatusTone.Error);
         }
     }
 
@@ -223,13 +210,13 @@ public sealed partial class MainPage : Page
     {
         if (!_hasScreenshot)
         {
-            StatusText.Text = "请先截图";
+            SetStatus("请先截图或载入本地图片", StatusTone.Warning);
             return;
         }
 
         if (_isFitToWindowMode)
         {
-            StatusText.Text = "裁剪模式仅在原图模式（1:1）下可用，请点击“原图 1:1”按钮";
+            SetStatus("裁剪模式仅在 1:1 视图下可用", StatusTone.Warning);
             return;
         }
 
@@ -237,23 +224,21 @@ public sealed partial class MainPage : Page
 
         if (_isCroppingMode)
         {
-            var success = Canvas.EnableCroppingMode();
-            if (!success)
+            if (!Canvas.EnableCroppingMode())
             {
                 _isCroppingMode = false;
-                StatusText.Text = "裁剪模式启用失败，请确保处于 1:1 模式";
-                UpdateButtonStates();
+                SetStatus("裁剪模式启用失败，请确保处于 1:1 模式", StatusTone.Warning);
                 return;
             }
 
             StartCropButton.Content = "退出裁剪";
-            StatusText.Text = "裁剪模式已启用，可拖拽创建矩形区域";
+            SetStatus("裁剪模式已启用，可拖拽创建区域", StatusTone.Info);
         }
         else
         {
             Canvas.DisableCroppingMode();
             StartCropButton.Content = "开启裁剪";
-            StatusText.Text = "裁剪模式已禁用";
+            SetStatus("裁剪模式已禁用", StatusTone.Info);
         }
 
         UpdateButtonStates();
@@ -269,9 +254,9 @@ public sealed partial class MainPage : Page
         }
 
         _templateFilePath = file.Path;
-        StatusText.Text = $"已选择模板：{file.Name}";
         UpdateSourceSummaries();
         UpdateButtonStates();
+        SetStatus($"已选择模板：{file.Name}", StatusTone.Info);
     }
 
     private async void BrowseScreenshotButton_Click(object sender, RoutedEventArgs e)
@@ -284,9 +269,9 @@ public sealed partial class MainPage : Page
         }
 
         _screenshotFilePath = file.Path;
-        StatusText.Text = $"已选择截图：{file.Name}";
         UpdateSourceSummaries();
         UpdateButtonStates();
+        SetStatus($"已选择测试截图：{file.Name}", StatusTone.Info);
     }
 
     private void TemplateSource_Changed(object sender, RoutedEventArgs e)
@@ -309,27 +294,6 @@ public sealed partial class MainPage : Page
         }
     }
 
-    private Task ShowUnimplementedMatchResultAsync()
-    {
-        MatchResultText.Text = "结果：匹配执行未接入，当前仅完成界面占位";
-        StatusText.Text = "匹配测试尚未接入真实执行逻辑";
-        return Task.CompletedTask;
-    }
-
-    private async void TestMatchButton_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            await ShowUnimplementedMatchResultAsync();
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorAsync($"匹配测试失败：{ex.Message}");
-            MatchResultText.Text = "结果：匹配执行未接入，当前仅完成界面占位";
-            StatusText.Text = "匹配测试失败";
-        }
-    }
-
     private async void SelectSaveFolderButton_Click(object sender, RoutedEventArgs e)
     {
         var picker = new Windows.Storage.Pickers.FolderPicker();
@@ -346,7 +310,7 @@ public sealed partial class MainPage : Page
 
         _saveFolderPath = folder.Path;
         UpdateSaveFolderDisplay();
-        StatusText.Text = "保存位置已更改";
+        SetStatus("保存位置已更改", StatusTone.Success);
     }
 
     private void UpdateSaveFolderDisplay()
@@ -361,16 +325,17 @@ public sealed partial class MainPage : Page
     {
         if (_currentCropRegion == null)
         {
+            SetStatus("请先创建裁剪区域", StatusTone.Warning);
             await ShowErrorAsync("请先创建裁剪区域");
             return;
         }
 
         try
         {
-            StatusText.Text = "正在保存模板和代码...";
+            SetStatus("正在保存模板和代码...", StatusTone.Info);
 
             var templateName = TemplateNameTextBox.Text.Trim();
-            if (string.IsNullOrEmpty(templateName))
+            if (string.IsNullOrWhiteSpace(templateName))
             {
                 templateName = $"template_{DateTime.Now:yyyyMMdd_HHmmss}";
             }
@@ -378,65 +343,59 @@ public sealed partial class MainPage : Page
             Directory.CreateDirectory(_saveFolderPath);
 
             var templatePath = await ExportCroppedTemplate(_currentCropRegion, templateName);
-            var regionRef = GenerateRegionRef(_currentCropRegion, padding: 20);
+            var regionRef = GenerateRegionRef(_currentCropRegion, padding: MatchRegionPadding);
             var code = GenerateMatchTemplateCode(templatePath, regionRef, _currentCropRegion);
-
             var codePath = Path.ChangeExtension(templatePath, ".js");
-            File.WriteAllText(codePath, code);
+
+            await File.WriteAllTextAsync(codePath, code);
 
             CodePreviewTextBox.Text = code;
             OpenBottomDock(BottomDockTab.Code);
 
-            StatusText.Text = $"已保存到：{_saveFolderPath}";
-
             Services.LogService.Instance.Log($"[保存] 模板: {templatePath}");
             Services.LogService.Instance.Log($"[保存] 代码: {codePath}");
-            Services.LogService.Instance.Log($"[保存] 位置: {_saveFolderPath}");
+            SetStatus("模板与代码已保存", StatusTone.Success);
         }
         catch (Exception ex)
         {
             await ShowErrorAsync($"保存失败：{ex.Message}");
-            StatusText.Text = "保存失败";
+            SetStatus("保存失败", StatusTone.Error);
         }
     }
 
     private void FitToWindowButton_Click(object sender, RoutedEventArgs e)
     {
         Canvas.FitToWindow();
-        var scale = Canvas.GetScale();
-
         _isFitToWindowMode = true;
-        StatusText.Text = $"已切换到适应窗口模式（缩放：{scale * 100:F0}%）";
-
         UpdateStagePresentation();
         UpdateButtonStates();
+        SetStatus($"已切换到适应窗口（{Canvas.GetScale() * 100:F0}%）", StatusTone.Info);
     }
 
     private void ResetViewButton_Click(object sender, RoutedEventArgs e)
     {
         Canvas.ResetView();
-
         _isFitToWindowMode = false;
-        StatusText.Text = "已切换到原图模式（1:1）";
-
         UpdateStagePresentation();
         UpdateButtonStates();
+        SetStatus("已切换到原图模式（1:1）", StatusTone.Info);
     }
 
     private void CopyCodeButton_Click(object sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(CodePreviewTextBox.Text))
+        if (string.IsNullOrWhiteSpace(CodePreviewTextBox.Text))
         {
             return;
         }
 
         CopyToClipboard(CodePreviewTextBox.Text);
-        StatusText.Text = "代码已复制到剪贴板";
+        SetStatus("代码已复制到剪贴板", StatusTone.Success);
     }
 
     private void ClearLogButton_Click(object sender, RoutedEventArgs e)
     {
         DebugLogText.Text = string.Empty;
+        SetStatus("调试日志已清空", StatusTone.Info);
     }
 
     private void SelectAllLogButton_Click(object sender, RoutedEventArgs e)
@@ -447,12 +406,12 @@ public sealed partial class MainPage : Page
     private void CopyLogButton_Click(object sender, RoutedEventArgs e)
     {
         var selectedText = DebugLogText.SelectedText;
-        if (string.IsNullOrEmpty(selectedText))
+        if (string.IsNullOrWhiteSpace(selectedText))
         {
             return;
         }
 
         CopyToClipboard(selectedText);
-        StatusText.Text = "日志已复制到剪贴板";
+        SetStatus("日志已复制到剪贴板", StatusTone.Success);
     }
 }

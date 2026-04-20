@@ -1,5 +1,7 @@
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -20,6 +22,20 @@ public sealed partial class MainPage
     {
         Code = 0,
         Log = 1
+    }
+
+    private enum StatusTone
+    {
+        Info,
+        Success,
+        Warning,
+        Error
+    }
+
+    private enum MatchSearchScope
+    {
+        Region,
+        FullImage
     }
 
     private WorkbenchMode _workbenchMode = WorkbenchMode.Image;
@@ -50,24 +66,21 @@ public sealed partial class MainPage
             ImageInspectorPanel == null ||
             UiInspectorPanel == null ||
             DumpUiButton == null ||
-            StartCropButton == null ||
-            WidgetBoundsCheckBox == null ||
-            ModeStatusText == null ||
-            HudModeText == null)
+            ImageToolbarPanel == null ||
+            UiToolbarPanel == null)
         {
             return;
         }
 
         var isImageMode = _workbenchMode == WorkbenchMode.Image;
-
         ImageModeButton.IsChecked = isImageMode;
         UiModeButton.IsChecked = !isImageMode;
 
         ImageInspectorPanel.Visibility = isImageMode ? Visibility.Visible : Visibility.Collapsed;
         UiInspectorPanel.Visibility = isImageMode ? Visibility.Collapsed : Visibility.Visible;
         DumpUiButton.Visibility = isImageMode ? Visibility.Collapsed : Visibility.Visible;
-        StartCropButton.Visibility = isImageMode ? Visibility.Visible : Visibility.Collapsed;
-        WidgetBoundsCheckBox.Visibility = isImageMode ? Visibility.Collapsed : Visibility.Visible;
+        ImageToolbarPanel.Visibility = isImageMode ? Visibility.Visible : Visibility.Collapsed;
+        UiToolbarPanel.Visibility = isImageMode ? Visibility.Collapsed : Visibility.Visible;
 
         var modeText = isImageMode ? "图像模式" : "控件模式";
         ModeStatusText.Text = $"当前模式：{modeText}";
@@ -77,12 +90,14 @@ public sealed partial class MainPage
     private void UpdateButtonStates()
     {
         if (CaptureButton == null ||
+            LoadLocalTopButton == null ||
             FitToWindowButton == null ||
             ResetViewButton == null ||
             TopFitToWindowButton == null ||
             TopResetViewButton == null ||
             DumpUiButton == null ||
             DumpUiInspectorButton == null ||
+            DumpUiStageButton == null ||
             StartCropButton == null ||
             WidgetBoundsCheckBox == null ||
             TestMatchButton == null ||
@@ -93,13 +108,15 @@ public sealed partial class MainPage
             TemplateSourceCrop == null ||
             TemplateSourceFile == null ||
             ScreenshotSourceCurrent == null ||
-            ScreenshotSourceFile == null)
+            ScreenshotSourceFile == null ||
+            TemplateBrowseButton == null ||
+            ScreenshotBrowseButton == null)
         {
             return;
         }
 
         var hasScreenshot = _hasScreenshot;
-        var canDumpUi = hasScreenshot && _isFitToWindowMode && _currentDevice != null;
+        var canDumpUi = hasScreenshot && _currentDevice != null;
         var hasTemplateSource = (TemplateSourceCrop.IsChecked == true && _currentCropRegion != null) ||
                                 (TemplateSourceFile.IsChecked == true && !string.IsNullOrWhiteSpace(_templateFilePath));
         var hasScreenshotSource = (ScreenshotSourceCurrent.IsChecked == true && hasScreenshot) ||
@@ -107,6 +124,7 @@ public sealed partial class MainPage
         var hasWidget = _selectedWidget != null;
 
         CaptureButton.IsEnabled = _currentDevice != null;
+        LoadLocalTopButton.IsEnabled = true;
 
         FitToWindowButton.IsEnabled = hasScreenshot;
         ResetViewButton.IsEnabled = hasScreenshot;
@@ -115,9 +133,13 @@ public sealed partial class MainPage
 
         DumpUiButton.IsEnabled = canDumpUi;
         DumpUiInspectorButton.IsEnabled = canDumpUi;
+        DumpUiStageButton.IsEnabled = canDumpUi;
 
         StartCropButton.IsEnabled = hasScreenshot && !_isFitToWindowMode && _workbenchMode == WorkbenchMode.Image;
         WidgetBoundsCheckBox.IsEnabled = hasScreenshot && _workbenchMode == WorkbenchMode.Ui;
+
+        TemplateBrowseButton.IsEnabled = TemplateSourceFile.IsChecked == true;
+        ScreenshotBrowseButton.IsEnabled = ScreenshotSourceFile.IsChecked == true;
 
         TestMatchButton.IsEnabled = hasTemplateSource && hasScreenshotSource;
         SaveTemplateButton.IsEnabled = _currentCropRegion != null;
@@ -126,18 +148,13 @@ public sealed partial class MainPage
         CopySelectorButton.IsEnabled = hasWidget;
         PreviewWidgetSnippetButton.IsEnabled = hasWidget;
 
-        ToolTipService.SetToolTip(DumpUiButton, !hasScreenshot
-            ? "请先截图或载入当前画布内容"
-            : !_isFitToWindowMode
-                ? "请先切换到适应窗口模式"
-                : _currentDevice == null
-                    ? "请先选择设备"
-                    : null);
-
-        ToolTipService.SetToolTip(TopFitToWindowButton, hasScreenshot ? null : "请先截图或载入本地图片");
-        ToolTipService.SetToolTip(TopResetViewButton, hasScreenshot ? null : "请先截图或载入本地图片");
+        ToolTipService.SetToolTip(DumpUiButton, canDumpUi ? null : "请先选择设备并准备一张当前截图");
+        ToolTipService.SetToolTip(DumpUiInspectorButton, canDumpUi ? null : "请先选择设备并准备一张当前截图");
+        ToolTipService.SetToolTip(DumpUiStageButton, canDumpUi ? null : "请先选择设备并准备一张当前截图");
         ToolTipService.SetToolTip(FitToWindowButton, hasScreenshot ? null : "请先截图或载入本地图片");
         ToolTipService.SetToolTip(ResetViewButton, hasScreenshot ? null : "请先截图或载入本地图片");
+        ToolTipService.SetToolTip(TopFitToWindowButton, hasScreenshot ? null : "请先截图或载入本地图片");
+        ToolTipService.SetToolTip(TopResetViewButton, hasScreenshot ? null : "请先截图或载入本地图片");
     }
 
     private void UpdateStagePresentation()
@@ -191,27 +208,15 @@ public sealed partial class MainPage
                 : $"当前裁剪：{_currentCropRegion.Width}x{_currentCropRegion.Height} 区域"
             : string.IsNullOrWhiteSpace(_templateFilePath)
                 ? "模板文件：尚未选择"
-                : $"模板文件：{_templateFilePath}";
+                : _templateFilePath!;
 
         ScreenshotSourceSummaryText.Text = ScreenshotSourceCurrent.IsChecked == true
             ? _hasScreenshot
-                ? "当前画布：已加载截图，可直接作为测试目标"
+                ? "当前画布：已就绪"
                 : "当前画布：尚未加载截图"
             : string.IsNullOrWhiteSpace(_screenshotFilePath)
                 ? "截图文件：尚未选择"
-                : $"截图文件：{_screenshotFilePath}";
-    }
-
-    private void UpdateUiTreeSummary()
-    {
-        if (UiTreeSummaryText == null)
-        {
-            return;
-        }
-
-        UiTreeSummaryText.Text = _uiDisplayedNodes <= 0
-            ? "尚未拉取 UI 树"
-            : $"已显示 {_uiDisplayedNodes} 个控件（原始节点 {_uiTotalNodes}）";
+                : _screenshotFilePath!;
     }
 
     private void UpdateSelectedWidgetSummary()
@@ -234,33 +239,31 @@ public sealed partial class MainPage
 
     private void ResetCanvasRelatedState(bool clearCodePreview)
     {
-        if (Canvas == null)
-        {
-            return;
-        }
-
         Canvas.SetWidgetNodes([]);
         Canvas.SetMatchResults([]);
+        Canvas.SetSelectedWidget(null);
         Canvas.SetCropRegion(null);
         Canvas.DisableCroppingMode();
 
         _isCroppingMode = false;
+        _selectedWidget = null;
+        _uiRootNode = null;
+        _uiTotalNodes = 0;
+        _uiDisplayedNodes = 0;
+
         if (StartCropButton != null)
         {
             StartCropButton.Content = "开启裁剪";
         }
 
-        _selectedWidget = null;
         PropertyPanel?.SetWidget(null);
         UpdateSelectedWidgetSummary();
-
-        _uiTotalNodes = 0;
-        _uiDisplayedNodes = 0;
         UpdateUiTreeSummary();
+        RebuildUiNodeTree();
 
         if (MatchResultText != null)
         {
-            MatchResultText.Text = "结果：匹配执行未接入，当前仅完成界面占位";
+            MatchResultText.Text = "结果：等待执行匹配测试";
         }
 
         if (clearCodePreview && CodePreviewTextBox != null)
@@ -302,7 +305,6 @@ public sealed partial class MainPage
 
         BottomDockPanel.Visibility = Visibility.Visible;
         BottomDockTabView.SelectedIndex = (int)tab;
-
         ToggleDockButton.IsChecked = true;
         ToggleDockButton.Content = "收起输出";
     }
@@ -316,18 +318,12 @@ public sealed partial class MainPage
 
         _isBottomDockOpen = false;
         BottomDockPanel.Visibility = Visibility.Collapsed;
-
         ToggleDockButton.IsChecked = false;
         ToggleDockButton.Content = "展开输出";
     }
 
     private void BottomDockTabView_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (BottomDockTabView == null)
-        {
-            return;
-        }
-
         _bottomDockTab = BottomDockTabView.SelectedIndex == (int)BottomDockTab.Log
             ? BottomDockTab.Log
             : BottomDockTab.Code;
@@ -335,11 +331,6 @@ public sealed partial class MainPage
 
     private void WidgetBoundsCheckBox_Changed(object sender, RoutedEventArgs e)
     {
-        if (WidgetBoundsCheckBox == null || Canvas == null)
-        {
-            return;
-        }
-
         Canvas.ToggleWidgetBounds(WidgetBoundsCheckBox.IsChecked == true);
     }
 
@@ -354,31 +345,23 @@ public sealed partial class MainPage
                 return;
             }
 
-            ResetCanvasRelatedState(clearCodePreview: false);
-            StatusText.Text = "正在载入本地图片...";
+            SetStatus("正在载入本地图片...", StatusTone.Info);
 
             var bytes = await File.ReadAllBytesAsync(file.Path);
             using var stream = await file.OpenReadAsync();
             var decoder = await BitmapDecoder.CreateAsync(stream);
 
-            Canvas.LoadImage(bytes, (int)decoder.PixelWidth, (int)decoder.PixelHeight);
+            await LoadImageIntoCanvasAsync(bytes, (int)decoder.PixelWidth, (int)decoder.PixelHeight, fitToWindow: false);
 
-            _hasScreenshot = true;
-            _isFitToWindowMode = false;
             _screenshotFilePath = file.Path;
             ScreenshotSourceCurrent.IsChecked = true;
 
-            ResolutionText.Text = $"分辨率：{decoder.PixelWidth}x{decoder.PixelHeight}";
-            StatusText.Text = $"已载入本地图片：{file.Name}";
-
-            UpdateSourceSummaries();
-            UpdateStagePresentation();
-            UpdateButtonStates();
+            SetStatus($"已载入本地图片：{file.Name}", StatusTone.Success);
         }
         catch (Exception ex)
         {
             await ShowErrorAsync($"载入本地图片失败：{ex.Message}");
-            StatusText.Text = "载入本地图片失败";
+            SetStatus("载入本地图片失败", StatusTone.Error);
         }
     }
 
@@ -386,12 +369,12 @@ public sealed partial class MainPage
     {
         if (string.IsNullOrWhiteSpace(RegionRefTextBox.Text) || RegionRefTextBox.Text == "[等待裁剪...]")
         {
-            StatusText.Text = "当前没有可复制的 regionRef";
+            SetStatus("当前没有可复制的 regionRef", StatusTone.Warning);
             return;
         }
 
         CopyToClipboard(RegionRefTextBox.Text);
-        StatusText.Text = "regionRef 已复制到剪贴板";
+        SetStatus("regionRef 已复制到剪贴板", StatusTone.Success);
     }
 
     private void CopyCoordinatesButton_Click(object sender, RoutedEventArgs e)
@@ -399,12 +382,12 @@ public sealed partial class MainPage
         var coordinates = PropertyPanel.GetCoordinatesText();
         if (string.IsNullOrWhiteSpace(coordinates))
         {
-            StatusText.Text = "请先在画布中选择控件";
+            SetStatus("请先在画布或节点树中选择控件", StatusTone.Warning);
             return;
         }
 
         CopyToClipboard(coordinates);
-        StatusText.Text = "控件坐标已复制到剪贴板";
+        SetStatus("控件坐标已复制到剪贴板", StatusTone.Success);
     }
 
     private void CopySelectorButton_Click(object sender, RoutedEventArgs e)
@@ -412,12 +395,12 @@ public sealed partial class MainPage
         var selector = PropertyPanel.GetUiSelectorText();
         if (string.IsNullOrWhiteSpace(selector))
         {
-            StatusText.Text = "请先在画布中选择控件";
+            SetStatus("请先在画布或节点树中选择控件", StatusTone.Warning);
             return;
         }
 
         CopyToClipboard(selector);
-        StatusText.Text = "UiSelector 已复制到剪贴板";
+        SetStatus("UiSelector 已复制到剪贴板", StatusTone.Success);
     }
 
     private void PreviewWidgetSnippetButton_Click(object sender, RoutedEventArgs e)
@@ -425,13 +408,13 @@ public sealed partial class MainPage
         var snippet = PropertyPanel.GetClickSnippet();
         if (string.IsNullOrWhiteSpace(snippet))
         {
-            StatusText.Text = "请先在画布中选择控件";
+            SetStatus("请先在画布或节点树中选择控件", StatusTone.Warning);
             return;
         }
 
         CodePreviewTextBox.Text = snippet;
         OpenBottomDock(BottomDockTab.Code);
-        StatusText.Text = "控件代码片段已写入代码预览";
+        SetStatus("控件代码片段已写入代码预览", StatusTone.Success);
     }
 
     private void PropertyPanel_CodeGenerated(object? sender, string code)
@@ -440,10 +423,66 @@ public sealed partial class MainPage
         OpenBottomDock(BottomDockTab.Code);
     }
 
+    private async Task LoadImageIntoCanvasAsync(byte[] imageBytes, int width, int height, bool fitToWindow)
+    {
+        ResetCanvasRelatedState(clearCodePreview: false);
+        Canvas.LoadImage(imageBytes, width, height);
+
+        _hasScreenshot = true;
+        ResolutionText.Text = $"分辨率：{width}x{height}";
+
+        if (fitToWindow)
+        {
+            Canvas.FitToWindow();
+            _isFitToWindowMode = true;
+        }
+        else
+        {
+            _isFitToWindowMode = false;
+        }
+
+        UpdateSourceSummaries();
+        UpdateStagePresentation();
+        UpdateButtonStates();
+
+        await Task.CompletedTask;
+    }
+
+    private MatchSearchScope GetMatchSearchScope()
+    {
+        return FullImageSearchCheckBox?.IsChecked == true
+            ? MatchSearchScope.FullImage
+            : MatchSearchScope.Region;
+    }
+
     private void CopyToClipboard(string text)
     {
         var dataPackage = new DataPackage();
         dataPackage.SetText(text);
         Clipboard.SetContent(dataPackage);
+    }
+
+    private void SetStatus(string message, StatusTone tone)
+    {
+        if (StatusText == null || StatusPillBorder == null || StatusIcon == null)
+        {
+            return;
+        }
+
+        var (foreground, background, glyph) = tone switch
+        {
+            StatusTone.Success => (Colors.ForestGreen, Windows.UI.Color.FromArgb(24, 34, 139, 34), "\uE73E"),
+            StatusTone.Warning => (Colors.DarkOrange, Windows.UI.Color.FromArgb(28, 255, 140, 0), "\uE7BA"),
+            StatusTone.Error => (Colors.IndianRed, Windows.UI.Color.FromArgb(28, 205, 92, 92), "\uEA39"),
+            _ => (Colors.DodgerBlue, Windows.UI.Color.FromArgb(24, 30, 144, 255), "\uE946")
+        };
+
+        var brush = new SolidColorBrush(foreground);
+        StatusText.Text = message;
+        StatusText.Foreground = brush;
+        StatusIcon.Glyph = glyph;
+        StatusIcon.Foreground = brush;
+        StatusPillBorder.Background = new SolidColorBrush(background);
+        StatusPillBorder.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(42, foreground.R, foreground.G, foreground.B));
     }
 }

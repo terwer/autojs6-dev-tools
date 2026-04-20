@@ -52,6 +52,7 @@ public sealed partial class CanvasView : Page
     // Overlay 层（上层）
     private List<WidgetNode> _widgetNodes = new();
     private List<MatchResult> _matchResults = new();
+    private WidgetNode? _selectedWidget;
     private CropRegion? _cropRegion;
     private bool _showWidgetBounds = true;
     private bool _showMatchResults = true;
@@ -142,6 +143,10 @@ public sealed partial class CanvasView : Page
     public void SetWidgetNodes(List<WidgetNode> nodes)
     {
         _widgetNodes = nodes;
+        if (_selectedWidget != null && !_widgetNodes.Contains(_selectedWidget))
+        {
+            _selectedWidget = null;
+        }
         Canvas?.Invalidate();
     }
 
@@ -151,6 +156,31 @@ public sealed partial class CanvasView : Page
     public void SetMatchResults(List<MatchResult> results)
     {
         _matchResults = results;
+        Canvas?.Invalidate();
+    }
+
+    /// <summary>
+    /// 获取当前底图字节。
+    /// </summary>
+    public byte[]? GetCurrentImageBytes()
+    {
+        return _imageData?.ToArray();
+    }
+
+    /// <summary>
+    /// 获取当前底图尺寸。
+    /// </summary>
+    public (int Width, int Height) GetCurrentImageSize()
+    {
+        return (_imageWidth, _imageHeight);
+    }
+
+    /// <summary>
+    /// 设置当前高亮控件。
+    /// </summary>
+    public void SetSelectedWidget(WidgetNode? widget)
+    {
+        _selectedWidget = widget;
         Canvas?.Invalidate();
     }
 
@@ -603,6 +633,17 @@ public sealed partial class CanvasView : Page
             }
         }
 
+        if (_selectedWidget != null)
+        {
+            var (sx, sy, sw, sh) = _selectedWidget.BoundsRect;
+            if (sw > 0 && sh > 0)
+            {
+                var highlightColor = Windows.UI.Color.FromArgb(255, 0, 120, 215);
+                ds.FillRectangle(sx, sy, sw, sh, Windows.UI.Color.FromArgb(48, highlightColor.R, highlightColor.G, highlightColor.B));
+                ds.DrawRectangle(sx, sy, sw, sh, highlightColor, 4);
+            }
+        }
+
         Services.LogService.Instance.Log($"[DrawWidgetBounds] 完成绘制，共绘制 {drawnCount} 个节点");
     }
 
@@ -626,9 +667,10 @@ public sealed partial class CanvasView : Page
             );
 
             ds.DrawRectangle(result.X, result.Y, result.Width, result.Height, colorWithAlpha, 3);
+            ds.FillCircle(result.ClickX, result.ClickY, 5, colorWithAlpha);
 
             // 绘制置信度文本
-            var text = $"{result.Confidence:F2}";
+            var text = $"{result.Confidence:F2} ({result.ClickX}, {result.ClickY})";
             ds.DrawText(text, result.X, result.Y - 20, colorWithAlpha);
         }
     }
@@ -980,6 +1022,8 @@ public sealed partial class CanvasView : Page
         // 触发控件选择事件
         if (selectedWidget != null)
         {
+            _selectedWidget = selectedWidget;
+            Canvas?.Invalidate();
             WidgetSelected?.Invoke(this, selectedWidget);
         }
     }
