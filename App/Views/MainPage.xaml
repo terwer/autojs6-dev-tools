@@ -600,7 +600,36 @@
                        PrimaryButtonClick="CodePreviewDialog_PrimaryButtonClick"
                        CloseButtonText="关闭"
                        DefaultButton="Primary">
-            <local:CodePreviewView x:Name="CodePreviewDialogView" />
+            <Grid RowSpacing="8" MinWidth="900" MinHeight="560">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackPanel x:Name="CodePreviewMetaPanel"
+                            Grid.Row="0"
+                            Spacing="6"
+                            Visibility="Collapsed">
+                    <TextBlock x:Name="CodePreviewTemplateDescriptionText"
+                               TextWrapping="Wrap"
+                               Style="{StaticResource WorkbenchCaptionTextStyle}"
+                               Visibility="Collapsed" />
+                    <HyperlinkButton x:Name="CodePreviewGistButton"
+                                     Content="打开 GitHub Gist"
+                                     Click="CodePreviewGistButton_Click"
+                                     Visibility="Collapsed"
+                                     HorizontalAlignment="Left" />
+                </StackPanel>
+
+                <TabView x:Name="CodePreviewTabView"
+                         Grid.Row="1"
+                         CanDragTabs="False"
+                         SelectionChanged="CodePreviewTabView_SelectionChanged"
+                         Visibility="Collapsed" />
+
+                <local:CodePreviewView x:Name="CodePreviewDialogView" Grid.Row="2" />
+            </Grid>
         </ContentDialog>
     </Grid>
 </Page>

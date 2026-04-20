@@ -335,48 +335,6 @@ public sealed partial class MainPage : Page
         }
     }
 
-    private async void SaveTemplateButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (_currentCropRegion == null)
-        {
-            SetStatus("请先创建裁剪区域", StatusTone.Warning);
-            await ShowErrorAsync("请先创建裁剪区域");
-            return;
-        }
-
-        try
-        {
-            SetStatus("正在保存模板和代码...", StatusTone.Info);
-
-            var templateName = TemplateNameTextBox.Text.Trim();
-            if (string.IsNullOrWhiteSpace(templateName))
-            {
-                templateName = $"template_{DateTime.Now:yyyyMMdd_HHmmss}";
-            }
-
-            Directory.CreateDirectory(_saveFolderPath);
-
-            var templatePath = await ExportCroppedTemplate(_currentCropRegion, templateName);
-            var regionRef = GenerateRegionRef(_currentCropRegion, padding: MatchRegionPadding);
-            var code = GenerateMatchTemplateCode(templatePath, regionRef, _currentCropRegion);
-            var codePath = Path.ChangeExtension(templatePath, ".js");
-
-            await File.WriteAllTextAsync(codePath, code);
-
-            _latestGeneratedCode = code;
-            UpdateButtonStates();
-
-            Services.LogService.Instance.Log($"[保存] 模板: {templatePath}");
-            Services.LogService.Instance.Log($"[保存] 代码: {codePath}");
-            SetStatus("模板与代码已保存", StatusTone.Success);
-        }
-        catch (Exception ex)
-        {
-            await ShowErrorAsync($"保存失败：{ex.Message}");
-            SetStatus("保存失败", StatusTone.Error);
-        }
-    }
-
     private void FitToWindowButton_Click(object sender, RoutedEventArgs e)
     {
         Canvas.FitToWindow();

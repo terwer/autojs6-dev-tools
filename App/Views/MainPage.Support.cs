@@ -47,45 +47,6 @@ public sealed partial class MainPage
         ];
     }
 
-    private string GenerateMatchTemplateCode(string templatePath, int[] regionRef, CropRegion cropRegion)
-    {
-        var templateName = Path.GetFileNameWithoutExtension(templatePath);
-        var orientation = (cropRegion.OriginalWidth ?? 1280) >= (cropRegion.OriginalHeight ?? 720)
-            ? "landscape"
-            : "portrait";
-
-        return $@"// 模板匹配测试代码
-// 模板: {Path.GetFileName(templatePath)}
-// 原始区域: [{cropRegion.X}, {cropRegion.Y}, {cropRegion.Width}, {cropRegion.Height}]
-// regionRef: [{string.Join(", ", regionRef)}]
-
-const screen = captureScreen();
-const result = services.image.matchReferenceTemplate(
-    screen,
-    ""./assets/{Path.GetFileName(templatePath)}"",
-    {{
-        name: ""{templateName}"",
-        orientation: ""{orientation}"",
-        regionRef: [{string.Join(", ", regionRef)}],
-        matchThreshold: 0.25,
-        acceptThreshold: 0.84,
-        useTransparentMask: true
-    }}
-);
-
-if (result && result.matched) {{
-    console.log(""匹配成功！"");
-    console.log(""位置: ("" + result.point.x + "", "" + result.point.y + "")"");
-    console.log(""置信度: "" + result.confidence.toFixed(4));
-
-    click(result.point.x, result.point.y);
-}} else {{
-    console.log(""匹配失败"");
-}}
-
-screen.recycle();";
-    }
-
     private async Task ShowErrorAsync(string message)
     {
         var dialog = new ContentDialog

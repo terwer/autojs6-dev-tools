@@ -6,7 +6,6 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using Windows.ApplicationModel.DataTransfer;
 using Windows.Graphics.Imaging;
 
 namespace App.Views;
@@ -277,6 +276,7 @@ public sealed partial class MainPage
         if (clearGeneratedCode)
         {
             _latestGeneratedCode = string.Empty;
+            _latestImageCodePreviewItems.Clear();
         }
 
         UpdateButtonStates();
@@ -300,6 +300,7 @@ public sealed partial class MainPage
         _uiTotalNodes = 0;
         _uiDisplayedNodes = 0;
         _latestGeneratedCode = string.Empty;
+        _latestImageCodePreviewItems.Clear();
 
         if (TemplateSourceCrop != null)
         {
@@ -397,32 +398,6 @@ public sealed partial class MainPage
         }
     }
 
-    private async void ViewCodeButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (string.IsNullOrWhiteSpace(_latestGeneratedCode))
-        {
-            SetStatus("当前没有可查看的代码，请先保存模板或生成代码", StatusTone.Warning);
-            return;
-        }
-
-        await ShowCodePreviewDialogAsync(_latestGeneratedCode);
-    }
-
-    private void CodePreviewDialog_PrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
-    {
-        var code = CodePreviewDialogView?.GetCode();
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            SetStatus("当前没有可复制的代码", StatusTone.Warning);
-            args.Cancel = true;
-            return;
-        }
-
-        CopyToClipboard(code);
-        SetStatus("代码已复制到剪贴板", StatusTone.Success);
-        args.Cancel = true;
-    }
-
     private void CopyRegionRefButton_Click(object sender, RoutedEventArgs e)
     {
         if (string.IsNullOrWhiteSpace(RegionRefTextBox.Text) || RegionRefTextBox.Text == "[等待裁剪...]")
@@ -461,27 +436,6 @@ public sealed partial class MainPage
         SetStatus("UiSelector 已复制到剪贴板", StatusTone.Success);
     }
 
-    private async void PreviewWidgetSnippetButton_Click(object sender, RoutedEventArgs e)
-    {
-        var snippet = PropertyPanel.GetClickSnippet();
-        if (string.IsNullOrWhiteSpace(snippet))
-        {
-            SetStatus("请先在画布或节点树中选择控件", StatusTone.Warning);
-            return;
-        }
-
-        _latestGeneratedCode = snippet;
-        UpdateButtonStates();
-        await ShowCodePreviewDialogAsync(_latestGeneratedCode);
-        SetStatus("控件代码已生成", StatusTone.Success);
-    }
-
-    private void PropertyPanel_CodeGenerated(object? sender, string code)
-    {
-        _latestGeneratedCode = code;
-        UpdateButtonStates();
-    }
-
     private async Task LoadImageIntoCanvasAsync(byte[] imageBytes, int width, int height, bool fitToWindow)
     {
         ResetCanvasRelatedState(clearGeneratedCode: false);
@@ -512,93 +466,6 @@ public sealed partial class MainPage
         return FullImageSearchCheckBox?.IsChecked == true
             ? MatchSearchScope.FullImage
             : MatchSearchScope.Region;
-    }
-
-    private void CopyToClipboard(string text)
-    {
-        var dataPackage = new DataPackage();
-        dataPackage.SetText(text);
-        Clipboard.SetContent(dataPackage);
-    }
-
-    private async Task ShowCodePreviewDialogAsync(string code)
-    {
-        CodePreviewDialog.XamlRoot = XamlRoot;
-        CodePreviewDialogView.SetCode(code);
-        CodePreviewDialog.IsPrimaryButtonEnabled = !string.IsNullOrWhiteSpace(code);
-        await CodePreviewDialog.ShowAsync();
-    }
-
-    private void ApplyCropButtonVisualState()
-    {
-        if (StartCropButton == null)
-        {
-            return;
-        }
-
-        StartCropButton.Style = (Style)Application.Current.Resources[
-            _isCroppingMode ? "WorkbenchDangerButtonStyle" : "WorkbenchPrimaryButtonStyle"];
-        StartCropButton.Content = BuildButtonContent(
-            _isCroppingMode ? "\uE10A" : "\uE16E",
-            _isCroppingMode ? "退出裁剪" : "开始裁剪");
-    }
-
-    private void SetDumpUiLoading(bool isLoading)
-    {
-        if (DumpUiStageButton != null)
-        {
-            DumpUiStageButton.Content = isLoading
-                ? BuildLoadingButtonContent("拉取中...")
-                : BuildButtonContent(Symbol.ViewAll, "拉取 UI 树");
-        }
-
-        if (DumpUiInspectorButton != null)
-        {
-            DumpUiInspectorButton.Content = isLoading
-                ? BuildLoadingButtonContent("拉取中...")
-                : BuildButtonContent(Symbol.ViewAll, "拉取 UI 树");
-        }
-    }
-
-    private static StackPanel BuildButtonContent(string glyph, string text)
-    {
-        var panel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 6
-        };
-        panel.Children.Add(new FontIcon { Glyph = glyph });
-        panel.Children.Add(new TextBlock { Text = text });
-        return panel;
-    }
-
-    private static StackPanel BuildButtonContent(Symbol symbol, string text)
-    {
-        var panel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 6
-        };
-        panel.Children.Add(new SymbolIcon(symbol));
-        panel.Children.Add(new TextBlock { Text = text });
-        return panel;
-    }
-
-    private static StackPanel BuildLoadingButtonContent(string text)
-    {
-        var panel = new StackPanel
-        {
-            Orientation = Orientation.Horizontal,
-            Spacing = 6
-        };
-        panel.Children.Add(new ProgressRing
-        {
-            IsActive = true,
-            Width = 14,
-            Height = 14
-        });
-        panel.Children.Add(new TextBlock { Text = text });
-        return panel;
     }
 
     private void SetStatus(string message, StatusTone tone)
