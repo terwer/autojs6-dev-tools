@@ -107,32 +107,46 @@ public sealed partial class MainPage
     private void StartCropButton_PointerEntered(object sender, PointerRoutedEventArgs e)
     {
         _isCropDangerPointerOver = true;
-        ApplyCropButtonVisualState();
+        RequestCropButtonVisualStateRefresh();
     }
 
     private void StartCropButton_PointerExited(object sender, PointerRoutedEventArgs e)
     {
         _isCropDangerPointerOver = false;
         _isCropDangerPressed = false;
-        ApplyCropButtonVisualState();
+        RequestCropButtonVisualStateRefresh();
     }
 
     private void StartCropButton_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
         _isCropDangerPressed = true;
-        ApplyCropButtonVisualState();
+        RequestCropButtonVisualStateRefresh();
     }
 
     private void StartCropButton_PointerReleased(object sender, PointerRoutedEventArgs e)
     {
         _isCropDangerPressed = false;
-        ApplyCropButtonVisualState();
+        RequestCropButtonVisualStateRefresh();
     }
 
     private void StartCropButton_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
     {
         _isCropDangerPressed = false;
-        ApplyCropButtonVisualState();
+        RequestCropButtonVisualStateRefresh();
+    }
+
+    private void RequestCropButtonVisualStateRefresh()
+    {
+        if (StartCropButton?.DispatcherQueue == null)
+        {
+            ApplyCropButtonVisualState();
+            return;
+        }
+
+        _ = StartCropButton.DispatcherQueue.TryEnqueue(() =>
+        {
+            ApplyCropButtonVisualState();
+        });
     }
 
     private static void ApplyButtonContentForeground(StackPanel panel, Brush foreground)

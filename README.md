@@ -15,6 +15,35 @@
 
 ---
 
+## ⚡ See the Toolkit in Action
+
+Bring screenshot analysis, widget inspection, and AutoJS6 code generation into one native Windows workbench. Tune match regions visually, validate selectors against the current UI tree, and export runnable code without bouncing between crop tools, terminals, and repeated device-side trial and error.
+
+<p align="center">
+  <img src="docs/images/workbench-demo.gif" alt="Animated demo of the AutoJS6 Visual Workbench switching between image mode and control mode" width="100%"/>
+</p>
+
+<p align="center">
+  <sub>Live template cropping · Threshold tuning · Widget boundary inspection · AutoJS6-ready code generation</sub>
+</p>
+
+## 🖥️ Two Focused Workspaces
+
+<table>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="docs/images/image-mode.png" alt="Image mode workspace for cropping templates, tuning threshold, and previewing OpenCV matches"/><br/>
+      <sub><b>Image Mode</b> · Crop templates, preview OpenCV matches, and export <code>images.findImage()</code>-based AutoJS6 flows.</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="docs/images/control-mode.png" alt="Control mode workspace for parsing UI tree, highlighting widgets, and generating UiSelector code"/><br/>
+      <sub><b>Control Mode</b> · Inspect the Android UI hierarchy, highlight widget bounds, and generate selector-based AutoJS6 actions.</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
 ## 😫 The Pain You Know Too Well
 
 **Developing AutoJS6 scripts without this tool:**
@@ -111,11 +140,14 @@ AUTOJS6_SOURCE_ROOT="C:\path\to\AutoJs6"
 ### 4️⃣ Build and Run
 
 ```bash
+# Restore solution packages
+dotnet restore autojs6-dev-tools.slnx
+
 # Build solution
-dotnet build
+dotnet build autojs6-dev-tools.slnx
 
 # Run application
-dotnet run --project src/App
+dotnet run --project App/App.csproj
 ```
 
 Or open `autojs6-dev-tools.slnx` in Visual Studio and press F5.
@@ -190,22 +222,31 @@ if (widget) {
 
 ```
 autojs6-dev-tools/
-├── src/
-│   ├── App/                    # WinUI 3 UI layer
-│   │   ├── Views/              # Pages and custom controls
-│   │   ├── ViewModels/         # MVVM view models
-│   │   └── Resources/          # Styles and resource dictionaries
-│   ├── Core/                   # Pure business logic (no UI dependencies)
-│   │   ├── Abstractions/       # Service interfaces
-│   │   ├── Models/             # Data models
-│   │   ├── Services/           # Core business services
-│   │   └── Helpers/            # Utility classes
-│   └── Infrastructure/         # Infrastructure layer
-│       ├── Adb/                # ADB communication
-│       └── Imaging/            # Image processing wrappers
-├── tests/                      # Unit tests
+├── App/                        # WinUI 3 desktop application
+│   ├── Views/                  # Pages and custom controls
+│   ├── ViewModels/             # MVVM view models
+│   ├── Services/               # App-layer orchestration services
+│   ├── Models/                 # UI-facing models
+│   ├── Resources/              # Styles and resource dictionaries
+│   ├── CodeTemplates/          # AutoJS6 code generation templates
+│   └── App.csproj
+├── Core/                       # Pure business logic (no UI dependencies)
+│   ├── Abstractions/           # Service interfaces
+│   ├── Models/                 # Domain models
+│   ├── Services/               # Core business services
+│   ├── Helpers/                # Utility classes
+│   └── Core.csproj
+├── Infrastructure/             # External dependency adapters
+│   ├── Adb/                    # ADB communication
+│   ├── Imaging/                # OpenCV / imaging wrappers
+│   └── Infrastructure.csproj
+├── App.Tests/                  # UI/app-level tests
+├── Core.Tests/                 # Core unit tests
+├── docs/
+│   └── images/                 # README screenshots and demo assets
 ├── openspec/                   # OpenSpec change proposals
 ├── AGENTS.md                   # Core design principles (AI agent context)
+├── autojs6-dev-tools.slnx      # Solution entry
 └── README.md                   # This file
 ```
 

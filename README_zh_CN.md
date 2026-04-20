@@ -15,6 +15,35 @@
 
 ---
 
+## ⚡ 一眼看懂这个工具
+
+把截图分析、控件树检查和 AutoJS6 代码生成收进同一个 Windows 原生工作台。你可以直接可视化调整匹配区域与阈值、验证当前 UI 树上的选择器，并导出可粘贴的 AutoJS6 代码，不再在截图软件、终端和真机试错之间来回切换。
+
+<p align="center">
+  <img src="docs/images/workbench-demo.gif" alt="AutoJS6 可视化工作台 GIF 演示：图像模式与控件模式切换" width="100%"/>
+</p>
+
+<p align="center">
+  <sub>模板裁剪 · 阈值调节 · 控件边界查看 · AutoJS6 代码生成</sub>
+</p>
+
+## 🖥️ 双工作区界面
+
+<table>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <img src="docs/images/image-mode.png" alt="图像模式界面：用于裁剪模板、调节阈值并预览 OpenCV 匹配结果"/><br/>
+      <sub><b>图像模式</b> · 用于模板裁剪、OpenCV 匹配预览与基于 <code>images.findImage()</code> 的 AutoJS6 代码导出。</sub>
+    </td>
+    <td width="50%" align="center" valign="top">
+      <img src="docs/images/control-mode.png" alt="控件模式界面：用于解析 UI 树、高亮控件边界并生成 UiSelector 代码"/><br/>
+      <sub><b>控件模式</b> · 用于解析 Android UI 树、查看控件边界，并生成基于 UiSelector 的 AutoJS6 交互代码。</sub>
+    </td>
+  </tr>
+</table>
+
+---
+
 ## 😫 你肯定经历过的痛苦
 
 **没有这个工具开发 AutoJS6 脚本时：**
@@ -111,11 +140,14 @@ AUTOJS6_SOURCE_ROOT="C:\path\to\AutoJs6"
 ### 4️⃣ 构建并运行
 
 ```bash
+# 恢复解决方案依赖
+dotnet restore autojs6-dev-tools.slnx
+
 # 构建解决方案
-dotnet build
+dotnet build autojs6-dev-tools.slnx
 
 # 运行应用
-dotnet run --project src/App
+dotnet run --project App/App.csproj
 ```
 
 或在 Visual Studio 中打开 `autojs6-dev-tools.slnx` 并按 F5。
@@ -190,22 +222,31 @@ if (widget) {
 
 ```
 autojs6-dev-tools/
-├── src/
-│   ├── App/                    # WinUI 3 UI 层
-│   │   ├── Views/              # 页面与自定义控件
-│   │   ├── ViewModels/         # MVVM 视图模型
-│   │   └── Resources/          # 样式与资源字典
-│   ├── Core/                   # 纯业务逻辑（无 UI 依赖）
-│   │   ├── Abstractions/       # 服务接口
-│   │   ├── Models/             # 数据模型
-│   │   ├── Services/           # 核心业务服务
-│   │   └── Helpers/            # 工具类
-│   └── Infrastructure/         # 基础设施层
-│       ├── Adb/                # ADB 通信
-│       └── Imaging/            # 图像处理封装
-├── tests/                      # 单元测试
+├── App/                        # WinUI 3 桌面应用
+│   ├── Views/                  # 页面与自定义控件
+│   ├── ViewModels/             # MVVM 视图模型
+│   ├── Services/               # 应用层编排服务
+│   ├── Models/                 # 面向 UI 的模型
+│   ├── Resources/              # 样式与资源字典
+│   ├── CodeTemplates/          # AutoJS6 代码模板
+│   └── App.csproj
+├── Core/                       # 纯业务逻辑（无 UI 依赖）
+│   ├── Abstractions/           # 服务接口
+│   ├── Models/                 # 领域模型
+│   ├── Services/               # 核心业务服务
+│   ├── Helpers/                # 工具类
+│   └── Core.csproj
+├── Infrastructure/             # 外部依赖适配层
+│   ├── Adb/                    # ADB 通信
+│   ├── Imaging/                # OpenCV / 图像处理封装
+│   └── Infrastructure.csproj
+├── App.Tests/                  # 应用/UI 测试
+├── Core.Tests/                 # Core 单元测试
+├── docs/
+│   └── images/                 # README 截图与演示资源
 ├── openspec/                   # OpenSpec 变更提案
 ├── AGENTS.md                   # 核心设计原则（AI agent 上下文）
+├── autojs6-dev-tools.slnx      # 解决方案入口
 └── README.md                   # 本文件
 ```
 
