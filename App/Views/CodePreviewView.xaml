@@ -10,10 +10,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- 标题 -->
         <TextBlock Grid.Row="0" Text="代码预览" FontWeight="SemiBold" Padding="8"/>
 
         <!-- 代码编辑器 -->
@@ -25,12 +23,7 @@
             FontFamily="Consolas"
             FontSize="12"
             Padding="8"
+            IsReadOnly="True"
             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
-
-        <!-- 操作按钮 -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" Padding="8">
-            <Button x:Name="CopyCodeButton" Content="复制代码" Click="CopyCodeButton_Click"/>
-            <Button x:Name="ExportButton" Content="导出 JS 文件" Click="ExportButton_Click"/>
-        </StackPanel>
     </Grid>
 </UserControl>

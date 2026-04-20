@@ -26,7 +26,7 @@ public sealed partial class MainPage : Page
     private bool _hasScreenshot;
     private bool _isFitToWindowMode;
     private bool _isCroppingMode;
-    private bool _isBottomDockOpen;
+    private bool _isDumpUiLoading;
 
     private int _uiTotalNodes;
     private int _uiDisplayedNodes;
@@ -149,6 +149,11 @@ public sealed partial class MainPage : Page
 
     private async void DumpUiButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_isDumpUiLoading)
+        {
+            return;
+        }
+
         if (_currentDevice == null)
         {
             SetStatus("请先选择设备", StatusTone.Warning);
@@ -164,6 +169,8 @@ public sealed partial class MainPage : Page
 
         try
         {
+            _isDumpUiLoading = true;
+            SetDumpUiLoading(true);
             SetStatus("正在拉取 UI 树...", StatusTone.Info);
 
             var xmlContent = await _adbService.DumpUiHierarchyAsync(_currentDevice);
@@ -204,6 +211,12 @@ public sealed partial class MainPage : Page
             await ShowErrorAsync($"拉取 UI 树失败：{ex.Message}");
             SetStatus("拉取 UI 树失败", StatusTone.Error);
         }
+        finally
+        {
+            _isDumpUiLoading = false;
+            SetDumpUiLoading(false);
+            UpdateButtonStates();
+        }
     }
 
     private void StartCropButton_Click(object sender, RoutedEventArgs e)
@@ -227,17 +240,18 @@ public sealed partial class MainPage : Page
             if (!Canvas.EnableCroppingMode())
             {
                 _isCroppingMode = false;
+                ApplyCropButtonVisualState();
                 SetStatus("裁剪模式启用失败，请确保处于 1:1 模式", StatusTone.Warning);
                 return;
             }
 
-            StartCropButton.Content = "退出裁剪";
+            ApplyCropButtonVisualState();
             SetStatus("裁剪模式已启用，可拖拽创建区域", StatusTone.Info);
         }
         else
         {
             Canvas.DisableCroppingMode();
-            StartCropButton.Content = "开启裁剪";
+            ApplyCropButtonVisualState();
             SetStatus("裁剪模式已禁用", StatusTone.Info);
         }
 
@@ -349,8 +363,8 @@ public sealed partial class MainPage : Page
 
             await File.WriteAllTextAsync(codePath, code);
 
-            CodePreviewTextBox.Text = code;
-            OpenBottomDock(BottomDockTab.Code);
+            _latestGeneratedCode = code;
+            UpdateButtonStates();
 
             Services.LogService.Instance.Log($"[保存] 模板: {templatePath}");
             Services.LogService.Instance.Log($"[保存] 代码: {codePath}");
@@ -379,17 +393,6 @@ public sealed partial class MainPage : Page
         UpdateStagePresentation();
         UpdateButtonStates();
         SetStatus("已切换到原图模式（1:1）", StatusTone.Info);
-    }
-
-    private void CopyCodeButton_Click(object sender, RoutedEventArgs e)
-    {
-        if (string.IsNullOrWhiteSpace(CodePreviewTextBox.Text))
-        {
-            return;
-        }
-
-        CopyToClipboard(CodePreviewTextBox.Text);
-        SetStatus("代码已复制到剪贴板", StatusTone.Success);
     }
 
     private void ClearLogButton_Click(object sender, RoutedEventArgs e)

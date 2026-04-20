@@ -95,9 +95,9 @@ public sealed partial class CanvasView : Page
     // 惯性滑动
     private Vector2 _velocity = Vector2.Zero;
     private DispatcherTimer? _inertiaTimer;
-    private const float InertiaDecay = 0.80f; // 衰减系数（降低以加快停止）
-    private const float MinVelocity = 2.0f; // 最小速度阈值（提高以更快停止）
-    private const float VelocityScale = 0.3f; // 速度缩放系数（降低初始速度）
+    private const float InertiaDecay = 0.72f; // 衰减系数（进一步降低以更快停止）
+    private const float MinVelocity = 4.0f; // 最小速度阈值（提高以更快停止）
+    private const float VelocityScale = 0.18f; // 速度缩放系数（明显降低初始速度）
 
     public CanvasView()
     {

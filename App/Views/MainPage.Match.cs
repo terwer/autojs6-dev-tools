@@ -37,7 +37,8 @@ public sealed partial class MainPage
             var overlayResults = matchResult == null ? [] : new List<MatchResult> { matchResult };
             Canvas.SetMatchResults(overlayResults);
 
-            MatchResultText.Text = BuildMatchSummary(matchResult, searchScope, region, threshold);
+            MatchSummaryText.Text = BuildMatchSummary(matchResult);
+            LogMatchDetails(matchResult, searchScope, region, threshold);
 
             if (matchResult == null)
             {
@@ -53,7 +54,8 @@ public sealed partial class MainPage
         }
         catch (Exception ex)
         {
-            MatchResultText.Text = $"结果：匹配测试失败\n原因：{ex.Message}";
+            MatchSummaryText.Text = "匹配：失败";
+            Services.LogService.Instance.Log($"[Match] 执行失败: {ex.Message}");
             Canvas.SetMatchResults([]);
             await ShowErrorAsync($"匹配测试失败：{ex.Message}");
             SetStatus("匹配测试失败", StatusTone.Error);
@@ -169,7 +171,19 @@ public sealed partial class MainPage
         SetStatus($"已切换到测试截图预览：{Path.GetFileName(screenshot.Label)}", StatusTone.Info);
     }
 
-    private string BuildMatchSummary(
+    private string BuildMatchSummary(MatchResult? matchResult)
+    {
+        if (matchResult == null)
+        {
+            return "匹配：失败";
+        }
+
+        return matchResult.IsMatch
+            ? $"匹配：命中 · {matchResult.Confidence:F3} · ({matchResult.ClickX}, {matchResult.ClickY})"
+            : $"匹配：未命中 · {matchResult.Confidence:F3}";
+    }
+
+    private void LogMatchDetails(
         MatchResult? matchResult,
         MatchSearchScope scope,
         CropRegion? region,
@@ -183,17 +197,13 @@ public sealed partial class MainPage
 
         if (matchResult == null)
         {
-            return $"结果：执行失败，未返回匹配结果\n阈值：{threshold:F2}\n搜索范围：{scopeText}";
+            Services.LogService.Instance.Log($"[Match] 未返回结果 · 阈值={threshold:F2} · 搜索={scopeText}");
+            return;
         }
 
-        var state = matchResult.IsMatch ? "命中" : "未命中";
-        return
-$@"结果：{state}
-置信度：{matchResult.Confidence:F4}
-点击坐标：({matchResult.ClickX}, {matchResult.ClickY})
-匹配区域：({matchResult.X}, {matchResult.Y}, {matchResult.Width}, {matchResult.Height})
-耗时：{matchResult.ElapsedMilliseconds} ms
-阈值：{threshold:F2}
-搜索范围：{scopeText}";
+        Services.LogService.Instance.Log(
+            $"[Match] {(matchResult.IsMatch ? "命中" : "未命中")} · 置信度={matchResult.Confidence:F4} · 点击=({matchResult.ClickX}, {matchResult.ClickY})");
+        Services.LogService.Instance.Log(
+            $"[Match] 匹配区域=({matchResult.X}, {matchResult.Y}, {matchResult.Width}, {matchResult.Height}) · 耗时={matchResult.ElapsedMilliseconds}ms · 阈值={threshold:F2} · 搜索={scopeText}");
     }
 }

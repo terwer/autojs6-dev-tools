@@ -6,13 +6,13 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid RowSpacing="12">
+    <Grid RowSpacing="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Style="{StaticResource WorkbenchCardBorderStyle}" Padding="12">
+        <Border Grid.Row="0" Style="{StaticResource WorkbenchCardBorderStyle}" Padding="10">
             <Grid ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -22,77 +22,50 @@
 
                 <Button x:Name="RefreshButton"
                         Grid.Column="0"
-                        Content="刷新"
                         Click="RefreshButton_Click"
-                        Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                        Style="{StaticResource WorkbenchSecondaryButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE72C;" />
+                        <TextBlock Text="刷新" />
+                    </StackPanel>
+                </Button>
 
                 <Button x:Name="DiscoverButton"
                         Grid.Column="1"
-                        Content="扫描"
                         Click="DiscoverButton_Click"
-                        Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                        Style="{StaticResource WorkbenchSecondaryButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE721;" />
+                        <TextBlock Text="扫描" />
+                    </StackPanel>
+                </Button>
 
                 <Button x:Name="WirelessButton"
                         Grid.Column="2"
-                        Content="无线连接"
                         HorizontalAlignment="Right"
                         Click="WirelessButton_Click"
-                        Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                        Style="{StaticResource WorkbenchSecondaryButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE701;" />
+                        <TextBlock Text="无线" />
+                    </StackPanel>
+                </Button>
             </Grid>
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource WorkbenchCardBorderStyle}" Padding="0">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Padding="10" Spacing="8">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="设备列表" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
+                        <TextBlock x:Name="DeviceCountText"
+                                   Text="选择设备后即可截图、拉取 UI 树和执行测试。"
+                                   Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                    </StackPanel>
 
-                <StackPanel Grid.Row="0" Padding="12,12,12,8" Spacing="2">
-                    <TextBlock Text="设备列表" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
-                    <TextBlock x:Name="DeviceCountText"
-                               Text="选择设备后即可截图、拉取 UI 树和执行测试。"
-                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                    <StackPanel x:Name="DeviceItemsPanel" Spacing="8" />
                 </StackPanel>
-
-                <ListView x:Name="DeviceListView"
-                          Grid.Row="1"
-                          Padding="6,0,6,6"
-                          SelectionMode="Single"
-                          SelectionChanged="DeviceListView_SelectionChanged"
-                          ScrollViewer.VerticalScrollBarVisibility="Auto">
-                    <ListView.ItemContainerStyle>
-                        <Style TargetType="ListViewItem">
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="Margin" Value="0,0,0,8" />
-                            <Setter Property="MinHeight" Value="76" />
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        </Style>
-                    </ListView.ItemContainerStyle>
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Padding="12,10">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0" Spacing="4">
-                                    <TextBlock Text="{Binding Serial}" FontWeight="SemiBold" TextWrapping="Wrap" />
-                                    <TextBlock Text="{Binding Model}" Style="{StaticResource WorkbenchCaptionTextStyle}" />
-                                </StackPanel>
-
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock Text="{Binding State}" FontWeight="SemiBold" HorizontalAlignment="Right" />
-                                    <TextBlock Text="{Binding ConnectionType}"
-                                               Style="{StaticResource WorkbenchCaptionTextStyle}"
-                                               HorizontalAlignment="Right" />
-                                </StackPanel>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </Grid>
+            </ScrollViewer>
         </Border>
 
         <ContentDialog x:Name="WirelessConnectionDialog"

@@ -53,6 +53,15 @@
                 <Setter Property="CornerRadius" Value="10" />
             </Style>
 
+            <Style x:Key="WorkbenchDangerButtonStyle" TargetType="Button">
+                <Setter Property="MinHeight" Value="38" />
+                <Setter Property="Padding" Value="14,8" />
+                <Setter Property="CornerRadius" Value="10" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="Background" Value="#D14343" />
+                <Setter Property="BorderBrush" Value="#D14343" />
+            </Style>
+
             <Style x:Key="WorkbenchSecondaryButtonStyle" TargetType="Button">
                 <Setter Property="MinHeight" Value="38" />
                 <Setter Property="Padding" Value="14,8" />
