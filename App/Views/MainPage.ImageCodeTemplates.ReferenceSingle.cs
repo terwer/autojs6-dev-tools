@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 using App.Models;
 using Core.Models;
 
@@ -26,71 +25,21 @@ public sealed partial class MainPage
 
     private string GenerateReferenceSingleFileCode(string templatePath, int[] regionRef, CropRegion cropRegion, double threshold)
     {
-        var helperSource = LoadReferenceSingleFileTemplateSource();
-        var templateName = Path.GetFileNameWithoutExtension(templatePath);
-        var templateFileName = NormalizeJsPath(Path.GetFileName(templatePath));
+        _ = LoadReferenceSingleFileTemplateSource();
+
         var templateReferencePath = BuildGeneratedTemplateReferencePath(templatePath);
         var orientation = GetGeneratedOrientation(cropRegion);
         var acceptThreshold = FormatJsNumber(ClampGeneratedThreshold(threshold));
         var matchThreshold = FormatJsNumber(0.25);
         var regionRefText = ToJsArray(regionRef);
 
-        var builder = new StringBuilder();
-        builder.AppendLine(helperSource.TrimEnd());
-        builder.AppendLine();
-        builder.Append(
+        return NormalizeGeneratedCode(
             $$"""
-// ------------------------------
-// 当前模板调用示例
-// GitHub Gist: {{ReferenceSingleFileGistUrl}}
-// 模板: {{templateFileName}}
-// 原始区域: [{{cropRegion.X}}, {{cropRegion.Y}}, {{cropRegion.Width}}, {{cropRegion.Height}}]
-// regionRef: {{regionRefText}}
-// 模板默认位于脚本同级 assets 目录。
-// ------------------------------
-var templatePath = files.path("{{templateReferencePath}}");
-var preferLandscape = {{ToJsBoolean(orientation == "landscape")}};
-var acceptThreshold = {{acceptThreshold}};
-var matchThreshold = {{matchThreshold}};
-var regionRef = {{regionRefText}};
-
-if (!requestScreenCapture(preferLandscape)) {
-  throw new Error("请求截图权限失败");
-}
-
+var matchReferenceTemplate = require("./autojs6-image-match-helper.js");
 var screen = captureScreen();
-try {
-  var detection = matchReferenceTemplate(screen, templatePath, {
-    name: "{{EscapeJavaScriptString(templateName)}}",
-    orientation: "{{orientation}}",
-    regionRef: regionRef,
-    matchThreshold: matchThreshold,
-    acceptThreshold: acceptThreshold,
-    threshold: acceptThreshold,
-    max: 1,
-    useTransparentMask: true,
-    enableMatchFeatures: true,
-    ignoreImmersiveSafeArea: true
-  });
-
-  if (detection.found) {
-    console.log("[reference-single] matched");
-    console.log("point=(" + detection.point.x + ", " + detection.point.y + ")");
-    console.log("click=(" + detection.clickX + ", " + detection.clickY + ")");
-    console.log("similarity=" + detection.similarityText);
-    click(detection.clickX, detection.clickY);
-  } else {
-    console.log("[reference-single] not matched");
-    console.log("best similarity=" + detection.similarityText);
-  }
-} finally {
-  if (screen && typeof screen.recycle === "function") {
-    screen.recycle();
-  }
-}
+var result = matchReferenceTemplate(screen, "{{templateReferencePath}}", { orientation: "{{orientation}}", regionRef: {{regionRefText}}, matchThreshold: {{matchThreshold}}, acceptThreshold: {{acceptThreshold}}, useTransparentMask: true, enableMatchFeatures: true });
+if (result.found) click(result.clickX, result.clickY);
+screen.recycle();
 """);
-
-        return NormalizeGeneratedCode(builder.ToString());
     }
-
 }

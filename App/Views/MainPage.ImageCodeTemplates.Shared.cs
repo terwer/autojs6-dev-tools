@@ -57,6 +57,25 @@ public sealed partial class MainPage
         return $"./assets/{NormalizeJsPath(Path.GetFileName(templatePath))}";
     }
 
+    private static string BuildUsageSearchRegionText(CropRegion cropRegion)
+    {
+        var screenWidth = cropRegion.OriginalWidth ?? (cropRegion.X + cropRegion.Width);
+        var screenHeight = cropRegion.OriginalHeight ?? (cropRegion.Y + cropRegion.Height);
+
+        var x = Math.Max(0, cropRegion.X - MatchRegionPadding);
+        var y = Math.Max(0, cropRegion.Y - MatchRegionPadding);
+        var right = Math.Min(screenWidth, cropRegion.X + cropRegion.Width + MatchRegionPadding);
+        var bottom = Math.Min(screenHeight, cropRegion.Y + cropRegion.Height + MatchRegionPadding);
+
+        return ToJsArray(
+        [
+            x,
+            y,
+            Math.Max(1, right - x),
+            Math.Max(1, bottom - y)
+        ]);
+    }
+
     private static string NormalizeJsPath(string path)
     {
         return path.Replace('\\', '/');

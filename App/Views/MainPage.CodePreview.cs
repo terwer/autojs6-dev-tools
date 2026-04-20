@@ -42,15 +42,16 @@ public sealed partial class MainPage
 
     private async void ViewCodeButton_Click(object sender, RoutedEventArgs e)
     {
+        var target = sender as FrameworkElement;
         if (_workbenchMode == WorkbenchMode.Image && _latestImageCodePreviewItems.Count > 0)
         {
-            await ShowCodePreviewDialogAsync(_latestImageCodePreviewItems, "图像代码模板预览");
+            await ShowCodePreviewDialogAsync(_latestImageCodePreviewItems, "图像代码调用模板预览");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_latestGeneratedCode))
         {
-            SetStatus("当前没有可查看的代码，请先保存模板或生成代码", StatusTone.Warning);
+            ShowActionTip("当前没有可查看的代码，请先保存模板或生成代码", StatusTone.Warning, target, "无法查看代码");
             return;
         }
 
@@ -59,10 +60,11 @@ public sealed partial class MainPage
 
     private async void PreviewWidgetSnippetButton_Click(object sender, RoutedEventArgs e)
     {
+        var target = sender as FrameworkElement;
         var snippet = PropertyPanel.GetClickSnippet();
         if (string.IsNullOrWhiteSpace(snippet))
         {
-            SetStatus("请先在画布或节点树中选择控件", StatusTone.Warning);
+            ShowActionTip("请先在画布或节点树中选择控件", StatusTone.Warning, target, "无法生成代码");
             return;
         }
 
@@ -74,7 +76,7 @@ public sealed partial class MainPage
                 "控件代码",
                 "当前选中控件生成的纯 AutoJS6 控件模式代码片段。"),
             "代码预览");
-        SetStatus("控件代码已生成", StatusTone.Success);
+        ShowActionTip("控件代码已生成", StatusTone.Success, target);
     }
 
     private void PropertyPanel_CodeGenerated(object? sender, string code)
@@ -88,13 +90,13 @@ public sealed partial class MainPage
         var code = GetCurrentCodePreviewItem()?.Code ?? CodePreviewDialogView?.GetCode();
         if (string.IsNullOrWhiteSpace(code))
         {
-            SetStatus("当前没有可复制的代码", StatusTone.Warning);
+            ShowActionTip("当前没有可复制的代码", StatusTone.Warning, null, "无法复制代码");
             args.Cancel = true;
             return;
         }
 
         CopyToClipboard(code);
-        SetStatus("代码已复制到剪贴板", StatusTone.Success);
+        ShowActionTip("代码已复制到剪贴板", StatusTone.Success);
         args.Cancel = true;
     }
 
@@ -103,12 +105,16 @@ public sealed partial class MainPage
         var url = GetCurrentCodePreviewItem()?.ExternalUrl;
         if (string.IsNullOrWhiteSpace(url))
         {
-            SetStatus("当前模板没有可打开的 Gist 链接", StatusTone.Warning);
+            ShowActionTip("当前模板没有可打开的 Gist 链接", StatusTone.Warning, null, "无法打开链接");
             return;
         }
 
         var launched = await Windows.System.Launcher.LaunchUriAsync(new Uri(url));
-        SetStatus(launched ? "已打开 GitHub Gist" : "打开 GitHub Gist 失败", launched ? StatusTone.Success : StatusTone.Error);
+        ShowActionTip(
+            launched ? "已打开 GitHub Gist" : "打开 GitHub Gist 失败",
+            launched ? StatusTone.Success : StatusTone.Error,
+            null,
+            launched ? "已打开链接" : "打开失败");
     }
 
     private void CodePreviewTabView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -125,7 +131,7 @@ public sealed partial class MainPage
     {
         if (items.Count == 0)
         {
-            SetStatus("当前没有可查看的代码", StatusTone.Warning);
+            ShowActionTip("当前没有可查看的代码", StatusTone.Warning, null, "无法查看代码");
             return;
         }
 

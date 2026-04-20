@@ -94,7 +94,8 @@ public sealed partial class MainPage
             LoadLocalTopButton == null ||
             FitToWindowButton == null ||
             ResetViewButton == null ||
-            StartCropButton == null ||
+            EnterCropButton == null ||
+            ExitCropButton == null ||
             DumpUiStageButton == null ||
             WidgetBoundsCheckBox == null ||
             TestMatchButton == null ||
@@ -128,7 +129,8 @@ public sealed partial class MainPage
 
         FitToWindowButton.IsEnabled = hasScreenshot;
         ResetViewButton.IsEnabled = hasScreenshot;
-        StartCropButton.IsEnabled = hasScreenshot && !_isFitToWindowMode && _workbenchMode == WorkbenchMode.Image;
+        EnterCropButton.IsEnabled = hasScreenshot && !_isFitToWindowMode && _workbenchMode == WorkbenchMode.Image && !_isCroppingMode;
+        ExitCropButton.IsEnabled = hasScreenshot && _workbenchMode == WorkbenchMode.Image && _isCroppingMode;
 
         WidgetBoundsCheckBox.IsEnabled = hasScreenshot && _workbenchMode == WorkbenchMode.Ui;
 
@@ -151,6 +153,8 @@ public sealed partial class MainPage
         ToolTipService.SetToolTip(DumpUiStageButton, canDumpUi ? null : "请先选择设备并准备一张当前截图");
         ToolTipService.SetToolTip(FitToWindowButton, hasScreenshot ? null : "请先截图或载入本地图片");
         ToolTipService.SetToolTip(ResetViewButton, hasScreenshot ? null : "请先截图或载入本地图片");
+        ToolTipService.SetToolTip(EnterCropButton, EnterCropButton.IsEnabled ? null : "请先截图并切回 1:1 视图");
+        ToolTipService.SetToolTip(ExitCropButton, ExitCropButton.IsEnabled ? null : "当前未处于裁剪模式");
         ToolTipService.SetToolTip(ViewCodeRightButton, hasGeneratedCode ? null : "请先执行保存或生成代码");
         ToolTipService.SetToolTip(CopyCoordinatesButton, hasWidget ? null : "请先在画布或节点树中选择控件");
         ToolTipService.SetToolTip(CopySelectorButton, hasWidget ? null : "请先在画布或节点树中选择控件");
@@ -255,7 +259,7 @@ public sealed partial class MainPage
         _uiTotalNodes = 0;
         _uiDisplayedNodes = 0;
 
-        if (StartCropButton != null)
+        if (EnterCropButton != null && ExitCropButton != null)
         {
             ApplyCropButtonVisualState();
         }
@@ -319,7 +323,7 @@ public sealed partial class MainPage
             ThresholdSlider.Value = 0.84;
         }
 
-        if (StartCropButton != null)
+        if (EnterCropButton != null && ExitCropButton != null)
         {
             ApplyCropButtonVisualState();
         }
@@ -366,6 +370,7 @@ public sealed partial class MainPage
 
     private async void LoadLocalImageButton_Click(object sender, RoutedEventArgs e)
     {
+        var target = sender as FrameworkElement;
         try
         {
             var picker = CreateImageFilePicker();
@@ -386,51 +391,53 @@ public sealed partial class MainPage
             _screenshotFilePath = file.Path;
             ScreenshotSourceCurrent.IsChecked = true;
 
-            SetStatus($"已载入本地图片：{file.Name}", StatusTone.Success);
+            ShowActionTip($"已载入本地图片：{file.Name}", StatusTone.Success, target);
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync($"载入本地图片失败：{ex.Message}");
-            SetStatus("载入本地图片失败", StatusTone.Error);
+            ShowActionTip($"载入本地图片失败：{ex.Message}", StatusTone.Error, target, "载入失败");
         }
     }
 
     private void CopyRegionRefButton_Click(object sender, RoutedEventArgs e)
     {
+        var target = sender as FrameworkElement;
         if (string.IsNullOrWhiteSpace(RegionRefTextBox.Text) || RegionRefTextBox.Text == "[等待裁剪...]")
         {
-            SetStatus("当前没有可复制的 regionRef", StatusTone.Warning);
+            ShowActionTip("当前没有可复制的 regionRef", StatusTone.Warning, target, "无法复制");
             return;
         }
 
         CopyToClipboard(RegionRefTextBox.Text);
-        SetStatus("regionRef 已复制到剪贴板", StatusTone.Success);
+        ShowActionTip("regionRef 已复制到剪贴板", StatusTone.Success, target);
     }
 
     private void CopyCoordinatesButton_Click(object sender, RoutedEventArgs e)
     {
+        var target = sender as FrameworkElement;
         var coordinates = PropertyPanel.GetCoordinatesText();
         if (string.IsNullOrWhiteSpace(coordinates))
         {
-            SetStatus("请先在画布或节点树中选择控件", StatusTone.Warning);
+            ShowActionTip("请先在画布或节点树中选择控件", StatusTone.Warning, target, "无法复制坐标");
             return;
         }
 
         CopyToClipboard(coordinates);
-        SetStatus("控件坐标已复制到剪贴板", StatusTone.Success);
+        ShowActionTip("控件坐标已复制到剪贴板", StatusTone.Success, target);
     }
 
     private void CopySelectorButton_Click(object sender, RoutedEventArgs e)
     {
+        var target = sender as FrameworkElement;
         var selector = PropertyPanel.GetUiSelectorText();
         if (string.IsNullOrWhiteSpace(selector))
         {
-            SetStatus("请先在画布或节点树中选择控件", StatusTone.Warning);
+            ShowActionTip("请先在画布或节点树中选择控件", StatusTone.Warning, target, "无法复制选择器");
             return;
         }
 
         CopyToClipboard(selector);
-        SetStatus("选择器已复制到剪贴板", StatusTone.Success);
+        ShowActionTip("选择器已复制到剪贴板", StatusTone.Success, target);
     }
 
     private async Task LoadImageIntoCanvasAsync(byte[] imageBytes, int width, int height, bool fitToWindow)

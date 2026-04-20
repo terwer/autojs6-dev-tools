@@ -7,6 +7,89 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
+    <Page.Resources>
+        <SolidColorBrush x:Key="ExitCropButtonNormalBrush" Color="#D14343" />
+        <SolidColorBrush x:Key="ExitCropButtonPointerOverBrush" Color="#C53A3A" />
+        <SolidColorBrush x:Key="ExitCropButtonPressedBrush" Color="#A93131" />
+        <SolidColorBrush x:Key="ExitCropButtonDisabledBrush" Color="#66D14343" />
+
+        <Style x:Key="ExitCropButtonStyle" TargetType="Button">
+            <Setter Property="MinHeight" Value="38" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="{StaticResource ExitCropButtonNormalBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource ExitCropButtonNormalBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="{TemplateBinding CornerRadius}"
+                                Opacity="1">
+                            <ContentPresenter Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                              Padding="{TemplateBinding Padding}" />
+                        </Border>
+
+                        <VisualStateManager.VisualStateGroups>
+                            <VisualStateGroup x:Name="CommonStates">
+                                <VisualState x:Name="Normal" />
+                                <VisualState x:Name="PointerOver">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder"
+                                                                       Storyboard.TargetProperty="Background">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource ExitCropButtonPointerOverBrush}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder"
+                                                                       Storyboard.TargetProperty="BorderBrush">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource ExitCropButtonPointerOverBrush}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+                                <VisualState x:Name="Pressed">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder"
+                                                                       Storyboard.TargetProperty="Background">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource ExitCropButtonPressedBrush}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder"
+                                                                       Storyboard.TargetProperty="BorderBrush">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource ExitCropButtonPressedBrush}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </VisualState>
+                                <VisualState x:Name="Disabled">
+                                    <Storyboard>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder"
+                                                                       Storyboard.TargetProperty="Background">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource ExitCropButtonDisabledBrush}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <ObjectAnimationUsingKeyFrames Storyboard.TargetName="RootBorder"
+                                                                       Storyboard.TargetProperty="BorderBrush">
+                                            <DiscreteObjectKeyFrame KeyTime="0" Value="{StaticResource ExitCropButtonDisabledBrush}" />
+                                        </ObjectAnimationUsingKeyFrames>
+                                        <DoubleAnimation Storyboard.TargetName="RootBorder"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         To="0.72"
+                                                         Duration="0:0:0" />
+                                    </Storyboard>
+                                </VisualState>
+                            </VisualStateGroup>
+                        </VisualStateManager.VisualStateGroups>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
+
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -108,12 +191,21 @@
                                     <TextBlock Text="原图 1:1" />
                                 </StackPanel>
                             </Button>
-                            <Button x:Name="StartCropButton"
-                                    Click="StartCropButton_Click"
+                            <Button x:Name="EnterCropButton"
+                                    Click="EnterCropButton_Click"
                                     Style="{StaticResource WorkbenchPrimaryButtonStyle}">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <FontIcon Glyph="&#xE16E;" />
                                     <TextBlock Text="开始裁剪" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="ExitCropButton"
+                                    Click="ExitCropButton_Click"
+                                    Style="{StaticResource ExitCropButtonStyle}"
+                                    Visibility="Collapsed">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE10A;" Foreground="White" />
+                                    <TextBlock Text="退出裁剪" Foreground="White" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -575,6 +667,21 @@
                 </TextBox.ContextFlyout>
             </TextBox>
         </Border>
+
+        <Border x:Name="ActionFeedbackAnchor"
+                Grid.Row="0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Width="1"
+                Height="1"
+                Margin="0,24,24,0"
+                Opacity="0.01" />
+
+        <TeachingTip x:Name="ActionFeedbackTip"
+                     IsOpen="False"
+                     PreferredPlacement="Bottom"
+                     PlacementMargin="12"
+                     CloseButtonContent="知道了" />
 
         <ContentDialog x:Name="CodePreviewDialog"
                        Title="代码预览"

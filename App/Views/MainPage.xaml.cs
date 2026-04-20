@@ -43,7 +43,6 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         InitializeComponent();
-        AttachCropButtonInteractionHandlers();
         Loaded += MainPage_Loaded;
 
         _adbService = new Infrastructure.Adb.AdbServiceImpl();
@@ -130,15 +129,20 @@ public sealed partial class MainPage : Page
             _ => StatusTone.Info
         };
 
-        SetStatus(e.Message, tone);
+        if (tone == StatusTone.Info)
+        {
+            SetStatus(e.Message, tone);
+            return;
+        }
+
+        ShowActionTip(e.Message, tone);
     }
 
     private async void CaptureButton_Click(object sender, RoutedEventArgs e)
     {
         if (_currentDevice == null)
         {
-            SetStatus("请先选择设备", StatusTone.Warning);
-            await ShowErrorAsync("请先选择设备");
+            ShowActionTip("请先选择设备", StatusTone.Warning, CaptureButton, "无法截图");
             return;
         }
 
@@ -153,12 +157,11 @@ public sealed partial class MainPage : Page
             _templateFilePath = null;
             _screenshotFilePath = null;
 
-            SetStatus("截图完成", StatusTone.Success);
+            ShowActionTip("截图完成", StatusTone.Success, CaptureButton);
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync($"截图失败：{ex.Message}");
-            SetStatus("截图失败", StatusTone.Error);
+            ShowActionTip($"截图失败：{ex.Message}", StatusTone.Error, CaptureButton, "截图失败");
         }
     }
 
@@ -171,14 +174,13 @@ public sealed partial class MainPage : Page
 
         if (_currentDevice == null)
         {
-            SetStatus("请先选择设备", StatusTone.Warning);
-            await ShowErrorAsync("请先选择设备");
+            ShowActionTip("请先选择设备", StatusTone.Warning, DumpUiStageButton, "无法拉取 UI 树");
             return;
         }
 
         if (!_hasScreenshot)
         {
-            SetStatus("请先准备当前截图", StatusTone.Warning);
+            ShowActionTip("请先准备当前截图", StatusTone.Warning, DumpUiStageButton, "无法拉取 UI 树");
             return;
         }
 
@@ -200,7 +202,7 @@ public sealed partial class MainPage : Page
                 _uiDisplayedNodes = 0;
                 Canvas.SetWidgetNodes([]);
                 RebuildUiNodeTree();
-                SetStatus("UI 树解析失败", StatusTone.Error);
+                ShowActionTip("UI 树解析失败", StatusTone.Error, DumpUiStageButton, "拉取失败");
                 return;
             }
 
@@ -218,13 +220,12 @@ public sealed partial class MainPage : Page
             Canvas.SetSelectedWidget(null);
             RebuildUiNodeTree();
 
-            SetStatus($"UI 树拉取完成，共 {nodes.Count} 个控件", StatusTone.Success);
+            ShowActionTip($"UI 树拉取完成，共 {nodes.Count} 个控件", StatusTone.Success, DumpUiStageButton);
         }
         catch (Exception ex)
         {
             Services.LogService.Instance.Log($"[DumpUI] 异常: {ex.Message}");
-            await ShowErrorAsync($"拉取 UI 树失败：{ex.Message}");
-            SetStatus("拉取 UI 树失败", StatusTone.Error);
+            ShowActionTip($"拉取 UI 树失败：{ex.Message}", StatusTone.Error, DumpUiStageButton, "拉取失败");
         }
         finally
         {
@@ -234,43 +235,41 @@ public sealed partial class MainPage : Page
         }
     }
 
-    private void StartCropButton_Click(object sender, RoutedEventArgs e)
+    private void EnterCropButton_Click(object sender, RoutedEventArgs e)
     {
         if (!_hasScreenshot)
         {
-            SetStatus("请先截图或载入本地图片", StatusTone.Warning);
+            ShowActionTip("请先截图或载入本地图片", StatusTone.Warning, EnterCropButton, "无法进入裁剪");
             return;
         }
 
         if (_isFitToWindowMode)
         {
-            SetStatus("裁剪模式仅在 1:1 视图下可用", StatusTone.Warning);
+            ShowActionTip("裁剪模式仅在 1:1 视图下可用", StatusTone.Warning, EnterCropButton, "无法进入裁剪");
             return;
         }
 
-        _isCroppingMode = !_isCroppingMode;
-
-        if (_isCroppingMode)
+        if (!Canvas.EnableCroppingMode())
         {
-            if (!Canvas.EnableCroppingMode())
-            {
-                _isCroppingMode = false;
-                ApplyCropButtonVisualState();
-                SetStatus("裁剪模式启用失败，请确保处于 1:1 模式", StatusTone.Warning);
-                return;
-            }
-
+            _isCroppingMode = false;
             ApplyCropButtonVisualState();
-            SetStatus("裁剪模式已启用，可拖拽创建区域", StatusTone.Info);
-        }
-        else
-        {
-            Canvas.DisableCroppingMode();
-            ApplyCropButtonVisualState();
-            SetStatus("裁剪模式已禁用", StatusTone.Info);
+            ShowActionTip("裁剪模式启用失败，请确保处于 1:1 模式", StatusTone.Warning, EnterCropButton, "无法进入裁剪");
+            return;
         }
 
+        _isCroppingMode = true;
+        ApplyCropButtonVisualState();
         UpdateButtonStates();
+        ShowActionTip("裁剪模式已启用，可拖拽创建区域", StatusTone.Success, ExitCropButton, "已进入裁剪");
+    }
+
+    private void ExitCropButton_Click(object sender, RoutedEventArgs e)
+    {
+        Canvas.DisableCroppingMode();
+        _isCroppingMode = false;
+        ApplyCropButtonVisualState();
+        UpdateButtonStates();
+        ShowActionTip("裁剪模式已禁用", StatusTone.Info, EnterCropButton, "已退出裁剪");
     }
 
     private async void BrowseTemplateButton_Click(object sender, RoutedEventArgs e)
@@ -285,7 +284,7 @@ public sealed partial class MainPage : Page
         _templateFilePath = file.Path;
         UpdateSourceSummaries();
         UpdateButtonStates();
-        SetStatus($"已选择模板：{file.Name}", StatusTone.Info);
+        ShowActionTip($"已选择模板：{file.Name}", StatusTone.Success, TemplateBrowseButton, "模板已更新");
     }
 
     private async void BrowseScreenshotButton_Click(object sender, RoutedEventArgs e)
@@ -300,7 +299,7 @@ public sealed partial class MainPage : Page
         _screenshotFilePath = file.Path;
         UpdateSourceSummaries();
         UpdateButtonStates();
-        SetStatus($"已选择测试截图：{file.Name}", StatusTone.Info);
+        ShowActionTip($"已选择测试截图：{file.Name}", StatusTone.Success, ScreenshotBrowseButton, "截图源已更新");
     }
 
     private void TemplateSource_Changed(object sender, RoutedEventArgs e)
@@ -339,7 +338,7 @@ public sealed partial class MainPage : Page
 
         _saveFolderPath = folder.Path;
         UpdateSaveFolderDisplay();
-        SetStatus("保存位置已更改", StatusTone.Success);
+        ShowActionTip("保存位置已更改", StatusTone.Success, SaveTemplateButton, "目录已更新");
     }
 
     private void UpdateSaveFolderDisplay()

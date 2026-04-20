@@ -15,8 +15,7 @@ public sealed partial class MainPage
     {
         if (_currentCropRegion == null)
         {
-            SetStatus("请先创建裁剪区域", StatusTone.Warning);
-            await ShowErrorAsync("请先创建裁剪区域");
+            ShowActionTip("请先创建裁剪区域", StatusTone.Warning, SaveTemplateButton, "无法保存");
             return;
         }
 
@@ -49,12 +48,11 @@ public sealed partial class MainPage
             Services.LogService.Instance.Log($"[保存] 模板: {templatePath}");
             Services.LogService.Instance.Log($"[保存] 代码: {codePath}");
             Services.LogService.Instance.Log($"[保存] 当前代码模板: {selectedItem.Title}");
-            SetStatus($"模板与代码已保存（{selectedItem.Title}）", StatusTone.Success);
+            ShowActionTip($"模板与代码已保存（{selectedItem.Title}）", StatusTone.Success, SaveTemplateButton, "保存成功");
         }
         catch (Exception ex)
         {
-            await ShowErrorAsync($"保存失败：{ex.Message}");
-            SetStatus("保存失败", StatusTone.Error);
+            ShowActionTip($"保存失败：{ex.Message}", StatusTone.Error, SaveTemplateButton, "保存失败");
         }
     }
 
@@ -68,18 +66,18 @@ public sealed partial class MainPage
         {
             new CodePreviewTemplateItem(
                 "封装版（gist-ready）",
-                "单文件最小可用封装版，包含 regionRef、等比缩放与 matchFeatures 兜底，并可直接打开 GitHub Gist。",
+                "封装版短调用示例；完整 helper 实现请点上方 GitHub Gist。",
                 GenerateImageModeCodeByTemplate(ImageCodeTemplateKind.ReferenceSingleFile, templatePath, regionRef, cropRegion, threshold),
                 ImageCodeTemplateKind.ReferenceSingleFile,
                 ReferenceSingleFileGistUrl),
             new CodePreviewTemplateItem(
                 "原生 matchTemplate",
-                "纯 AutoJS 原生 images.matchTemplate 路径，保留 regionRef 与等比缩放重试，不依赖任何项目封装。",
+                "原生 matchTemplate 3-5 行调用示例，只展示怎么调用。",
                 GenerateImageModeCodeByTemplate(ImageCodeTemplateKind.MatchTemplateNative, templatePath, regionRef, cropRegion, threshold),
                 ImageCodeTemplateKind.MatchTemplateNative),
             new CodePreviewTemplateItem(
                 "原生 matchFeature",
-                "纯 AutoJS 原生 detectAndComputeFeatures / matchFeatures 路径，适合作为特征匹配兜底脚本。",
+                "原生 matchFeature 3-5 行调用示例，只展示怎么调用。",
                 GenerateImageModeCodeByTemplate(ImageCodeTemplateKind.MatchFeatureNative, templatePath, regionRef, cropRegion, threshold),
                 ImageCodeTemplateKind.MatchFeatureNative)
         };

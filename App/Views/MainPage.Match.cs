@@ -10,10 +10,11 @@ public sealed partial class MainPage
 {
     private async void TestMatchButton_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
+        var target = sender as Microsoft.UI.Xaml.FrameworkElement;
         try
         {
-            var templateBytes = await ResolveTemplateBytesAsync();
-            var screenshotBytes = await ResolveScreenshotBytesAsync();
+            var templateBytes = await ResolveTemplateBytesAsync(target);
+            var screenshotBytes = await ResolveScreenshotBytesAsync(target);
 
             if (templateBytes == null || screenshotBytes == null)
             {
@@ -42,40 +43,41 @@ public sealed partial class MainPage
 
             if (matchResult == null)
             {
-                SetStatus("匹配执行失败，未返回结果", StatusTone.Error);
+                ShowActionTip("匹配执行失败，未返回结果", StatusTone.Error, target, "执行失败");
                 return;
             }
 
-            SetStatus(
+            ShowActionTip(
                 matchResult.IsMatch
                     ? $"匹配成功：({matchResult.ClickX}, {matchResult.ClickY})"
                     : $"未达到阈值，最佳置信度 {matchResult.Confidence:F3}",
-                matchResult.IsMatch ? StatusTone.Success : StatusTone.Warning);
+                matchResult.IsMatch ? StatusTone.Success : StatusTone.Warning,
+                target,
+                matchResult.IsMatch ? "匹配成功" : "匹配未命中");
         }
         catch (Exception ex)
         {
             MatchSummaryText.Text = "匹配：失败";
             Services.LogService.Instance.Log($"[Match] 执行失败: {ex.Message}");
             Canvas.SetMatchResults([]);
-            await ShowErrorAsync($"匹配测试失败：{ex.Message}");
-            SetStatus("匹配测试失败", StatusTone.Error);
+            ShowActionTip($"匹配测试失败：{ex.Message}", StatusTone.Error, target, "执行失败");
         }
     }
 
-    private async Task<(byte[] Bytes, string Label)?> ResolveTemplateBytesAsync()
+    private async Task<(byte[] Bytes, string Label)?> ResolveTemplateBytesAsync(Microsoft.UI.Xaml.FrameworkElement? target)
     {
         if (TemplateSourceCrop.IsChecked == true)
         {
             if (_currentCropRegion == null)
             {
-                SetStatus("请先在当前画布中创建裁剪区域", StatusTone.Warning);
+                ShowActionTip("请先在当前画布中创建裁剪区域", StatusTone.Warning, target, "无法执行测试");
                 return null;
             }
 
             var screenshotBytes = Canvas.GetCurrentImageBytes();
             if (screenshotBytes == null)
             {
-                SetStatus("当前画布没有可用图像，无法裁剪模板", StatusTone.Warning);
+                ShowActionTip("当前画布没有可用图像，无法裁剪模板", StatusTone.Warning, target, "无法执行测试");
                 return null;
             }
 
@@ -91,28 +93,28 @@ public sealed partial class MainPage
 
         if (string.IsNullOrWhiteSpace(_templateFilePath) || !File.Exists(_templateFilePath))
         {
-            SetStatus("请选择模板文件", StatusTone.Warning);
+            ShowActionTip("请选择模板文件", StatusTone.Warning, target, "无法执行测试");
             return null;
         }
 
         var templateBytes = await File.ReadAllBytesAsync(_templateFilePath);
         if (!_openCvMatchService.ValidateTemplate(templateBytes))
         {
-            SetStatus("模板文件无效，无法执行匹配", StatusTone.Error);
+            ShowActionTip("模板文件无效，无法执行匹配", StatusTone.Error, target, "无法执行测试");
             return null;
         }
 
         return (templateBytes, _templateFilePath);
     }
 
-    private async Task<(byte[] Bytes, int Width, int Height, bool IsExternalFile, string Label)?> ResolveScreenshotBytesAsync()
+    private async Task<(byte[] Bytes, int Width, int Height, bool IsExternalFile, string Label)?> ResolveScreenshotBytesAsync(Microsoft.UI.Xaml.FrameworkElement? target)
     {
         if (ScreenshotSourceCurrent.IsChecked == true)
         {
             var currentBytes = Canvas.GetCurrentImageBytes();
             if (currentBytes == null)
             {
-                SetStatus("当前画布没有可用截图", StatusTone.Warning);
+                ShowActionTip("当前画布没有可用截图", StatusTone.Warning, target, "无法执行测试");
                 return null;
             }
 
@@ -122,7 +124,7 @@ public sealed partial class MainPage
 
         if (string.IsNullOrWhiteSpace(_screenshotFilePath) || !File.Exists(_screenshotFilePath))
         {
-            SetStatus("请选择测试截图文件", StatusTone.Warning);
+            ShowActionTip("请选择测试截图文件", StatusTone.Warning, target, "无法执行测试");
             return null;
         }
 
