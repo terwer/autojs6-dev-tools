@@ -16,7 +16,6 @@
             <Grid ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
@@ -30,18 +29,8 @@
                     </StackPanel>
                 </Button>
 
-                <Button x:Name="DiscoverButton"
-                        Grid.Column="1"
-                        Click="DiscoverButton_Click"
-                        Style="{StaticResource WorkbenchSecondaryButtonStyle}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE721;" />
-                        <TextBlock Text="扫描" />
-                    </StackPanel>
-                </Button>
-
                 <Button x:Name="WirelessButton"
-                        Grid.Column="2"
+                        Grid.Column="1"
                         HorizontalAlignment="Right"
                         Click="WirelessButton_Click"
                         Style="{StaticResource WorkbenchSecondaryButtonStyle}">

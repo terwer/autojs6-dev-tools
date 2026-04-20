@@ -7,7 +7,6 @@ using Core.Models;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Formats.Png;
-using Zeroconf;
 
 namespace Infrastructure.Adb;
 
@@ -177,83 +176,6 @@ public class AdbServiceImpl : IAdbService
         {
             throw new InvalidOperationException($"配对设备失败：{ex.Message}", ex);
         }
-    }
-
-    /// <summary>
-    /// 通过 mDNS 自动发现局域网内的 ADB 设备
-    /// </summary>
-    public async Task<List<(string DeviceName, string Address)>> DiscoverDevicesAsync(int timeoutSeconds = 5, CancellationToken cancellationToken = default)
-    {
-        var devices = new List<(string DeviceName, string Address)>();
-
-        try
-        {
-            // Android 无线调试可能使用多种服务类型，尝试所有可能的类型
-            var serviceTypes = new[]
-            {
-                "_adb-tls-connect._tcp.local.",  // Android 11+ 无线调试
-                "_adb._tcp.local.",              // 旧版 ADB
-                "_adb-tls-pairing._tcp.local."   // 配对服务
-            };
-
-            foreach (var serviceType in serviceTypes)
-            {
-                System.Diagnostics.Debug.WriteLine($"[mDNS] 尝试解析服务: {serviceType}");
-
-                try
-                {
-                    var responses = await ZeroconfResolver.ResolveAsync(serviceType, TimeSpan.FromSeconds(timeoutSeconds), cancellationToken: cancellationToken);
-
-                    System.Diagnostics.Debug.WriteLine($"[mDNS] {serviceType} 收到 {responses.Count()} 个响应");
-
-                    foreach (var response in responses)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"[mDNS] 响应: {response.Id}, DisplayName: {response.DisplayName}, IP: {response.IPAddress}");
-
-                        foreach (var service in response.Services)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"[mDNS] 服务: {service.Key}, Port: {service.Value.Port}");
-
-                            if (service.Value.Port > 0)
-                            {
-                                // 获取设备名称
-                                string deviceName = response.DisplayName;
-                                if (string.IsNullOrEmpty(deviceName))
-                                {
-                                    deviceName = response.Id.Replace(".local.", "");
-                                }
-
-                                // 获取 IP 地址
-                                string ipAddress = response.IPAddress;
-                                int port = service.Value.Port;
-
-                                var deviceKey = $"{ipAddress}:{port}";
-
-                                // 避免重复添加
-                                if (!devices.Any(d => d.Address == deviceKey))
-                                {
-                                    System.Diagnostics.Debug.WriteLine($"[mDNS] 添加设备: {deviceName} ({deviceKey})");
-                                    devices.Add((deviceName, deviceKey));
-                                }
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"[mDNS] {serviceType} 解析失败: {ex.Message}");
-                }
-            }
-
-            System.Diagnostics.Debug.WriteLine($"[mDNS] 最终发现 {devices.Count} 个设备");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"[mDNS] 发现异常: {ex.GetType().Name} - {ex.Message}");
-            System.Diagnostics.Debug.WriteLine($"[mDNS] 堆栈: {ex.StackTrace}");
-        }
-
-        return devices;
     }
 
     private DeviceData? FindDeviceBySerial(string serial)

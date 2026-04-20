@@ -37,7 +37,7 @@ public sealed partial class MainPage
             var threshold = ThresholdSlider?.Value ?? 0.84;
             var previewItems = GenerateImageModeCodePreviewItems(templatePath, regionRef, _currentCropRegion, threshold);
             var selectedItem = SelectImageCodePreviewItemForSave(previewItems);
-            var codePath = Path.ChangeExtension(templatePath, ".js");
+            var codePath = Path.Combine(_saveFolderPath, $"{templateName}.js");
 
             await File.WriteAllTextAsync(codePath, selectedItem.Code, Encoding.UTF8);
 

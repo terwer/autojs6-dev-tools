@@ -9,6 +9,7 @@ public sealed partial class MainPage
     {
         var templateName = Path.GetFileNameWithoutExtension(templatePath);
         var templateFileName = NormalizeJsPath(Path.GetFileName(templatePath));
+        var templateReferencePath = BuildGeneratedTemplateReferencePath(templatePath);
         var orientation = GetGeneratedOrientation(cropRegion);
         var acceptThreshold = FormatJsNumber(ClampGeneratedThreshold(threshold));
         var regionRefText = ToJsArray(regionRef);
@@ -20,7 +21,7 @@ public sealed partial class MainPage
 // 原始区域: [{{cropRegion.X}}, {{cropRegion.Y}}, {{cropRegion.Width}}, {{cropRegion.Height}}]
 // regionRef: {{regionRefText}}
 // 这个版本只使用 AutoJS 原生 detectAndComputeFeatures / matchFeatures。
-var templatePath = files.path("./{{templateFileName}}");
+var templatePath = files.path("{{templateReferencePath}}");
 var preferLandscape = {{ToJsBoolean(orientation == "landscape")}};
 var orientation = "{{orientation}}";
 var regionRef = {{regionRefText}};

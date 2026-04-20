@@ -43,6 +43,7 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         InitializeComponent();
+        AttachCropButtonInteractionHandlers();
         Loaded += MainPage_Loaded;
 
         _adbService = new Infrastructure.Adb.AdbServiceImpl();
@@ -50,6 +51,7 @@ public sealed partial class MainPage : Page
         _imageProcessor = new ImageProcessor();
 
         DeviceList.DeviceSelected += DeviceList_DeviceSelected;
+        DeviceList.RefreshStatusChanged += DeviceList_RefreshStatusChanged;
         Services.LogService.Instance.LogMessageReceived += OnLogMessageReceived;
 
         Canvas.ScaleChanged += Canvas_ScaleChanged;
@@ -116,6 +118,19 @@ public sealed partial class MainPage : Page
         UpdateCurrentDeviceSummary();
         UpdateButtonStates();
         SetStatus($"已连接设备：{device.Serial}", StatusTone.Success);
+    }
+
+    private void DeviceList_RefreshStatusChanged(object? sender, AdbDeviceListView.DeviceRefreshStatusChangedEventArgs e)
+    {
+        var tone = e.Tone switch
+        {
+            AdbDeviceListView.RefreshFeedbackTone.Success => StatusTone.Success,
+            AdbDeviceListView.RefreshFeedbackTone.Warning => StatusTone.Warning,
+            AdbDeviceListView.RefreshFeedbackTone.Error => StatusTone.Error,
+            _ => StatusTone.Info
+        };
+
+        SetStatus(e.Message, tone);
     }
 
     private async void CaptureButton_Click(object sender, RoutedEventArgs e)
@@ -356,7 +371,7 @@ public sealed partial class MainPage : Page
     private void ClearLogButton_Click(object sender, RoutedEventArgs e)
     {
         DebugLogText.Text = string.Empty;
-        SetStatus("调试日志已清空", StatusTone.Info);
+        SetStatus("日志已清空", StatusTone.Info);
     }
 
     private void SelectAllLogButton_Click(object sender, RoutedEventArgs e)

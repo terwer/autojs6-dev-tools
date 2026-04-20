@@ -69,15 +69,6 @@
                             <TextBlock Text="载入图片" />
                         </StackPanel>
                     </Button>
-
-                    <Button x:Name="ViewCodeTopButton"
-                            Click="ViewCodeButton_Click"
-                            Style="{StaticResource WorkbenchSecondaryButtonStyle}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <SymbolIcon Symbol="Page2" />
-                            <TextBlock Text="查看代码" />
-                        </StackPanel>
-                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
@@ -133,7 +124,7 @@
                                     Visibility="Collapsed">
                             <Button x:Name="DumpUiStageButton"
                                     Click="DumpUiButton_Click"
-                                    Style="{StaticResource WorkbenchSecondaryButtonStyle}">
+                                    Style="{StaticResource WorkbenchPrimaryButtonStyle}">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <SymbolIcon Symbol="ViewAll" />
                                     <TextBlock Text="拉取 UI 树" />
@@ -420,16 +411,7 @@
                                 </Grid.RowDefinitions>
 
                                 <Grid ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="节点树" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
-                                    <Button x:Name="DumpUiInspectorButton"
-                                            Grid.Column="1"
-                                            Content="拉取 UI 树"
-                                            Click="DumpUiButton_Click"
-                                            Style="{StaticResource WorkbenchPrimaryButtonStyle}" />
+                                    <TextBlock Text="节点树" Style="{StaticResource WorkbenchSectionTitleTextStyle}" />
                                 </Grid>
 
                                 <StackPanel Grid.Row="1" Spacing="6">
@@ -492,7 +474,7 @@
                                             Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
                                     <Button x:Name="CopySelectorButton"
                                             Grid.Column="1"
-                                            Content="复制 UiSelector"
+                                            Content="复制选择"
                                             Click="CopySelectorButton_Click"
                                             Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
                                     <Button x:Name="PreviewWidgetSnippetButton"
@@ -546,7 +528,7 @@
                            Style="{StaticResource WorkbenchCaptionTextStyle}" />
                 <Button x:Name="ShowLogButton"
                         Grid.Column="4"
-                        Content="调试日志"
+                        Content="查看日志"
                         Click="ShowLogDockButton_Click"
                         Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
             </Grid>

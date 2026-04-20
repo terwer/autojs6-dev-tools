@@ -53,11 +53,4 @@ public interface IAdbService
     /// <returns>配对结果</returns>
     Task<string> PairDeviceAsync(string address, string pairingCode, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// 通过 mDNS 自动发现局域网内的 ADB 设备
-    /// </summary>
-    /// <param name="timeoutSeconds">扫描超时时间（秒）</param>
-    /// <param name="cancellationToken">取消令牌</param>
-    /// <returns>发现的设备列表（设备名、IP、端口）</returns>
-    Task<List<(string DeviceName, string Address)>> DiscoverDevicesAsync(int timeoutSeconds = 5, CancellationToken cancellationToken = default);
 }

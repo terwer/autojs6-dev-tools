@@ -1,6 +1,7 @@
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.ApplicationModel.DataTransfer;
 
@@ -8,6 +9,29 @@ namespace App.Views;
 
 public sealed partial class MainPage
 {
+    private bool _isCropDangerPointerOver;
+    private bool _isCropDangerPressed;
+
+    private void AttachCropButtonInteractionHandlers()
+    {
+        if (StartCropButton == null)
+        {
+            return;
+        }
+
+        StartCropButton.PointerEntered -= StartCropButton_PointerEntered;
+        StartCropButton.PointerExited -= StartCropButton_PointerExited;
+        StartCropButton.PointerPressed -= StartCropButton_PointerPressed;
+        StartCropButton.PointerReleased -= StartCropButton_PointerReleased;
+        StartCropButton.PointerCaptureLost -= StartCropButton_PointerCaptureLost;
+
+        StartCropButton.PointerEntered += StartCropButton_PointerEntered;
+        StartCropButton.PointerExited += StartCropButton_PointerExited;
+        StartCropButton.PointerPressed += StartCropButton_PointerPressed;
+        StartCropButton.PointerReleased += StartCropButton_PointerReleased;
+        StartCropButton.PointerCaptureLost += StartCropButton_PointerCaptureLost;
+    }
+
     private void CopyToClipboard(string text)
     {
         var dataPackage = new DataPackage();
@@ -26,6 +50,8 @@ public sealed partial class MainPage
         StartCropButton.Style = (Style)Application.Current.Resources[
             isDanger ? "WorkbenchDangerButtonStyle" : "WorkbenchPrimaryButtonStyle"];
         StartCropButton.ClearValue(Control.ForegroundProperty);
+        StartCropButton.ClearValue(Control.BackgroundProperty);
+        StartCropButton.ClearValue(Control.BorderBrushProperty);
 
         var content = BuildButtonContent(
             isDanger ? "\uE10A" : "\uE16E",
@@ -33,9 +59,16 @@ public sealed partial class MainPage
 
         if (isDanger)
         {
-            var foreground = new SolidColorBrush(Colors.White);
+            var (foreground, background, borderBrush) = ResolveCropDangerVisuals();
             StartCropButton.Foreground = foreground;
+            StartCropButton.Background = background;
+            StartCropButton.BorderBrush = borderBrush;
             ApplyButtonContentForeground(content, foreground);
+        }
+        else
+        {
+            _isCropDangerPointerOver = false;
+            _isCropDangerPressed = false;
         }
 
         StartCropButton.Content = content;
@@ -49,13 +82,57 @@ public sealed partial class MainPage
                 ? BuildLoadingButtonContent("拉取中...")
                 : BuildButtonContent(Symbol.ViewAll, "拉取 UI 树");
         }
+    }
 
-        if (DumpUiInspectorButton != null)
+    private (Brush Foreground, Brush Background, Brush BorderBrush) ResolveCropDangerVisuals()
+    {
+        if (StartCropButton?.IsEnabled != true)
         {
-            DumpUiInspectorButton.Content = isLoading
-                ? BuildLoadingButtonContent("拉取中...")
-                : BuildButtonContent(Symbol.ViewAll, "拉取 UI 树");
+            return (
+                new SolidColorBrush(Windows.UI.Color.FromArgb(204, 255, 255, 255)),
+                new SolidColorBrush(Windows.UI.Color.FromArgb(102, 209, 67, 67)),
+                new SolidColorBrush(Windows.UI.Color.FromArgb(102, 209, 67, 67)));
         }
+
+        var color = _isCropDangerPressed
+            ? Windows.UI.Color.FromArgb(255, 169, 49, 49)
+            : _isCropDangerPointerOver
+                ? Windows.UI.Color.FromArgb(255, 197, 58, 58)
+                : Windows.UI.Color.FromArgb(255, 209, 67, 67);
+
+        var brush = new SolidColorBrush(color);
+        return (new SolidColorBrush(Colors.White), brush, brush);
+    }
+
+    private void StartCropButton_PointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        _isCropDangerPointerOver = true;
+        ApplyCropButtonVisualState();
+    }
+
+    private void StartCropButton_PointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        _isCropDangerPointerOver = false;
+        _isCropDangerPressed = false;
+        ApplyCropButtonVisualState();
+    }
+
+    private void StartCropButton_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        _isCropDangerPressed = true;
+        ApplyCropButtonVisualState();
+    }
+
+    private void StartCropButton_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        _isCropDangerPressed = false;
+        ApplyCropButtonVisualState();
+    }
+
+    private void StartCropButton_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+    {
+        _isCropDangerPressed = false;
+        ApplyCropButtonVisualState();
     }
 
     private static void ApplyButtonContentForeground(StackPanel panel, Brush foreground)

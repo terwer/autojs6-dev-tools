@@ -92,11 +92,9 @@ public sealed partial class MainPage
     {
         if (CaptureButton == null ||
             LoadLocalTopButton == null ||
-            ViewCodeTopButton == null ||
             FitToWindowButton == null ||
             ResetViewButton == null ||
             StartCropButton == null ||
-            DumpUiInspectorButton == null ||
             DumpUiStageButton == null ||
             WidgetBoundsCheckBox == null ||
             TestMatchButton == null ||
@@ -127,7 +125,6 @@ public sealed partial class MainPage
 
         CaptureButton.IsEnabled = _currentDevice != null;
         LoadLocalTopButton.IsEnabled = true;
-        ViewCodeTopButton.IsEnabled = hasGeneratedCode;
 
         FitToWindowButton.IsEnabled = hasScreenshot;
         ResetViewButton.IsEnabled = hasScreenshot;
@@ -147,17 +144,17 @@ public sealed partial class MainPage
         PreviewWidgetSnippetButton.IsEnabled = hasWidget;
         ShowLogButton.IsEnabled = true;
 
-        DumpUiInspectorButton.IsEnabled = canDumpUi && !_isDumpUiLoading;
         DumpUiStageButton.IsEnabled = canDumpUi && !_isDumpUiLoading;
         SetDumpUiLoading(_isDumpUiLoading);
         ApplyCropButtonVisualState();
 
-        ToolTipService.SetToolTip(DumpUiInspectorButton, canDumpUi ? null : "请先选择设备并准备一张当前截图");
         ToolTipService.SetToolTip(DumpUiStageButton, canDumpUi ? null : "请先选择设备并准备一张当前截图");
         ToolTipService.SetToolTip(FitToWindowButton, hasScreenshot ? null : "请先截图或载入本地图片");
         ToolTipService.SetToolTip(ResetViewButton, hasScreenshot ? null : "请先截图或载入本地图片");
-        ToolTipService.SetToolTip(ViewCodeTopButton, hasGeneratedCode ? null : "请先执行保存或生成代码");
         ToolTipService.SetToolTip(ViewCodeRightButton, hasGeneratedCode ? null : "请先执行保存或生成代码");
+        ToolTipService.SetToolTip(CopyCoordinatesButton, hasWidget ? null : "请先在画布或节点树中选择控件");
+        ToolTipService.SetToolTip(CopySelectorButton, hasWidget ? null : "请先在画布或节点树中选择控件");
+        ToolTipService.SetToolTip(PreviewWidgetSnippetButton, hasWidget ? null : "请先在画布或节点树中选择控件");
     }
 
     private void UpdateStagePresentation()
@@ -433,7 +430,7 @@ public sealed partial class MainPage
         }
 
         CopyToClipboard(selector);
-        SetStatus("UiSelector 已复制到剪贴板", StatusTone.Success);
+        SetStatus("选择器已复制到剪贴板", StatusTone.Success);
     }
 
     private async Task LoadImageIntoCanvasAsync(byte[] imageBytes, int width, int height, bool fitToWindow)

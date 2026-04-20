@@ -159,6 +159,7 @@ public sealed partial class MainPage
         PropertyPanel?.SetWidget(widget);
         Canvas.SetSelectedWidget(widget);
         UpdateSelectedWidgetSummary();
+        UpdateButtonStates();
 
         if (syncTreeSelection)
         {

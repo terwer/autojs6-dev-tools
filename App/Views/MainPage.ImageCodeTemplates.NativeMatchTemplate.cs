@@ -9,6 +9,7 @@ public sealed partial class MainPage
     {
         var templateName = Path.GetFileNameWithoutExtension(templatePath);
         var templateFileName = NormalizeJsPath(Path.GetFileName(templatePath));
+        var templateReferencePath = BuildGeneratedTemplateReferencePath(templatePath);
         var orientation = GetGeneratedOrientation(cropRegion);
         var acceptThreshold = FormatJsNumber(ClampGeneratedThreshold(threshold));
         var matchThreshold = FormatJsNumber(0.25);
@@ -20,8 +21,8 @@ public sealed partial class MainPage
 // 模板: {{templateFileName}}
 // 原始区域: [{{cropRegion.X}}, {{cropRegion.Y}}, {{cropRegion.Width}}, {{cropRegion.Height}}]
 // regionRef: {{regionRefText}}
-// 模板默认与当前脚本放在同一目录；若你改成 assets/，请同步修改 templatePath。
-var templatePath = files.path("./{{templateFileName}}");
+// 模板默认位于脚本同级 assets 目录。
+var templatePath = files.path("{{templateReferencePath}}");
 var preferLandscape = {{ToJsBoolean(orientation == "landscape")}};
 var orientation = "{{orientation}}";
 var regionRef = {{regionRefText}};

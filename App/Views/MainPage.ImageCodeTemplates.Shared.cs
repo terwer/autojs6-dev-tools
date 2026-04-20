@@ -51,6 +51,11 @@ public sealed partial class MainPage
         return $"[{string.Join(", ", values)}]";
     }
 
+    private static string BuildGeneratedTemplateReferencePath(string templatePath)
+    {
+        return $"./assets/{NormalizeJsPath(Path.GetFileName(templatePath))}";
+    }
+
     private static string NormalizeJsPath(string path)
     {
         return path.Replace('\\', '/');

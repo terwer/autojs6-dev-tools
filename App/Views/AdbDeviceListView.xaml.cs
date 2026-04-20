@@ -15,62 +15,45 @@ namespace App.Views;
 /// </summary>
 public sealed partial class AdbDeviceListView : UserControl
 {
+    public enum RefreshFeedbackTone
+    {
+        Info,
+        Success,
+        Warning,
+        Error
+    }
+
+    public sealed class DeviceRefreshStatusChangedEventArgs : EventArgs
+    {
+        public DeviceRefreshStatusChangedEventArgs(string message, RefreshFeedbackTone tone)
+        {
+            Message = message;
+            Tone = tone;
+        }
+
+        public string Message { get; }
+
+        public RefreshFeedbackTone Tone { get; }
+    }
+
     private readonly IAdbService _adbService;
     private readonly List<AdbDevice> _devices = [];
     private AdbDevice? _selectedDevice;
 
     public event EventHandler<AdbDevice>? DeviceSelected;
+    public event EventHandler<DeviceRefreshStatusChangedEventArgs>? RefreshStatusChanged;
 
     public AdbDeviceListView()
     {
         InitializeComponent();
 
         _adbService = new Infrastructure.Adb.AdbServiceImpl();
-        _ = RefreshDevicesAsync();
+        _ = RefreshDevicesAsync(reportStatus: false);
     }
 
     private async void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
-        await RefreshDevicesAsync();
-    }
-
-    private async void DiscoverButton_Click(object sender, RoutedEventArgs e)
-    {
-        Services.LogService.Instance.Log("[mDNS] 开始扫描局域网设备（超时 5 秒）...");
-        DiscoverButton.IsEnabled = false;
-        DiscoverButton.Content = "扫描中...";
-
-        try
-        {
-            var discoveredDevices = await _adbService.DiscoverDevicesAsync(timeoutSeconds: 5);
-            Services.LogService.Instance.Log($"[mDNS] 扫描完成，发现 {discoveredDevices.Count} 个设备");
-
-            await RefreshDevicesAsync();
-
-            foreach (var device in discoveredDevices.Where(device => _devices.All(item => item.Serial != device.Address)))
-            {
-                _devices.Add(new AdbDevice
-                {
-                    Serial = device.Address,
-                    Model = device.DeviceName,
-                    State = "未连接",
-                    ConnectionType = "tcpip",
-                    Product = "无线设备",
-                    TransportId = null
-                });
-            }
-
-            RenderDevices();
-        }
-        catch (Exception ex)
-        {
-            Services.LogService.Instance.Log($"[mDNS] 扫描异常: {ex.Message}");
-        }
-        finally
-        {
-            DiscoverButton.IsEnabled = true;
-            DiscoverButton.Content = "扫描";
-        }
+        await RefreshDevicesAsync(reportStatus: true);
     }
 
     private async void WirelessButton_Click(object sender, RoutedEventArgs e)
@@ -130,7 +113,7 @@ public sealed partial class AdbDeviceListView : UserControl
                 return;
             }
 
-            await RefreshDevicesAsync(address);
+            await RefreshDevicesAsync(address, reportStatus: true);
         }
         catch (Exception ex)
         {
@@ -138,8 +121,15 @@ public sealed partial class AdbDeviceListView : UserControl
         }
     }
 
-    private async Task RefreshDevicesAsync(string? preferredSelectedSerial = null)
+    private async Task RefreshDevicesAsync(string? preferredSelectedSerial = null, bool reportStatus = false)
     {
+        if (reportStatus)
+        {
+            RaiseRefreshStatus("正在刷新设备...", RefreshFeedbackTone.Info);
+        }
+
+        RefreshButton.IsEnabled = false;
+
         try
         {
             var devices = await _adbService.ScanDevicesAsync();
@@ -173,11 +163,34 @@ public sealed partial class AdbDeviceListView : UserControl
                 : _devices.FirstOrDefault(device => device.Serial == selectedSerial);
 
             RenderDevices();
+            Services.LogService.Instance.Log($"[刷新] 刷新完成，共 {_devices.Count} 台在线设备");
+
+            if (reportStatus)
+            {
+                RaiseRefreshStatus(
+                    _devices.Count == 0
+                        ? "未发现在线设备"
+                        : $"设备刷新完成，共 {_devices.Count} 台在线设备",
+                    _devices.Count == 0 ? RefreshFeedbackTone.Warning : RefreshFeedbackTone.Success);
+            }
         }
         catch (Exception ex)
         {
             Services.LogService.Instance.Log($"[刷新] 刷新设备失败：{ex.Message}");
+            if (reportStatus)
+            {
+                RaiseRefreshStatus($"刷新设备失败：{ex.Message}", RefreshFeedbackTone.Error);
+            }
         }
+        finally
+        {
+            RefreshButton.IsEnabled = true;
+        }
+    }
+
+    private void RaiseRefreshStatus(string message, RefreshFeedbackTone tone)
+    {
+        RefreshStatusChanged?.Invoke(this, new DeviceRefreshStatusChangedEventArgs(message, tone));
     }
 
     private void RenderDevices()
