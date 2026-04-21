@@ -32,6 +32,9 @@ bld/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
+# Ignore scripts/release folder as it is necessary for releases workflow
+!scripts/release
+
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

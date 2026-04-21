@@ -119,7 +119,7 @@ Bring screenshot analysis, widget inspection, and AutoJS6 code generation into o
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/autojs6-dev-tools.git
+git clone https://github.com/terwer/autojs6-dev-tools.git
 cd autojs6-dev-tools
 ```
 
@@ -319,6 +319,15 @@ App → Infrastructure → Core ← Infrastructure
 - ✅ Verify 60 FPS rendering performance
 - ✅ Run unit tests
 
+### 🚢 Before Release
+
+- ✅ Run the `manual-release-test` workflow with release upload turned off before merging the release PR
+- ✅ Verify `win-x64` and `win-arm64` both produce ZIP, EXE installer, and MSIX
+- ✅ Smoke test the ZIP or EXE on a clean Windows machine before publishing
+- ✅ Confirm the generated app name, package identity, and publisher are correct
+- ✅ If packaging fails after a release is created, use `manual-release-test` to rebuild and re-upload assets instead of guessing fixes
+- ✅ If a production package is broken, prefer a forward fix and a new patch release over mutating an existing production tag
+
 ---
 
 ## ⚠️ AutoJS6 Code Generation Constraints
@@ -382,6 +391,8 @@ This toolkit is designed to serve AutoJS6 automation projects, particularly:
 
 - **📘 AGENTS.md**: Core design principles and constraints (read first)
 - **📗 openspec/project.md**: Development checklist and verification rules
+- **📙 DEVELOPMENT.md**: Release automation, manual packaging test, recovery, and rollback guide
+- **📕 DEVELOPMENT_zh_CN.md**: Chinese version of the release and recovery guide
 - **📂 openspec/changes/**: OpenSpec change proposals
 
 ---
@@ -404,8 +415,8 @@ This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.t
 ## 💬 Support
 
 - 📖 [Documentation](openspec/)
-- 🐛 [Issue Tracker](https://github.com/yourusername/autojs6-dev-tools/issues)
-- 💬 [Discussions](https://github.com/yourusername/autojs6-dev-tools/discussions)
+- 🐛 [Issue Tracker](https://github.com/terwer/autojs6-dev-tools/issues)
+- 💬 [Discussions](https://github.com/terwer/autojs6-dev-tools/discussions)
 
 ---
 
@@ -432,7 +443,7 @@ If this tool saves you hours of tedious work, consider buying me a coffee! Your 
     <td align="center">
       <img src="https://img.shields.io/badge/爱发电-946CE6?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMEw5LjUgNS41TDE1IDdMOS41IDguNUw4IDE1TDYuNSA4LjVMMSA3TDYuNSA1LjVMOCAwWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+&logoColor=white" alt="爱发电"/><br/>
       <b>爱发电 (afdian)</b><br/>
-      <a href="https://afdian.net/@yourusername">
+      <a href="https://afdian.net/@terwer">
         <img src="https://img.shields.io/badge/Support-爱发电-946CE6?style=for-the-badge" alt="Support on 爱发电"/>
       </a><br/>
       <sub>Monthly sponsorship</sub>

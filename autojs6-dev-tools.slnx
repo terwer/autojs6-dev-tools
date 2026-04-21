@@ -5,8 +5,13 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/docs/">
+    <File Path=".github\workflows\manual-release-test.yml" />
+    <File Path=".github\workflows\release-please.yml" />
     <File Path=".gitignore" />
     <File Path="AGENTS.md" />
+    <File Path="CHANGELOG.md" />
+    <File Path="DEVELOPMENT.md" />
+    <File Path="DEVELOPMENT_zh_CN.md" />
     <File Path="LICENSE.txt" />
     <File Path="README.md" />
     <File Path="README_zh_CN.md" />
