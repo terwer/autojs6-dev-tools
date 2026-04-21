@@ -11,7 +11,7 @@
   <Identity
     Name="space.terwer.autojs6devtools"
     Publisher="CN=terwer"
-    Version="1.0.0.0" />
+    Version="0.0.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="a3aede3f-09b3-4ad1-84a5-4781aff0f8c8" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 

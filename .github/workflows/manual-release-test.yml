@@ -9,7 +9,7 @@ on:
         default: main
         type: string
       version:
-        description: Version shown in the package files and app metadata, for example 1.0.1.
+        description: Version shown in the package files and app metadata, for example 0.0.1.
         required: true
         type: string
       publish_to_release:

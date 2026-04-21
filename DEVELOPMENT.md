@@ -91,8 +91,8 @@ For a repair run, use the already published production tag.
 
 Use a normal semantic version, such as:
 
-- `1.0.1`
-- `1.2.3`
+- `0.0.1`
+- `0.1.0`
 
 #### Whether this run is only for validation or should upload to a Release
 
@@ -187,8 +187,8 @@ The safer response is:
 
 For example:
 
-- `1.0.1` has a problem
-- the fix is released as `1.0.2`
+- `0.0.1` has a problem
+- the fix is released as `0.0.2`
 
 Unless there is a very specific reason, rewriting an already published production tag should not be the first choice.
 
