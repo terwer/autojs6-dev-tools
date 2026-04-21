@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Core.Helpers;
 using Core.Models;
 
 namespace App.Views;
@@ -33,13 +34,27 @@ public sealed partial class MainPage
                 threshold,
                 region);
 
-            await EnsureScreenshotPreviewAsync(screenshotBytes.Value);
-
             var overlayResults = matchResult == null ? [] : new List<MatchResult> { matchResult };
-            Canvas.SetMatchResults(overlayResults);
+
+            if (screenshotBytes.Value.IsExternalFile)
+            {
+                await ShowExternalScreenshotPreviewAsync(
+                    screenshotBytes.Value.Bytes,
+                    screenshotBytes.Value.Width,
+                    screenshotBytes.Value.Height,
+                    screenshotBytes.Value.Label,
+                    overlayResults);
+            }
+            else
+            {
+                Canvas.ToggleCropRegion(true);
+                Canvas.SetMatchResults(overlayResults);
+            }
 
             MatchSummaryText.Text = BuildMatchSummary(matchResult);
-            LogMatchDetails(matchResult, searchScope, region, threshold);
+            UpdateMatchContext(matchResult, templateBytes.Value.SourceKind, screenshotBytes.Value.Width, screenshotBytes.Value.Height);
+            UpdateRegionRefDisplay();
+            LogMatchDetails(matchResult, searchScope, region, threshold, templateBytes.Value.Label, screenshotBytes.Value.Label);
 
             if (matchResult == null)
             {
@@ -47,16 +62,19 @@ public sealed partial class MainPage
                 return;
             }
 
+            var successMessage = screenshotBytes.Value.IsExternalFile
+                ? $"匹配成功：({matchResult.ClickX}, {matchResult.ClickY})，已切换到测试截图，可随时恢复现场"
+                : $"匹配成功：({matchResult.ClickX}, {matchResult.ClickY})";
+
             ShowActionTip(
-                matchResult.IsMatch
-                    ? $"匹配成功：({matchResult.ClickX}, {matchResult.ClickY})"
-                    : $"未达到阈值，最佳置信度 {matchResult.Confidence:F3}",
+                matchResult.IsMatch ? successMessage : $"未达到阈值，最佳置信度 {matchResult.Confidence:F3}",
                 matchResult.IsMatch ? StatusTone.Success : StatusTone.Warning,
                 target,
                 matchResult.IsMatch ? "匹配成功" : "匹配未命中");
         }
         catch (Exception ex)
         {
+            InvalidateSuccessfulMatchContext(clearCanvasResults: true);
             MatchSummaryText.Text = "匹配：失败";
             Services.LogService.Instance.Log($"[Match] 执行失败: {ex.Message}");
             Canvas.SetMatchResults([]);
@@ -64,31 +82,25 @@ public sealed partial class MainPage
         }
     }
 
-    private async Task<(byte[] Bytes, string Label)?> ResolveTemplateBytesAsync(Microsoft.UI.Xaml.FrameworkElement? target)
+    private async Task<(byte[] Bytes, string Label, ImageTemplateSourceKind SourceKind)?> ResolveTemplateBytesAsync(Microsoft.UI.Xaml.FrameworkElement? target)
     {
         if (TemplateSourceCrop.IsChecked == true)
         {
-            if (_currentCropRegion == null)
+            var cropSourceContext = GetActiveCropImageSourceContext();
+            if (cropSourceContext == null)
             {
                 ShowActionTip("请先在当前画布中创建裁剪区域", StatusTone.Warning, target, "无法执行测试");
                 return null;
             }
 
-            var screenshotBytes = Canvas.GetCurrentImageBytes();
-            if (screenshotBytes == null)
-            {
-                ShowActionTip("当前画布没有可用图像，无法裁剪模板", StatusTone.Warning, target, "无法执行测试");
-                return null;
-            }
-
             var croppedBytes = await _imageProcessor.CropAsync(
-                screenshotBytes,
-                _currentCropRegion.X,
-                _currentCropRegion.Y,
-                _currentCropRegion.Width,
-                _currentCropRegion.Height);
+                cropSourceContext.ImageBytes,
+                cropSourceContext.CropRegion.X,
+                cropSourceContext.CropRegion.Y,
+                cropSourceContext.CropRegion.Width,
+                cropSourceContext.CropRegion.Height);
 
-            return (croppedBytes, "当前裁剪");
+            return (croppedBytes, "当前裁剪", ImageTemplateSourceKind.Crop);
         }
 
         if (string.IsNullOrWhiteSpace(_templateFilePath) || !File.Exists(_templateFilePath))
@@ -104,7 +116,7 @@ public sealed partial class MainPage
             return null;
         }
 
-        return (templateBytes, _templateFilePath);
+        return (templateBytes, _templateFilePath, ImageTemplateSourceKind.File);
     }
 
     private async Task<(byte[] Bytes, int Width, int Height, bool IsExternalFile, string Label)?> ResolveScreenshotBytesAsync(Microsoft.UI.Xaml.FrameworkElement? target)
@@ -119,7 +131,7 @@ public sealed partial class MainPage
             }
 
             var (currentWidth, currentHeight) = Canvas.GetCurrentImageSize();
-            return (currentBytes, currentWidth, currentHeight, false, "当前画布");
+            return (currentBytes, currentWidth, currentHeight, false, _currentCanvasSourceSummary);
         }
 
         if (string.IsNullOrWhiteSpace(_screenshotFilePath) || !File.Exists(_screenshotFilePath))
@@ -135,42 +147,42 @@ public sealed partial class MainPage
 
     private CropRegion? BuildMatchSearchRegion(MatchSearchScope searchScope, bool isExternalScreenshot)
     {
-        if (searchScope == MatchSearchScope.FullImage || isExternalScreenshot)
+        if (searchScope == MatchSearchScope.FullImage || isExternalScreenshot || _currentCropRegion == null)
         {
             return null;
         }
 
-        if (_currentCropRegion == null)
-        {
-            return null;
-        }
-
-        var (imageWidth, imageHeight) = Canvas.GetCurrentImageSize();
-        var x = Math.Max(0, _currentCropRegion.X - MatchRegionPadding);
-        var y = Math.Max(0, _currentCropRegion.Y - MatchRegionPadding);
-        var right = Math.Min(imageWidth, _currentCropRegion.X + _currentCropRegion.Width + MatchRegionPadding);
-        var bottom = Math.Min(imageHeight, _currentCropRegion.Y + _currentCropRegion.Height + MatchRegionPadding);
-
-        return new CropRegion
-        {
-            X = x,
-            Y = y,
-            Width = Math.Max(1, right - x),
-            Height = Math.Max(1, bottom - y),
-            OriginalWidth = imageWidth,
-            OriginalHeight = imageHeight
-        };
+        return ImageMatchRegionCalculator.Create(_currentCropRegion, MatchRegionPadding).SearchRegion;
     }
 
-    private async Task EnsureScreenshotPreviewAsync((byte[] Bytes, int Width, int Height, bool IsExternalFile, string Label) screenshot)
+    private void UpdateMatchContext(
+        MatchResult? matchResult,
+        ImageTemplateSourceKind templateSourceKind,
+        int screenshotWidth,
+        int screenshotHeight)
     {
-        if (!screenshot.IsExternalFile)
+        if (matchResult == null || !matchResult.IsMatch)
         {
+            _lastSuccessfulMatchContext = null;
+            UpdateButtonStates();
             return;
         }
 
-        await LoadImageIntoCanvasAsync(screenshot.Bytes, screenshot.Width, screenshot.Height, fitToWindow: true);
-        SetStatus($"已切换到测试截图预览：{Path.GetFileName(screenshot.Label)}", StatusTone.Info);
+        var referenceBounds = CreateReferenceBounds(matchResult, screenshotWidth, screenshotHeight);
+        var regionContext = CreateRegionContext(referenceBounds);
+
+        _lastSuccessfulMatchContext = new SuccessfulImageMatchContext
+        {
+            TemplateSourceKind = templateSourceKind,
+            TemplatePath = templateSourceKind == ImageTemplateSourceKind.File ? _templateFilePath : _savedCropTemplatePath,
+            ReferenceBounds = regionContext.ReferenceBounds,
+            SearchRegion = regionContext.SearchRegion,
+            RegionRef = regionContext.RegionRef,
+            Orientation = regionContext.Orientation,
+            MatchResult = matchResult
+        };
+
+        UpdateButtonStates();
     }
 
     private string BuildMatchSummary(MatchResult? matchResult)
@@ -181,21 +193,26 @@ public sealed partial class MainPage
         }
 
         return matchResult.IsMatch
-            ? $"匹配：命中 · {matchResult.Confidence:F3} · ({matchResult.ClickX}, {matchResult.ClickY})"
-            : $"匹配：未命中 · {matchResult.Confidence:F3}";
+            ? $"匹配：命中 · {matchResult.Confidence:F3} · {matchResult.ElapsedMilliseconds}ms · ({matchResult.ClickX}, {matchResult.ClickY})"
+            : $"匹配：未命中 · {matchResult.Confidence:F3} · {matchResult.ElapsedMilliseconds}ms";
     }
 
     private void LogMatchDetails(
         MatchResult? matchResult,
         MatchSearchScope scope,
         CropRegion? region,
-        double threshold)
+        double threshold,
+        string templateLabel,
+        string screenshotLabel)
     {
         var scopeText = scope == MatchSearchScope.FullImage
             ? "全图搜索"
             : region == null
                 ? "区域搜索（回退全图）"
                 : $"区域搜索 [{region.X}, {region.Y}, {region.Width}, {region.Height}]";
+
+        Services.LogService.Instance.Log($"[Match] 模板源={templateLabel}");
+        Services.LogService.Instance.Log($"[Match] 截图源={screenshotLabel}");
 
         if (matchResult == null)
         {

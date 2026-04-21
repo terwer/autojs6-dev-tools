@@ -1,14 +1,16 @@
-using System.IO;
-using Core.Models;
+using Core.Helpers;
 
 namespace App.Views;
 
 public sealed partial class MainPage
 {
-    private string GenerateNativeMatchFeatureCode(string templatePath, int[] regionRef, CropRegion cropRegion, double threshold)
+    private string GenerateNativeMatchFeatureCode(
+        string templatePath,
+        ImageMatchRegionContext regionContext,
+        string codeOutputDirectory)
     {
-        var templateReferencePath = BuildGeneratedTemplateReferencePath(templatePath);
-        var searchRegionText = BuildUsageSearchRegionText(cropRegion);
+        var templateReferencePath = BuildGeneratedTemplateReferencePath(templatePath, codeOutputDirectory);
+        var searchRegionText = BuildUsageSearchRegionText(regionContext);
 
         return NormalizeGeneratedCode(
             $$"""

@@ -63,6 +63,7 @@ public sealed partial class MainPage : Page
     {
         UpdateSaveFolderDisplay();
         UpdateSourceSummaries();
+        UpdateRegionRefDisplay();
         UpdateUiTreeSummary();
         UpdateSelectedWidgetSummary();
         UpdateWorkbenchModeUi();
@@ -85,19 +86,24 @@ public sealed partial class MainPage : Page
 
     private void Canvas_CropRegionChanged(object? sender, CropRegion? cropRegion)
     {
+        var previousCropRegion = _currentCropRegion;
         _currentCropRegion = cropRegion;
+
+        if (!_suspendCropStateTracking && !CropRegionEquals(previousCropRegion, cropRegion))
+        {
+            _savedCropTemplatePath = null;
+            if (TemplateSourceCrop?.IsChecked == true)
+            {
+                InvalidateSuccessfulMatchContext(clearCanvasResults: true);
+            }
+        }
 
         if (cropRegion != null)
         {
-            var regionRef = GenerateRegionRef(cropRegion, padding: MatchRegionPadding);
-            RegionRefTextBox.Text = $"[{string.Join(", ", regionRef)}]";
             SetStatus($"裁剪区域已更新：{cropRegion.Width}x{cropRegion.Height}", StatusTone.Info);
         }
-        else
-        {
-            RegionRefTextBox.Text = "[等待裁剪...]";
-        }
 
+        UpdateRegionRefDisplay();
         UpdateSourceSummaries();
         UpdateStagePresentation();
         UpdateButtonStates();
@@ -153,7 +159,13 @@ public sealed partial class MainPage : Page
             var (screenshot, width, height) = await _adbService.CaptureScreenshotAsync(_currentDevice);
             Services.LogService.Instance.Log($"[Capture] Framebuffer 实际尺寸: {width}x{height}");
 
-            await LoadImageIntoCanvasAsync(screenshot, width, height, fitToWindow: false);
+            DiscardExternalScreenshotPreviewSnapshot();
+            await LoadImageIntoCanvasAsync(
+                screenshot,
+                width,
+                height,
+                fitToWindow: false,
+                currentCanvasSummary: $"当前画布：设备截图 {width}x{height}");
             _templateFilePath = null;
             _screenshotFilePath = null;
 
@@ -282,6 +294,7 @@ public sealed partial class MainPage : Page
         }
 
         _templateFilePath = file.Path;
+        InvalidateSuccessfulMatchContext(clearCanvasResults: true);
         UpdateSourceSummaries();
         UpdateButtonStates();
         ShowActionTip($"已选择模板：{file.Name}", StatusTone.Success, TemplateBrowseButton, "模板已更新");
@@ -297,6 +310,7 @@ public sealed partial class MainPage : Page
         }
 
         _screenshotFilePath = file.Path;
+        InvalidateSuccessfulMatchContext(clearCanvasResults: true);
         UpdateSourceSummaries();
         UpdateButtonStates();
         ShowActionTip($"已选择测试截图：{file.Name}", StatusTone.Success, ScreenshotBrowseButton, "截图源已更新");
@@ -305,12 +319,14 @@ public sealed partial class MainPage : Page
     private void TemplateSource_Changed(object sender, RoutedEventArgs e)
     {
         UpdateSourceSummaries();
+        UpdateRegionRefDisplay();
         UpdateButtonStates();
     }
 
     private void ScreenshotSource_Changed(object sender, RoutedEventArgs e)
     {
         UpdateSourceSummaries();
+        UpdateRegionRefDisplay();
         UpdateButtonStates();
     }
 
@@ -338,14 +354,14 @@ public sealed partial class MainPage : Page
 
         _saveFolderPath = folder.Path;
         UpdateSaveFolderDisplay();
-        ShowActionTip("保存位置已更改", StatusTone.Success, SaveTemplateButton, "目录已更新");
+        ShowActionTip("代码目录已更改", StatusTone.Success, GenerateCodeButton, "目录已更新");
     }
 
     private void UpdateSaveFolderDisplay()
     {
         if (SaveFolderText != null)
         {
-            SaveFolderText.Text = _saveFolderPath;
+            SaveFolderText.Text = $"代码目录：{_saveFolderPath}";
         }
     }
 

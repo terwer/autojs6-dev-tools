@@ -160,6 +160,14 @@ public sealed partial class CanvasView : Page
     }
 
     /// <summary>
+    /// 获取当前匹配结果快照。
+    /// </summary>
+    public List<MatchResult> GetMatchResults()
+    {
+        return _matchResults.ToList();
+    }
+
+    /// <summary>
     /// 获取当前底图字节。
     /// </summary>
     public byte[]? GetCurrentImageBytes()
@@ -515,6 +523,26 @@ public sealed partial class CanvasView : Page
     /// 获取当前偏移量
     /// </summary>
     public (float X, float Y) GetOffset() => (_offsetX, _offsetY);
+
+    /// <summary>
+    /// 获取当前视图状态。
+    /// </summary>
+    public (float Scale, float OffsetX, float OffsetY) GetViewState()
+    {
+        return (_scale, _offsetX, _offsetY);
+    }
+
+    /// <summary>
+    /// 设置当前视图状态。
+    /// </summary>
+    public void SetViewState(float scale, float offsetX, float offsetY)
+    {
+        _scale = scale;
+        _offsetX = offsetX;
+        _offsetY = offsetY;
+        ScaleChanged?.Invoke(this, _scale);
+        Canvas?.Invalidate();
+    }
 
     /// <summary>
     /// 画布坐标转图像坐标
