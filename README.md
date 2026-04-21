@@ -1,7 +1,5 @@
 # AutoJS6 Visual Development Toolkit
 
-> **⚠️ Under Active Development** - This project is in early development stage. Features are not yet complete. Do not use in production.
-
 [English](README.md) | [简体中文](README_zh_CN.md)
 
 🎯 A development toolkit for AutoJS6 script developers, with visual screenshot analysis, UI widget parsing, image matching preview, and AutoJS6 script code generation.
