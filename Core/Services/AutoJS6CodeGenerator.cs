@@ -113,15 +113,21 @@ public class AutoJS6CodeGenerator : ICodeGenerator
         sb.AppendLine("// 控件模式：使用 UiSelector 进行控件查找");
         sb.AppendLine();
 
-        var uiDumpParser = new UiDumpParser();
-        var selector = uiDumpParser.GenerateUiSelector(options.Widget);
+        var primarySelector = BuildPrimaryWidgetSelector(options.Widget);
+        var fallbackSelectors = BuildFallbackWidgetSelectors(options.Widget);
 
         if (options.GenerateRetryLogic)
         {
             sb.AppendLine("// 重试机制");
             sb.AppendLine($"var {options.VariablePrefix} = null;");
             sb.AppendLine($"for (var i = 0; i < {options.RetryCount}; i++) {{");
-            sb.AppendLine($"    {options.VariablePrefix} = {selector};");
+            sb.AppendLine($"    {options.VariablePrefix} = {primarySelector};");
+            foreach (var fallbackSelector in fallbackSelectors)
+            {
+                sb.AppendLine($"    if (!{options.VariablePrefix}) {{");
+                sb.AppendLine($"        {options.VariablePrefix} = {fallbackSelector};");
+                sb.AppendLine("    }");
+            }
             sb.AppendLine($"    if ({options.VariablePrefix}) {{");
             sb.AppendLine("        break;");
             sb.AppendLine("    }");
@@ -140,7 +146,13 @@ public class AutoJS6CodeGenerator : ICodeGenerator
         }
         else
         {
-            sb.AppendLine($"var {options.VariablePrefix} = {selector};");
+            sb.AppendLine($"var {options.VariablePrefix} = {primarySelector};");
+            foreach (var fallbackSelector in fallbackSelectors)
+            {
+                sb.AppendLine($"if (!{options.VariablePrefix}) {{");
+                sb.AppendLine($"    {options.VariablePrefix} = {fallbackSelector};");
+                sb.AppendLine("}");
+            }
             sb.AppendLine($"if ({options.VariablePrefix}) {{");
             sb.AppendLine($"    {options.VariablePrefix}.click();");
             sb.AppendLine("} else {");
@@ -273,5 +285,72 @@ public class AutoJS6CodeGenerator : ICodeGenerator
         sb.AppendLine($"{indent}    toast(\"已点击目标\");");
         sb.AppendLine($"{indent}}}");
         sb.AppendLine();
+    }
+
+    private static string BuildPrimaryWidgetSelector(WidgetNode widget)
+    {
+        if (!string.IsNullOrWhiteSpace(widget.ResourceId))
+        {
+            return BuildSelectorWithOptionalBounds($"id(\"{widget.ResourceId}\")", widget);
+        }
+
+        if (!string.IsNullOrWhiteSpace(widget.Text))
+        {
+            return BuildSelectorWithOptionalBounds($"text(\"{EscapeJavaScript(widget.Text)}\")", widget);
+        }
+
+        if (!string.IsNullOrWhiteSpace(widget.ContentDesc))
+        {
+            return BuildSelectorWithOptionalBounds($"desc(\"{EscapeJavaScript(widget.ContentDesc)}\")", widget);
+        }
+
+        var selectorBase = !string.IsNullOrWhiteSpace(widget.ClassName)
+            ? $"className(\"{widget.ClassName}\")"
+            : "selector()";
+
+        return BuildSelectorWithOptionalBounds(selectorBase, widget);
+    }
+
+    private static IEnumerable<string> BuildFallbackWidgetSelectors(WidgetNode widget)
+    {
+        var selectors = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(widget.ResourceId) && !string.IsNullOrWhiteSpace(widget.Text))
+        {
+            selectors.Add(BuildSelectorWithOptionalBounds($"text(\"{EscapeJavaScript(widget.Text)}\")", widget));
+        }
+
+        if (!string.IsNullOrWhiteSpace(widget.ContentDesc))
+        {
+            selectors.Add(BuildSelectorWithOptionalBounds($"desc(\"{EscapeJavaScript(widget.ContentDesc)}\")", widget));
+        }
+
+        if (selectors.Count == 0 && !string.IsNullOrWhiteSpace(widget.Text))
+        {
+            selectors.Add(BuildSelectorWithOptionalBounds($"text(\"{EscapeJavaScript(widget.Text)}\")", widget));
+        }
+
+        return selectors.Distinct(StringComparer.Ordinal);
+    }
+
+    private static string BuildSelectorWithOptionalBounds(string selectorBase, WidgetNode widget)
+    {
+        if (widget.BoundsRect.Width > 0 && widget.BoundsRect.Height > 0)
+        {
+            var (x, y, width, height) = widget.BoundsRect;
+            return $"{selectorBase}.boundsInside({x}, {y}, {x + width}, {y + height}).findOne()";
+        }
+
+        return $"{selectorBase}.findOne()";
+    }
+
+    private static string EscapeJavaScript(string input)
+    {
+        return input
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("\n", "\\n")
+            .Replace("\r", "\\r")
+            .Replace("\t", "\\t");
     }
 }

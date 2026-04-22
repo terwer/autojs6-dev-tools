@@ -32,6 +32,35 @@ When a change really needs packaging validation, trigger the test packaging flow
 
 ---
 
+## Local release prerequisites
+
+If you want to validate ZIP / EXE / MSIX locally before pushing to CI, make sure the machine has:
+
+- .NET 8 SDK
+- Visual Studio 2022/2026 or Build Tools with **MSBuild** and Windows 10/11 SDK (**SignTool**)
+- Inno Setup 6 (`ISCC.exe`)
+
+The release scripts now auto-detect these tools. If one is missing, the script should stop early with a direct message instead of failing later with an ambiguous packaging error.
+
+---
+
+## Recommended local validation sequence
+
+Use this order when validating a release candidate on your own machine:
+
+1. `dotnet restore autojs6-dev-tools.slnx`
+2. `dotnet build autojs6-dev-tools.slnx -c Release`
+3. `dotnet test autojs6-dev-tools.slnx -c Release`
+4. Build `win-x64` and `win-arm64` portable ZIP packages
+5. Run `scripts/release/Test-PortablePackageSmoke.ps1` against the `win-x64` portable EXE
+6. Build `win-x64` and `win-arm64` EXE installers
+7. Build `win-x64` and `win-arm64` MSIX packages
+8. Confirm the files in `release-assets/` match the expected version, publisher, and SHA256 list
+
+Use CI after local validation, not instead of it.
+
+---
+
 ## Test packaging / repair
 
 Test packaging and repair both use:
@@ -192,6 +221,32 @@ For example:
 
 Unless there is a very specific reason, rewriting an already published production tag should not be the first choice.
 
+### Local `dotnet build -c Release` fails before packaging starts
+
+Check these first:
+
+- the app project should not default to trim / ReadyToRun for ordinary Release builds
+- MSBuild must resolve a concrete platform instead of falling back to AnyCPU
+- if MSIX validation is not the current task, fix the build baseline before touching the release workflow
+
+### Local MSIX build fails with certificate or signature errors
+
+Check these in order:
+
+- the certificate `Subject` must exactly match the `Publisher` in `App/Package.appxmanifest`
+- `signtool.exe` must be installed and discoverable
+- the generated `.cer` should be imported into the current user's **Trusted People** and **Trusted Root Certification Authorities** stores for local verification
+
+If those conditions are not true, treat it as an environment or signing configuration issue first.
+
+### Local EXE installer build fails immediately
+
+Check these first:
+
+- whether `ISCC.exe` exists (for example via Inno Setup 6)
+- whether the source publish directory actually contains the built app files
+- whether the resolved installer output path is writable
+
 ---
 
 ## Current release identity
@@ -216,4 +271,5 @@ If installer titles, package names, or publisher details ever look wrong, these 
 - `scripts/release/Build-InnoInstaller.ps1`
 - `scripts/release/Build-MsixPackage.ps1`
 - `packaging/windows/autojs6-dev-tools.iss`
+- `packaging/windows/ChineseSimplified.isl`
 - `packaging/windows/MSIX-INSTALL.md`

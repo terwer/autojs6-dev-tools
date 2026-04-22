@@ -116,6 +116,12 @@ Bring screenshot analysis, widget inspection, and AutoJS6 code generation into o
 - **🛠️ IDE**: Visual Studio 2022/2026 with WinUI 3 workload
 - **📱 Tools**: Android Debug Bridge (ADB) in PATH
 
+### Extra tools for local release validation
+
+- **MSBuild + SignTool**: install Visual Studio 2022/2026 or Build Tools with Windows 10/11 SDK
+- **Inno Setup 6**: required for building the EXE installer (`ISCC.exe`)
+- **Tip**: the local release scripts auto-detect `ISCC.exe`, `msbuild.exe`, and `signtool.exe`, but they now fail with clear prerequisite messages if a tool is missing
+
 ### 1️⃣ Clone the Repository
 
 ```bash
@@ -321,7 +327,10 @@ App → Infrastructure → Core ← Infrastructure
 
 ### 🚢 Before Release
 
+- ✅ Run `dotnet build autojs6-dev-tools.slnx -c Release`
+- ✅ Run `dotnet test autojs6-dev-tools.slnx -c Release`
 - ✅ Run the `manual-release-test` workflow with release upload turned off before merging the release PR
+- ✅ Verify the local portable smoke check on `win-x64` before trusting a full release candidate
 - ✅ Verify `win-x64` and `win-arm64` both produce ZIP, EXE installer, and MSIX
 - ✅ Smoke test the ZIP or EXE on a clean Windows machine before publishing
 - ✅ Confirm the generated app name, package identity, and publisher are correct

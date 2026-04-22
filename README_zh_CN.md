@@ -116,6 +116,12 @@
 - **🛠️ IDE**：Visual Studio 2022/2026 带 WinUI 3 工作负载
 - **📱 工具**：Android Debug Bridge (ADB) 在 PATH 中
 
+### 本地 release 验包额外依赖
+
+- **MSBuild + SignTool**：安装 Visual Studio 2022/2026 或带 Windows 10/11 SDK 的 Build Tools
+- **Inno Setup 6**：生成 EXE 安装器时需要 `ISCC.exe`
+- **说明**：本地 release 脚本现在会自动探测 `ISCC.exe`、`msbuild.exe`、`signtool.exe`，缺失时会直接给出清晰提示
+
 ### 1️⃣ 克隆仓库
 
 ```bash
@@ -321,7 +327,10 @@ App → Infrastructure → Core ← Infrastructure
 
 ### 🚢 发布前自检清单
 
+- ✅ 先运行 `dotnet build autojs6-dev-tools.slnx -c Release`
+- ✅ 再运行 `dotnet test autojs6-dev-tools.slnx -c Release`
 - ✅ 合并 release PR 之前，先运行 `manual-release-test`，并保持不上传到 GitHub Release
+- ✅ 本地至少先对 `win-x64` 便携版做一次冒烟启动检查
 - ✅ 确认 `win-x64` 和 `win-arm64` 都能产出 ZIP、安装器 EXE、MSIX
 - ✅ 在尽量干净的 Windows 环境里先冒烟验证 ZIP 或 EXE 能正常运行
 - ✅ 确认生成出来的产品名、包标识、发布者都正确

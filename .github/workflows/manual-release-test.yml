@@ -68,6 +68,22 @@ jobs:
         with:
           ref: ${{ inputs.source_ref }}
 
+      - name: Validate release metadata files
+        shell: pwsh
+        run: |
+          Get-Content release-please-config.json -Raw | ConvertFrom-Json | Out-Null
+
+          $manifest = Get-Content .release-please-manifest.json -Raw | ConvertFrom-Json
+          $version = $manifest.'.'
+
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            throw "Release manifest is missing the root package version."
+          }
+
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Release manifest version must use semantic format x.y.z. Actual: $version"
+          }
+
       - name: Set up .NET 8 SDK
         uses: actions/setup-dotnet@v4
         with:

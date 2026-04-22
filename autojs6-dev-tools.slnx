@@ -1,7 +1,7 @@
 <Solution>
   <Configurations>
-    <Platform Name="ARM64" />
     <Platform Name="x64" />
+    <Platform Name="ARM64" />
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/docs/">
@@ -17,22 +17,12 @@
     <File Path="README_zh_CN.md" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="App/App.csproj">
-      <Platform Solution="*|ARM64" Project="ARM64" />
-      <Platform Solution="*|x64" Project="x64" />
-      <Platform Solution="*|x86" Project="x86" />
-      <Deploy />
-    </Project>
+    <Project Path="App/App.csproj" />
     <Project Path="Core/Core.csproj" />
     <Project Path="Infrastructure/Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="App.Tests/App.Tests.csproj">
-      <Platform Solution="*|ARM64" Project="ARM64" />
-      <Platform Solution="*|x64" Project="x64" />
-      <Platform Solution="*|x86" Project="x86" />
-      <Deploy />
-    </Project>
+    <Project Path="App.Tests/App.Tests.csproj" />
     <Project Path="Core.Tests/Core.Tests.csproj" />
   </Folder>
 </Solution>

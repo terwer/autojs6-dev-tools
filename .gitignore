@@ -377,3 +377,7 @@ FodyWeavers.xsd
 
 # JetBrains Rider directories
 .idea/
+
+# Local artifacts folder
+artifacts-local
+artifacts-local-direct

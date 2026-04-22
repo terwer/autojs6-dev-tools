@@ -32,6 +32,35 @@
 
 ---
 
+## 本地 release 验包前置依赖
+
+如果你要在本机先把 ZIP / EXE / MSIX 验通，再交给 CI，至少要有：
+
+- .NET 8 SDK
+- Visual Studio 2022/2026 或 Build Tools（包含 **MSBuild** 和 Windows 10/11 SDK，也就是 **SignTool**）
+- Inno Setup 6（提供 `ISCC.exe`）
+
+现在的 release 脚本会自动探测这些工具；如果缺失，会尽量在一开始就报清楚，而不是拖到后面的打包阶段再模糊失败。
+
+---
+
+## 推荐的本地验包顺序
+
+本机验证 release 候选版本时，建议按这个顺序走：
+
+1. `dotnet restore autojs6-dev-tools.slnx`
+2. `dotnet build autojs6-dev-tools.slnx -c Release`
+3. `dotnet test autojs6-dev-tools.slnx -c Release`
+4. 构建 `win-x64` 和 `win-arm64` 便携 ZIP
+5. 用 `scripts/release/Test-PortablePackageSmoke.ps1` 对 `win-x64` 便携版 EXE 做一次冒烟启动检查
+6. 构建 `win-x64` 和 `win-arm64` EXE 安装器
+7. 构建 `win-x64` 和 `win-arm64` MSIX
+8. 检查 `release-assets/` 里的文件名、版本号、发布者和 SHA256 清单是否一致
+
+CI 应该放在本地验证之后做复验，而不是完全替代本地验包。
+
+---
+
 ## 测试打包 / 补包
 
 测试打包和补包统一使用：
@@ -194,6 +223,32 @@ MSIX 也会生成，但当前仍需要先信任证书，所以它不是普通用
 
 除非有非常明确的原因，否则不要优先去改写已经发布的正式 tag。
 
+### 本地 `dotnet build -c Release` 在打包前就失败
+
+优先检查这几件事：
+
+- App 项目是否还在普通 Release 构建里默认开启 trim / ReadyToRun
+- MSBuild 是否落到了 AnyCPU，而不是明确的平台
+- 如果当前还没走到 MSIX 这一步，先把基础 Release 构建修通，再看发布脚本
+
+### 本地 MSIX 构建报证书或签名错误
+
+按顺序检查：
+
+- 证书 `Subject` 是否与 `App/Package.appxmanifest` 里的 `Publisher` 完全一致
+- `signtool.exe` 是否已安装并可被脚本发现
+- 本地验证前，生成出来的 `.cer` 是否已同时导入当前用户的 **Trusted People** 和 **Trusted Root Certification Authorities**
+
+这几项不满足时，优先按环境 / 签名配置问题处理，不要直接怀疑业务代码。
+
+### 本地 EXE 安装器一开始就构建失败
+
+优先检查：
+
+- `ISCC.exe` 是否存在（例如 Inno Setup 6 是否已安装）
+- 发布源目录里是否真的有构建好的应用文件
+- 安装器输出目录是否可写
+
 ---
 
 ## 当前发布标识
@@ -218,4 +273,5 @@ MSIX 也会生成，但当前仍需要先信任证书，所以它不是普通用
 - `scripts/release/Build-InnoInstaller.ps1`
 - `scripts/release/Build-MsixPackage.ps1`
 - `packaging/windows/autojs6-dev-tools.iss`
+- `packaging/windows/ChineseSimplified.isl`
 - `packaging/windows/MSIX-INSTALL.md`
