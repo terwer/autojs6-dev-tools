@@ -193,6 +193,44 @@ public sealed partial class CanvasView : Page
     }
 
     /// <summary>
+    /// 将画布平移至指定控件位置，使其在视口中居中显示。
+    /// 仅当控件不在当前可见区域内时才触发平移。
+    /// </summary>
+    public void ScrollToWidget(WidgetNode widget)
+    {
+        var (x, y, w, h) = widget.BoundsRect;
+        if (w <= 0 || h <= 0 || _imageWidth <= 0 || _imageHeight <= 0)
+            return;
+
+        if (Canvas == null || Canvas.ActualWidth <= 0 || Canvas.ActualHeight <= 0)
+            return;
+
+        float centerImgX = x + w / 2.0f;
+        float centerImgY = y + h / 2.0f;
+
+        // 检查控件是否已在可见视口内（含 15% 内边距）
+        var (canvasLeft, canvasTop) = ImageToCanvas(x, y);
+        var (canvasRight, canvasBottom) = ImageToCanvas(x + w, y + h);
+        float viewW = (float)Canvas.ActualWidth;
+        float viewH = (float)Canvas.ActualHeight;
+        float marginX = viewW * 0.15f;
+        float marginY = viewH * 0.15f;
+
+        bool isVisible = canvasLeft >= marginX &&
+                         canvasTop >= marginY &&
+                         canvasRight <= viewW - marginX &&
+                         canvasBottom <= viewH - marginY;
+
+        if (isVisible)
+            return;
+
+        _offsetX = viewW / 2.0f - centerImgX * _scale;
+        _offsetY = viewH / 2.0f - centerImgY * _scale;
+        Canvas.Invalidate();
+        ScaleChanged?.Invoke(this, _scale);
+    }
+
+    /// <summary>
     /// 设置裁剪区域（用于绘制裁剪框）
     /// </summary>
     public void SetCropRegion(CropRegion? region)
