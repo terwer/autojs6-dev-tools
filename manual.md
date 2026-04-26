@@ -220,4 +220,5 @@
 | `release-please` 权限错误 | GitHub 仓库 `Settings → Actions → Workflow permissions` |
 | token 错误 | 仓库 Secret `GH_TOKEN` |
 | 上传 Release 失败 | `publish_to_release`、`release_tag`、`release_name` 是否填写正确 |
+| 日志停在证书导入 / 信任步骤 | 先看 `DEVELOPMENT_zh_CN.md` 的“CI 无交互安全说明与卡住点排查” |
 

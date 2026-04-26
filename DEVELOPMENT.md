@@ -161,6 +161,69 @@ Use CI after local validation, not instead of it.
 
 ---
 
+## Non-interactive CI safety and hang review
+
+The release path has now been reviewed specifically for **“can this block waiting for a human?”** behavior.
+
+### Confirmed high-risk interactive point
+
+- `scripts/release/New-CodeSigningCertificate.ps1`
+  - Risk source: importing a generated certificate into `TrustedPeople` / `Root`
+  - Why it can hang: `Root` trust import may trigger Windows trust confirmation and stall in headless CI
+  - Current behavior:
+    - CI / non-interactive sessions skip trust-store import automatically
+    - local trust import is **opt-in only**
+    - enable only when you explicitly pass:
+      - `-ImportToTrustedPeople`
+      - `-ImportToRoot`
+
+### Reviewed release scripts that should not require manual confirmation in CI
+
+- `scripts/release/Build-PortablePackage.ps1`
+  - Uses `dotnet publish`
+  - No interactive prompt path in the script itself
+
+- `scripts/release/Build-InnoInstaller.ps1`
+  - Uses `ISCC.exe`
+  - No script-level confirmation prompt
+  - If Inno Setup is missing, it should fail fast with a direct error
+
+- `scripts/release/Build-MsixPackage.ps1`
+  - Uses `MSBuild` + `signtool`
+  - Signs directly with the generated PFX
+  - Does **not** need certificate-store trust import during CI packaging
+  - If required tooling is missing, it should fail early instead of waiting for input
+
+- `scripts/release/Set-AppReleaseMetadata.ps1`
+  - File-edit only, no interactive path
+
+- `scripts/release/Test-PortablePackageSmoke.ps1`
+  - Starts the app, waits a bounded number of seconds, then force-stops it
+  - This is time-bounded, not an infinite confirmation wait
+
+### Scripts that are local-install oriented and should not be used in CI
+
+- `App/AppPackages/**/Add-AppDevPackage.ps1`
+- `App/AppPackages/**/Install.ps1`
+
+These generated install scripts are for local sideload / local package install flows and may involve certificate trust or install-time interaction. They are **not** part of the CI release packaging path and should not be called from GitHub Actions.
+
+### Fast triage when a workflow looks “stuck”
+
+If a Windows release job appears frozen:
+
+1. check the **last printed log line**
+2. identify the exact script / step name
+3. assume the last visible operation is the first suspect
+4. cancel the run if it is clearly waiting on a trust / install / UI action
+5. fix the script to become fail-fast or non-interactive before rerunning
+
+### Practical rule
+
+> In CI, package generation is allowed; machine trust changes are not a safe default.
+
+---
+
 ## Test packaging / repair
 
 Test packaging and repair both use:
