@@ -381,3 +381,4 @@ FodyWeavers.xsd
 # Local artifacts folder
 artifacts-local
 artifacts-local-direct
+artifacts-local-validation
