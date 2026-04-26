@@ -646,6 +646,7 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <Border x:Name="StatusPillBorder"
@@ -667,8 +668,15 @@
                            Text="当前模式：图像模式"
                            VerticalAlignment="Center"
                            Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                <HyperlinkButton x:Name="AboutAuthorButton"
+                                 Grid.Column="4"
+                                 Content="关于作者"
+                                 Click="AboutAuthorButton_Click"
+                                 Padding="4,0"
+                                 VerticalAlignment="Center"
+                                 FontSize="12" />
                 <Button x:Name="ShowLogButton"
-                        Grid.Column="4"
+                        Grid.Column="5"
                         Content="查看日志"
                         Click="ShowLogDockButton_Click"
                         Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
