@@ -471,13 +471,13 @@ while (true) {
     <td align="center">
       <img src="https://img.shields.io/badge/微信支付-09B83E?logo=wechat&logoColor=white" alt="微信支付"/><br/>
       <b>微信支付</b><br/>
-      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/wechat.jpg" alt="wechat" style="width:280px;height:375px;" />
+      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/wechat.jpg" alt="wechat" style="width:280px;height:375px;" /><br/>
       <sub>扫码赞助</sub>
     </td>
     <td align="center">
       <img src="https://img.shields.io/badge/支付宝-1677FF?logo=alipay&logoColor=white" alt="支付宝"/><br/>
       <b>支付宝</b><br/>
-        <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/alipay.jpg" alt="alipay" style="width:280px;height:375px;" />
+        <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/alipay.jpg" alt="alipay" style="width:280px;height:375px;" /><br/>
       <sub>扫码赞助</sub>
     </td>
     <td align="center">

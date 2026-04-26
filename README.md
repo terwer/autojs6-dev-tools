@@ -471,13 +471,13 @@ If this tool saves you hours of tedious work, consider buying me a coffee! Your 
     <td align="center">
       <img src="https://img.shields.io/badge/WeChat-09B83E?logo=wechat&logoColor=white" alt="WeChat Pay"/><br/>
       <b>WeChat Pay</b><br/>
-      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/wechat.jpg" alt="wechat" style="width:280px;height:375px;" />
+      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/wechat.jpg" alt="wechat" style="width:280px;height:375px;" /><br/>
       <sub>Scan to donate</sub>
     </td>
     <td align="center">
       <img src="https://img.shields.io/badge/Alipay-1677FF?logo=alipay&logoColor=white" alt="Alipay"/><br/>
       <b>Alipay</b><br/>
-      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/alipay.jpg" alt="alipay" style="width:280px;height:375px;" />
+      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/alipay.jpg" alt="alipay" style="width:280px;height:375px;" /><br/>
       <sub>Scan to donate</sub>
     </td>
     <td align="center">
