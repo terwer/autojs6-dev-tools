@@ -16,7 +16,7 @@
 
 If you want to understand this tool faster, start with the Bilibili quick-start video. It will walk through .NET 8 installation, first launch, screenshot loading, template cropping, match preview, and AutoJS6 code generation in one complete flow, so you can get from “just downloaded” to “actually usable” with much less trial and error.
 
-**Bilibili quick-start video:** [AutoJS6 Visual Development Toolkit Quick Start](https://space.bilibili.com/)
+**Bilibili quick-start video:** [AutoJS6 Visual Development Toolkit Quick Start](https://space.bilibili.com/19450592)
 
 ## 🧭 Which Edition Should You Choose?
 
