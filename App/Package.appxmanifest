@@ -9,15 +9,15 @@
   IgnorableNamespaces="uap rescap systemai">
 
   <Identity
-    Name="a3aede3f-09b3-4ad1-84a5-4781aff0f8c8"
-    Publisher="CN=Administrator"
-    Version="1.0.0.0" />
+    Name="space.terwer.autojs6devtools"
+    Publisher="CN=terwer"
+    Version="0.0.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="a3aede3f-09b3-4ad1-84a5-4781aff0f8c8" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>App</DisplayName>
-    <PublisherDisplayName>Administrator</PublisherDisplayName>
+    <DisplayName>AutoJS6 Visual Development Toolkit</DisplayName>
+    <PublisherDisplayName>terwer</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -35,8 +35,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="App"
-        Description="App"
+        DisplayName="AutoJS6 Visual Development Toolkit"
+        Description="AutoJS6 image matching, widget inspection, and code generation workbench"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

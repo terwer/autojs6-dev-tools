@@ -187,6 +187,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <StackPanel x:Name="ImageToolbarPanel"
@@ -249,8 +250,19 @@
                                       Unchecked="WidgetBoundsCheckBox_Changed" />
                         </StackPanel>
 
-                        <Button x:Name="ClearStageButton"
+                        <Button x:Name="RestoreStageButton"
                                 Grid.Column="1"
+                                Click="RestoreStageButton_Click"
+                                Style="{StaticResource WorkbenchSecondaryButtonStyle}"
+                                Visibility="Collapsed">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE777;" />
+                                <TextBlock Text="恢复现场" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="ClearStageButton"
+                                Grid.Column="2"
                                 Click="ClearStageButton_Click"
                                 Style="{StaticResource WorkbenchSecondaryButtonStyle}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -379,7 +391,8 @@
                                                Grid.ColumnSpan="2"
                                                x:Name="TemplateSourceSummaryText"
                                                Text="当前裁剪：尚未创建区域"
-                                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                               Style="{StaticResource WorkbenchCaptionTextStyle}"
+                                               TextWrapping="WrapWholeWords" />
 
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="截图" VerticalAlignment="Center" />
                                     <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="10">
@@ -403,7 +416,8 @@
                                                Grid.ColumnSpan="2"
                                                x:Name="ScreenshotSourceSummaryText"
                                                Text="当前画布：尚未加载截图"
-                                               Style="{StaticResource WorkbenchCaptionTextStyle}" />
+                                               Style="{StaticResource WorkbenchCaptionTextStyle}"
+                                               TextWrapping="WrapWholeWords" />
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -486,29 +500,35 @@
                                                Text="-"
                                                VerticalAlignment="Center"
                                                Style="{StaticResource WorkbenchCaptionTextStyle}"
-                                               TextTrimming="CharacterEllipsis" />
+                                               TextWrapping="WrapWholeWords" />
                                     <Button Grid.Column="1"
-                                            Content="文件夹"
+                                            Content="代码目录"
                                             Click="SelectSaveFolderButton_Click"
                                             Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
                                 </Grid>
 
                                 <TextBox x:Name="TemplateNameTextBox"
                                          Grid.Row="5"
-                                         PlaceholderText="模板名（留空自动生成）" />
+                                         PlaceholderText="模板名（代码文件名优先取这里，留空则跟模板名）" />
 
                                 <Grid Grid.Row="6" ColumnSpacing="8">
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Button x:Name="SaveTemplateButton"
                                             Grid.Column="0"
-                                            Content="保存模板与代码"
+                                            Content="保存模板"
                                             Click="SaveTemplateButton_Click"
+                                            Style="{StaticResource WorkbenchSecondaryButtonStyle}" />
+                                    <Button x:Name="GenerateCodeButton"
+                                            Grid.Column="1"
+                                            Content="生成代码"
+                                            Click="GenerateCodeButton_Click"
                                             Style="{StaticResource WorkbenchPrimaryButtonStyle}" />
                                     <Button x:Name="ViewCodeRightButton"
-                                            Grid.Column="1"
+                                            Grid.Column="2"
                                             Content="查看代码"
                                             Click="ViewCodeButton_Click"
                                             Style="{StaticResource WorkbenchSecondaryButtonStyle}" />

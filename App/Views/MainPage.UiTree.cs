@@ -1,3 +1,4 @@
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
@@ -165,6 +166,10 @@ public sealed partial class MainPage
         {
             SelectTreeNodeForWidget(widget);
         }
+        else
+        {
+            Canvas.ScrollToWidget(widget);
+        }
     }
 
     private void SelectTreeNodeForWidget(WidgetNode widget)
@@ -176,6 +181,16 @@ public sealed partial class MainPage
 
         ExpandTreeNodeAncestors(treeNode);
         UiNodeTreeView.SelectedNode = treeNode;
+
+        // 延迟到下一帧执行，等待 ExpandTreeNodeAncestors 触发的布局更新完成
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            var container = UiNodeTreeView.ContainerFromNode(treeNode);
+            if (container is UIElement element)
+            {
+                element.StartBringIntoView(new BringIntoViewOptions { AnimationDesired = true });
+            }
+        });
     }
 
     private static void ExpandTreeNodeAncestors(TreeViewNode node)

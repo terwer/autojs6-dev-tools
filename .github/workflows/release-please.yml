@@ -1,0 +1,206 @@
+name: release-please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      PRODUCT_NAME: AutoJS6 Visual Development Toolkit
+      PACKAGE_IDENTITY_NAME: space.terwer.autojs6devtools
+      PUBLISHER: CN=terwer
+      PUBLISHER_DISPLAY_NAME: terwer
+      APP_EXE_NAME: autojs6-dev-tools.exe
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate release metadata files
+        shell: pwsh
+        run: |
+          Get-Content release-please-config.json -Raw | ConvertFrom-Json | Out-Null
+
+          $manifest = Get-Content .release-please-manifest.json -Raw | ConvertFrom-Json
+          $version = $manifest.'.'
+
+          if ([string]::IsNullOrWhiteSpace($version)) {
+            throw "Release manifest is missing the root package version."
+          }
+
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Release manifest version must use semantic format x.y.z. Actual: $version"
+          }
+
+      - id: release
+        uses: googleapis/release-please-action@v4.4.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Check out tagged source
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.release.outputs.tag_name }}
+
+      - name: Set up .NET 8 SDK
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Set up MSBuild
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Resolve release version
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        id: version
+        shell: pwsh
+        run: |
+          $tag = "${{ steps.release.outputs.tag_name }}"
+          if ([string]::IsNullOrWhiteSpace($tag)) {
+            throw "release-please did not provide a tag name."
+          }
+
+          $version = $tag.Trim()
+          if ($version.StartsWith('v')) {
+            $version = $version.Substring(1)
+          }
+
+          Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "version=$version"
+          Write-Host "Preparing release assets for version $version"
+
+      - name: Restore app project
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        run: dotnet restore App/App.csproj
+
+      - name: Install Inno Setup
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: pwsh
+        run: choco install innosetup --no-progress --yes
+
+      - name: Apply release metadata
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: pwsh
+        run: >
+          ./scripts/release/Set-AppReleaseMetadata.ps1
+          -Version "${{ steps.version.outputs.version }}"
+          -ProductName "${env:PRODUCT_NAME}"
+          -PackageIdentityName "${env:PACKAGE_IDENTITY_NAME}"
+          -Publisher "${env:PUBLISHER}"
+          -PublisherDisplayName "${env:PUBLISHER_DISPLAY_NAME}"
+
+      - name: Create signing certificate
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        id: cert
+        shell: pwsh
+        run: >
+          ./scripts/release/New-CodeSigningCertificate.ps1
+          -Subject "${env:PUBLISHER}"
+          -OutputDirectory "artifacts/signing"
+
+      - name: Build x64 portable ZIP
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: pwsh
+        run: >
+          ./scripts/release/Build-PortablePackage.ps1
+          -ProjectPath "App/App.csproj"
+          -RuntimeIdentifier "win-x64"
+          -Version "${{ steps.version.outputs.version }}"
+          -OutputRoot "artifacts"
+
+      - name: Build ARM64 portable ZIP
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: pwsh
+        run: >
+          ./scripts/release/Build-PortablePackage.ps1
+          -ProjectPath "App/App.csproj"
+          -RuntimeIdentifier "win-arm64"
+          -Version "${{ steps.version.outputs.version }}"
+          -OutputRoot "artifacts"
+
+      - name: Build x64 installer
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: pwsh
+        run: >
+          ./scripts/release/Build-InnoInstaller.ps1
+          -ScriptPath "packaging/windows/autojs6-dev-tools.iss"
+          -RuntimeIdentifier "win-x64"
+          -Version "${{ steps.version.outputs.version }}"
+          -SourceDirectory "artifacts/publish/win-x64"
+          -OutputDirectory "artifacts/release-assets"
+          -ArchitecturesAllowed "x64compatible"
+          -ArchitecturesInstallIn64BitMode "x64compatible"
+
+      - name: Build ARM64 installer
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: pwsh
+        run: >
+          ./scripts/release/Build-InnoInstaller.ps1
+          -ScriptPath "packaging/windows/autojs6-dev-tools.iss"
+          -RuntimeIdentifier "win-arm64"
+          -Version "${{ steps.version.outputs.version }}"
+          -SourceDirectory "artifacts/publish/win-arm64"
+          -OutputDirectory "artifacts/release-assets"
+          -ArchitecturesAllowed "arm64"
+          -ArchitecturesInstallIn64BitMode "arm64"
+
+      - name: Build x64 MSIX
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: pwsh
+        run: >
+          ./scripts/release/Build-MsixPackage.ps1
+          -ProjectPath "App/App.csproj"
+          -Platform "x64"
+          -RuntimeIdentifier "win-x64"
+          -Version "${{ steps.version.outputs.version }}"
+          -OutputRoot "artifacts"
+          -PackageCertificatePath "${{ steps.cert.outputs.pfx_path }}"
+          -PackageCertificatePassword "${{ steps.cert.outputs.password }}"
+
+      - name: Build ARM64 MSIX
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: pwsh
+        run: >
+          ./scripts/release/Build-MsixPackage.ps1
+          -ProjectPath "App/App.csproj"
+          -Platform "ARM64"
+          -RuntimeIdentifier "win-arm64"
+          -Version "${{ steps.version.outputs.version }}"
+          -OutputRoot "artifacts"
+          -PackageCertificatePath "${{ steps.cert.outputs.pfx_path }}"
+          -PackageCertificatePassword "${{ steps.cert.outputs.password }}"
+
+      - name: Prepare release support files
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        shell: pwsh
+        run: |
+          Copy-Item -LiteralPath "packaging/windows/MSIX-INSTALL.md" -Destination "artifacts/release-assets/MSIX-INSTALL.md" -Force
+          Copy-Item -LiteralPath "${{ steps.cert.outputs.cer_path }}" -Destination "artifacts/release-assets/autojs6-dev-tools-signing.cer" -Force
+
+          $hashLines = Get-ChildItem -LiteralPath "artifacts/release-assets" -File |
+            Sort-Object Name |
+            ForEach-Object {
+              $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+              "$hash *$($_.Name)"
+            }
+
+          Set-Content -LiteralPath "artifacts/release-assets/SHA256SUMS.txt" -Value $hashLines
+
+      - name: Upload release assets
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: >
+          gh release upload "${{ steps.release.outputs.tag_name }}" artifacts/release-assets/* --clobber

@@ -1,7 +1,6 @@
 using System;
-using System.IO;
 using App.Models;
-using Core.Models;
+using Core.Helpers;
 
 namespace App.Views;
 
@@ -10,39 +9,42 @@ public sealed partial class MainPage
     private string GenerateImageModeCodeByTemplate(
         ImageCodeTemplateKind kind,
         string templatePath,
-        int[] regionRef,
-        CropRegion cropRegion,
-        double threshold)
+        ImageMatchRegionContext regionContext,
+        double threshold,
+        string codeOutputDirectory)
     {
         return kind switch
         {
-            ImageCodeTemplateKind.ReferenceSingleFile => GenerateReferenceSingleFileCode(templatePath, regionRef, cropRegion, threshold),
-            ImageCodeTemplateKind.MatchTemplateNative => GenerateNativeMatchTemplateCode(templatePath, regionRef, cropRegion, threshold),
-            ImageCodeTemplateKind.MatchFeatureNative => GenerateNativeMatchFeatureCode(templatePath, regionRef, cropRegion, threshold),
+            ImageCodeTemplateKind.ReferenceSingleFile => GenerateReferenceSingleFileCode(templatePath, regionContext, threshold, codeOutputDirectory),
+            ImageCodeTemplateKind.MatchTemplateNative => GenerateNativeMatchTemplateCode(templatePath, regionContext, threshold, codeOutputDirectory),
+            ImageCodeTemplateKind.MatchFeatureNative => GenerateNativeMatchFeatureCode(templatePath, regionContext, codeOutputDirectory),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null)
         };
     }
 
-    private string GenerateReferenceSingleFileCode(string templatePath, int[] regionRef, CropRegion cropRegion, double threshold)
+    private string GenerateReferenceSingleFileCode(
+        string templatePath,
+        ImageMatchRegionContext regionContext,
+        double threshold,
+        string codeOutputDirectory)
     {
         _ = LoadReferenceSingleFileTemplateSource();
 
-        var templateReferencePath = BuildGeneratedTemplateReferencePath(templatePath);
-        var orientation = GetGeneratedOrientation(cropRegion);
+        var templateReferencePath = BuildGeneratedTemplateReferencePath(templatePath, codeOutputDirectory);
         var acceptThreshold = FormatJsNumber(ClampGeneratedThreshold(threshold));
         var matchThreshold = FormatJsNumber(0.25);
-        var regionRefText = ToJsArray(regionRef);
+        var regionRefText = ToJsArray(regionContext.RegionRef);
 
         return NormalizeGeneratedCode(
             $$"""
 const matchReferenceTemplate = require("./autojs6-image-match-helper.js")
 const screen = captureScreen()
 var result = matchReferenceTemplate(screen, "{{templateReferencePath}}", {
-  orientation: "{{orientation}}",
+  orientation: "{{regionContext.Orientation}}",
   regionRef: {{regionRefText}},
   matchThreshold: {{matchThreshold}},
   acceptThreshold: {{acceptThreshold}},
-  useTransparentMask: true
+  useTransparentMask: false
 })
 if (result && result.found) {
   click(result.clickX, result.clickY)

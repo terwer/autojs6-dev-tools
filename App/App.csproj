@@ -4,14 +4,31 @@
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>App</RootNamespace>
+    <AssemblyName>autojs6-dev-tools</AssemblyName>
+    <Product>AutoJS6 Visual Development Toolkit</Product>
+    <Authors>terwer</Authors>
+    <Company>terwer</Company>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Platforms>x86;x64;ARM64</Platforms>
+    <Platform Condition="'$(Platform)'==''">x64</Platform>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)'=='' and ('$(Platform)'=='AnyCPU' or '$(Platform)'=='Any CPU')">win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)'=='' and '$(Platform)'=='x86'">win-x86</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)'=='' and '$(Platform)'=='x64'">win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)'=='' and '$(Platform)'=='ARM64'">win-arm64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)'==''">win-x64</RuntimeIdentifier>
+    <Platforms>AnyCPU;x86;x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
-    <PublishProfile>win-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <WinUISDKReferences>false</WinUISDKReferences>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PlatformTarget Condition="'$(Platform)'=='AnyCPU' or '$(Platform)'=='Any CPU'">x64</PlatformTarget>
+    <PlatformTarget Condition="'$(Platform)'=='x64' or '$(RuntimeIdentifier)'=='win-x64'">x64</PlatformTarget>
+    <PlatformTarget Condition="'$(Platform)'=='x86' or '$(RuntimeIdentifier)'=='win-x86'">x86</PlatformTarget>
+    <PlatformTarget Condition="'$(Platform)'=='ARM64' or '$(RuntimeIdentifier)'=='win-arm64'">ARM64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
@@ -59,11 +76,8 @@
     <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
   </PropertyGroup>
 
-  <!-- Publish Properties -->
   <PropertyGroup>
-    <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
-    <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
-    <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
-    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
 </Project>

@@ -97,10 +97,12 @@ public sealed partial class MainPage
             EnterCropButton == null ||
             ExitCropButton == null ||
             ClearStageButton == null ||
+            RestoreStageButton == null ||
             DumpUiStageButton == null ||
             WidgetBoundsCheckBox == null ||
             TestMatchButton == null ||
             SaveTemplateButton == null ||
+            GenerateCodeButton == null ||
             ViewCodeRightButton == null ||
             CopyCoordinatesButton == null ||
             CopySelectorButton == null ||
@@ -116,31 +118,42 @@ public sealed partial class MainPage
             return;
         }
 
+        var isImageMode = _workbenchMode == WorkbenchMode.Image;
         var hasScreenshot = _hasScreenshot;
         var canDumpUi = hasScreenshot && _currentDevice != null;
-        var hasTemplateSource = (TemplateSourceCrop.IsChecked == true && _currentCropRegion != null) ||
-                                (TemplateSourceFile.IsChecked == true && !string.IsNullOrWhiteSpace(_templateFilePath));
+        var hasCropTemplateSource = TemplateSourceCrop.IsChecked == true && _currentCropRegion != null;
+        var hasFileTemplateSource = TemplateSourceFile.IsChecked == true && !string.IsNullOrWhiteSpace(_templateFilePath);
+        var hasTemplateSource = hasCropTemplateSource || hasFileTemplateSource;
         var hasScreenshotSource = (ScreenshotSourceCurrent.IsChecked == true && hasScreenshot) ||
                                   (ScreenshotSourceFile.IsChecked == true && !string.IsNullOrWhiteSpace(_screenshotFilePath));
         var hasWidget = _selectedWidget != null;
         var hasGeneratedCode = !string.IsNullOrWhiteSpace(_latestGeneratedCode);
+        var hasSavedCropTemplate = !string.IsNullOrWhiteSpace(_savedCropTemplatePath) && File.Exists(_savedCropTemplatePath);
+        var hasRestoreSnapshot = HasExternalScreenshotPreviewSnapshot();
+
+        var canGenerateCode = isImageMode && (TemplateSourceCrop.IsChecked == true
+            ? hasSavedCropTemplate
+            : hasFileTemplateSource && _lastSuccessfulMatchContext?.TemplateSourceKind == ImageTemplateSourceKind.File);
 
         CaptureButton.IsEnabled = _currentDevice != null;
         LoadLocalTopButton.IsEnabled = true;
 
         FitToWindowButton.IsEnabled = hasScreenshot;
         ResetViewButton.IsEnabled = hasScreenshot;
-        EnterCropButton.IsEnabled = hasScreenshot && !_isFitToWindowMode && _workbenchMode == WorkbenchMode.Image && !_isCroppingMode;
-        ExitCropButton.IsEnabled = hasScreenshot && _workbenchMode == WorkbenchMode.Image && _isCroppingMode;
+        EnterCropButton.IsEnabled = hasScreenshot && !_isFitToWindowMode && isImageMode && !_isCroppingMode;
+        ExitCropButton.IsEnabled = hasScreenshot && isImageMode && _isCroppingMode;
         ClearStageButton.IsEnabled = hasScreenshot;
+        RestoreStageButton.IsEnabled = hasRestoreSnapshot;
+        RestoreStageButton.Visibility = hasRestoreSnapshot ? Visibility.Visible : Visibility.Collapsed;
 
         WidgetBoundsCheckBox.IsEnabled = hasScreenshot && _workbenchMode == WorkbenchMode.Ui;
 
         TemplateBrowseButton.IsEnabled = TemplateSourceFile.IsChecked == true;
         ScreenshotBrowseButton.IsEnabled = ScreenshotSourceFile.IsChecked == true;
 
-        TestMatchButton.IsEnabled = hasTemplateSource && hasScreenshotSource;
-        SaveTemplateButton.IsEnabled = _currentCropRegion != null;
+        TestMatchButton.IsEnabled = isImageMode && hasTemplateSource && hasScreenshotSource;
+        SaveTemplateButton.IsEnabled = isImageMode && hasTemplateSource;
+        GenerateCodeButton.IsEnabled = canGenerateCode;
         ViewCodeRightButton.IsEnabled = hasGeneratedCode;
 
         CopyCoordinatesButton.IsEnabled = hasWidget;
@@ -157,8 +170,19 @@ public sealed partial class MainPage
         ToolTipService.SetToolTip(ResetViewButton, hasScreenshot ? null : "请先截图或载入本地图片");
         ToolTipService.SetToolTip(EnterCropButton, EnterCropButton.IsEnabled ? null : "请先截图并切回 1:1 视图");
         ToolTipService.SetToolTip(ExitCropButton, ExitCropButton.IsEnabled ? null : "当前未处于裁剪模式");
+        ToolTipService.SetToolTip(RestoreStageButton, hasRestoreSnapshot ? "恢复切换到测试截图前的现场" : "当前没有可恢复的现场");
         ToolTipService.SetToolTip(ClearStageButton, hasScreenshot ? "保留当前图片，清空当前模式里的裁剪、匹配和选择状态" : "请先截图或载入本地图片");
-        ToolTipService.SetToolTip(ViewCodeRightButton, hasGeneratedCode ? null : "请先执行保存或生成代码");
+        ToolTipService.SetToolTip(SaveTemplateButton, SaveTemplateButton.IsEnabled
+            ? "每次保存都会让你明确选择目标 PNG 文件"
+            : TemplateSourceCrop.IsChecked == true
+                ? "请先创建裁剪区域，或切换到模板文件来源"
+                : "请先选择模板文件");
+        ToolTipService.SetToolTip(GenerateCodeButton, GenerateCodeButton.IsEnabled
+            ? "代码会直接写入当前代码目录，同名文件会覆盖"
+            : TemplateSourceCrop.IsChecked == true
+                ? "请先保存模板，再生成代码"
+                : "外部模板请先完成一次命中测试");
+        ToolTipService.SetToolTip(ViewCodeRightButton, hasGeneratedCode ? null : "请先生成代码");
         ToolTipService.SetToolTip(CopyCoordinatesButton, hasWidget ? null : "请先在画布或节点树中选择控件");
         ToolTipService.SetToolTip(CopySelectorButton, hasWidget ? null : "请先在画布或节点树中选择控件");
         ToolTipService.SetToolTip(PreviewWidgetSnippetButton, hasWidget ? null : "请先在画布或节点树中选择控件");
@@ -185,7 +209,7 @@ public sealed partial class MainPage
         HudResolutionText.Text = ResolutionText.Text;
         HudCropText.Text = _currentCropRegion == null
             ? "裁剪区域：-"
-            : $"裁剪区域：{_currentCropRegion.Width}x{_currentCropRegion.Height}";
+            : $"裁剪区域：{_currentCropRegion.Width}x{_currentCropRegion.Height}{(HasExternalScreenshotPreviewSnapshot() ? "（暂存）" : string.Empty)}";
         MatchSummaryText.Text = string.IsNullOrWhiteSpace(MatchSummaryText.Text)
             ? "匹配：-"
             : MatchSummaryText.Text;
@@ -213,21 +237,36 @@ public sealed partial class MainPage
             return;
         }
 
-        TemplateSourceSummaryText.Text = TemplateSourceCrop.IsChecked == true
-            ? _currentCropRegion == null
-                ? "当前裁剪：尚未创建区域"
-                : $"当前裁剪：{_currentCropRegion.Width}x{_currentCropRegion.Height} 区域"
-            : string.IsNullOrWhiteSpace(_templateFilePath)
+        if (TemplateSourceCrop.IsChecked == true)
+        {
+            if (_currentCropRegion == null)
+            {
+                TemplateSourceSummaryText.Text = "当前裁剪：尚未创建区域";
+            }
+            else
+            {
+                var savedState = !string.IsNullOrWhiteSpace(_savedCropTemplatePath) && File.Exists(_savedCropTemplatePath)
+                    ? $"已保存：{_savedCropTemplatePath}"
+                    : "未保存：请先保存模板再生成代码";
+                var previewState = HasExternalScreenshotPreviewSnapshot()
+                    ? " · 已暂存预览前现场"
+                    : string.Empty;
+                TemplateSourceSummaryText.Text =
+                    $"当前裁剪：{_currentCropRegion.Width}x{_currentCropRegion.Height} 区域{previewState}\n{savedState}";
+            }
+        }
+        else
+        {
+            TemplateSourceSummaryText.Text = string.IsNullOrWhiteSpace(_templateFilePath)
                 ? "模板文件：尚未选择"
-                : _templateFilePath!;
+                : $"模板文件：{Path.GetFileName(_templateFilePath)}\n{_templateFilePath}";
+        }
 
         ScreenshotSourceSummaryText.Text = ScreenshotSourceCurrent.IsChecked == true
-            ? _hasScreenshot
-                ? "当前画布：已就绪"
-                : "当前画布：尚未加载截图"
+            ? _currentCanvasSourceSummary
             : string.IsNullOrWhiteSpace(_screenshotFilePath)
-                ? "截图文件：尚未选择"
-                : _screenshotFilePath!;
+                ? "测试截图：尚未选择"
+                : $"测试截图：{Path.GetFileName(_screenshotFilePath)}\n{_screenshotFilePath}";
     }
 
     private void UpdateSelectedWidgetSummary()
@@ -255,12 +294,15 @@ public sealed partial class MainPage
         Canvas.SetSelectedWidget(null);
         Canvas.SetCropRegion(null);
         Canvas.DisableCroppingMode();
+        Canvas.ToggleCropRegion(true);
 
         _isCroppingMode = false;
         _selectedWidget = null;
         _uiRootNode = null;
         _uiTotalNodes = 0;
         _uiDisplayedNodes = 0;
+        _savedCropTemplatePath = null;
+        _lastSuccessfulMatchContext = null;
 
         if (EnterCropButton != null && ExitCropButton != null)
         {
@@ -283,6 +325,7 @@ public sealed partial class MainPage
             _latestImageCodePreviewItems.Clear();
         }
 
+        UpdateRegionRefDisplay();
         UpdateButtonStates();
     }
 
@@ -294,6 +337,7 @@ public sealed partial class MainPage
         Canvas.SetCropRegion(null);
         Canvas.DisableCroppingMode();
         Canvas.ToggleWidgetBounds(true);
+        Canvas.ToggleCropRegion(true);
 
         _isCroppingMode = false;
         _currentCropRegion = null;
@@ -303,8 +347,11 @@ public sealed partial class MainPage
         _uiRootNode = null;
         _uiTotalNodes = 0;
         _uiDisplayedNodes = 0;
+        _savedCropTemplatePath = null;
+        _lastSuccessfulMatchContext = null;
         _latestGeneratedCode = string.Empty;
         _latestImageCodePreviewItems.Clear();
+        DiscardExternalScreenshotPreviewSnapshot();
 
         if (TemplateSourceCrop != null)
         {
@@ -331,11 +378,6 @@ public sealed partial class MainPage
             ApplyCropButtonVisualState();
         }
 
-        if (RegionRefTextBox != null)
-        {
-            RegionRefTextBox.Text = "[等待裁剪...]";
-        }
-
         if (MatchSummaryText != null)
         {
             MatchSummaryText.Text = "匹配：-";
@@ -350,6 +392,7 @@ public sealed partial class MainPage
         UpdateSelectedWidgetSummary();
         UpdateUiTreeSummary();
         RebuildUiNodeTree();
+        UpdateRegionRefDisplay();
         UpdateSourceSummaries();
         UpdateButtonStates();
     }
@@ -368,6 +411,11 @@ public sealed partial class MainPage
 
         var modeText = _workbenchMode == WorkbenchMode.Image ? "图像模式" : "控件模式";
         ShowActionTip($"已清空{modeText}现场，底图已保留", StatusTone.Success, target);
+    }
+
+    private async void RestoreStageButton_Click(object sender, RoutedEventArgs e)
+    {
+        await RestoreExternalScreenshotPreviewAsync(sender as FrameworkElement);
     }
 
     private void ShowLogDockButton_Click(object sender, RoutedEventArgs e)
@@ -405,7 +453,13 @@ public sealed partial class MainPage
             using var stream = await file.OpenReadAsync();
             var decoder = await BitmapDecoder.CreateAsync(stream);
 
-            await LoadImageIntoCanvasAsync(bytes, (int)decoder.PixelWidth, (int)decoder.PixelHeight, fitToWindow: false);
+            DiscardExternalScreenshotPreviewSnapshot();
+            await LoadImageIntoCanvasAsync(
+                bytes,
+                (int)decoder.PixelWidth,
+                (int)decoder.PixelHeight,
+                fitToWindow: false,
+                currentCanvasSummary: $"当前画布：本地图片 {file.Name} · {decoder.PixelWidth}x{decoder.PixelHeight}");
 
             _screenshotFilePath = file.Path;
             ScreenshotSourceCurrent.IsChecked = true;
@@ -421,7 +475,7 @@ public sealed partial class MainPage
     private void CopyRegionRefButton_Click(object sender, RoutedEventArgs e)
     {
         var target = sender as FrameworkElement;
-        if (string.IsNullOrWhiteSpace(RegionRefTextBox.Text) || RegionRefTextBox.Text == "[等待裁剪...]")
+        if (string.IsNullOrWhiteSpace(RegionRefTextBox.Text) || RegionRefTextBox.Text.StartsWith("[等待", StringComparison.Ordinal))
         {
             ShowActionTip("当前没有可复制的 regionRef", StatusTone.Warning, target, "无法复制");
             return;
@@ -459,13 +513,19 @@ public sealed partial class MainPage
         ShowActionTip("选择器已复制到剪贴板", StatusTone.Success, target);
     }
 
-    private async Task LoadImageIntoCanvasAsync(byte[] imageBytes, int width, int height, bool fitToWindow)
+    private async Task LoadImageIntoCanvasAsync(
+        byte[] imageBytes,
+        int width,
+        int height,
+        bool fitToWindow,
+        string? currentCanvasSummary = null)
     {
         ResetCanvasRelatedState(clearGeneratedCode: false);
         Canvas.LoadImage(imageBytes, width, height);
 
         _hasScreenshot = true;
         ResolutionText.Text = $"分辨率：{width}x{height}";
+        UpdateCurrentCanvasSourceSummary(currentCanvasSummary ?? $"当前画布：已就绪 · {width}x{height}");
 
         if (fitToWindow)
         {

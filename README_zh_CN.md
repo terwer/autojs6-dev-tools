@@ -116,10 +116,32 @@
 - **🛠️ IDE**：Visual Studio 2022/2026 带 WinUI 3 工作负载
 - **📱 工具**：Android Debug Bridge (ADB) 在 PATH 中
 
+### 本地 release 验包额外依赖
+
+- **MSBuild + SignTool**：安装 Visual Studio 2022/2026 或带 Windows 10/11 SDK 的 Build Tools
+- **Inno Setup 6**：生成 EXE 安装器时需要 `ISCC.exe`
+- **说明**：本地 release 脚本现在会自动探测 `ISCC.exe`、`msbuild.exe`、`signtool.exe`，缺失时会直接给出清晰提示
+
+### GitHub / 代理说明（如无法访问 GitHub）
+
+如果你所在网络环境无法直接访问 GitHub，建议先阅读：
+
+- [`PROXY_zh_CN.md`](PROXY_zh_CN.md)
+
+否则以下操作都可能失败：
+
+- `git clone`
+- `git push`
+- 把 `.github/workflows/*` 推到 GitHub 后再验证 Actions
+
+> 特别注意：  
+> 如果 `origin` 仍然是 `git@github.com:...` 这种 SSH 远端，仅设置 `HTTP_PROXY` / `HTTPS_PROXY` 往往**不够**。  
+> 最省事的默认方案通常是：**改成 HTTPS 远端，再给 Git 配代理。**
+
 ### 1️⃣ 克隆仓库
 
 ```bash
-git clone https://github.com/yourusername/autojs6-dev-tools.git
+git clone https://github.com/terwer/autojs6-dev-tools.git
 cd autojs6-dev-tools
 ```
 
@@ -319,6 +341,18 @@ App → Infrastructure → Core ← Infrastructure
 - ✅ 验证 60 FPS 渲染性能
 - ✅ 运行单元测试
 
+### 🚢 发布前自检清单
+
+- ✅ 先运行 `dotnet build autojs6-dev-tools.slnx -c Release`
+- ✅ 再运行 `dotnet test autojs6-dev-tools.slnx -c Release`
+- ✅ 合并 release PR 之前，先运行 `manual-release-test`，并保持不上传到 GitHub Release
+- ✅ 本地至少先对 `win-x64` 便携版做一次冒烟启动检查
+- ✅ 确认 `win-x64` 和 `win-arm64` 都能产出 ZIP、安装器 EXE、MSIX
+- ✅ 在尽量干净的 Windows 环境里先冒烟验证 ZIP 或 EXE 能正常运行
+- ✅ 确认生成出来的产品名、包标识、发布者都正确
+- ✅ 如果正式 Release 已创建但发包失败，优先用 `manual-release-test` 重打并补传资产，不要凭感觉硬修
+- ✅ 如果正式包有问题，优先修复代码并发下一个 patch 版本，不要直接改写已发布正式 tag
+
 ---
 
 ## ⚠️ AutoJS6 代码生成约束
@@ -382,6 +416,8 @@ while (true) {
 
 - **📘 AGENTS.md**：核心设计原则与约束（优先阅读）
 - **📗 openspec/project.md**：开发清单与验证规则
+- **📙 DEVELOPMENT.md**：发布自动化、手动测试发包、修复与回退说明（英文）
+- **📕 DEVELOPMENT_zh_CN.md**：发布自动化、手动测试发包、修复与回退说明（中文）
 - **📂 openspec/changes/**：OpenSpec 变更提案
 
 ---
@@ -404,8 +440,8 @@ while (true) {
 ## 💬 支持
 
 - 📖 [文档](openspec/)
-- 🐛 [问题追踪](https://github.com/yourusername/autojs6-dev-tools/issues)
-- 💬 [讨论区](https://github.com/yourusername/autojs6-dev-tools/discussions)
+- 🐛 [问题追踪](https://github.com/terwer/autojs6-dev-tools/issues)
+- 💬 [讨论区](https://github.com/terwer/autojs6-dev-tools/discussions)
 
 ---
 
@@ -432,7 +468,7 @@ while (true) {
     <td align="center">
       <img src="https://img.shields.io/badge/爱发电-946CE6?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMEw5LjUgNS41TDE1IDdMOS41IDguNUw4IDE1TDYuNSA4LjVMMSA3TDYuNSA1LjVMOCAwWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+&logoColor=white" alt="爱发电"/><br/>
       <b>爱发电</b><br/>
-      <a href="https://afdian.net/@yourusername">
+      <a href="https://afdian.net/@terwer">
         <img src="https://img.shields.io/badge/赞助-爱发电-946CE6?style=for-the-badge" alt="在爱发电上赞助"/>
       </a><br/>
       <sub>月度赞助</sub>

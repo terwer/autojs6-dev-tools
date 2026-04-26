@@ -1,14 +1,17 @@
-using System.IO;
-using Core.Models;
+using Core.Helpers;
 
 namespace App.Views;
 
 public sealed partial class MainPage
 {
-    private string GenerateNativeMatchTemplateCode(string templatePath, int[] regionRef, CropRegion cropRegion, double threshold)
+    private string GenerateNativeMatchTemplateCode(
+        string templatePath,
+        ImageMatchRegionContext regionContext,
+        double threshold,
+        string codeOutputDirectory)
     {
-        var templateReferencePath = BuildGeneratedTemplateReferencePath(templatePath);
-        var searchRegionText = BuildUsageSearchRegionText(cropRegion);
+        var templateReferencePath = BuildGeneratedTemplateReferencePath(templatePath, codeOutputDirectory);
+        var searchRegionText = BuildUsageSearchRegionText(regionContext);
         var matchThreshold = FormatJsNumber(ClampGeneratedThreshold(threshold));
 
         return NormalizeGeneratedCode(

@@ -160,6 +160,14 @@ public sealed partial class CanvasView : Page
     }
 
     /// <summary>
+    /// 获取当前匹配结果快照。
+    /// </summary>
+    public List<MatchResult> GetMatchResults()
+    {
+        return _matchResults.ToList();
+    }
+
+    /// <summary>
     /// 获取当前底图字节。
     /// </summary>
     public byte[]? GetCurrentImageBytes()
@@ -182,6 +190,44 @@ public sealed partial class CanvasView : Page
     {
         _selectedWidget = widget;
         Canvas?.Invalidate();
+    }
+
+    /// <summary>
+    /// 将画布平移至指定控件位置，使其在视口中居中显示。
+    /// 仅当控件不在当前可见区域内时才触发平移。
+    /// </summary>
+    public void ScrollToWidget(WidgetNode widget)
+    {
+        var (x, y, w, h) = widget.BoundsRect;
+        if (w <= 0 || h <= 0 || _imageWidth <= 0 || _imageHeight <= 0)
+            return;
+
+        if (Canvas == null || Canvas.ActualWidth <= 0 || Canvas.ActualHeight <= 0)
+            return;
+
+        float centerImgX = x + w / 2.0f;
+        float centerImgY = y + h / 2.0f;
+
+        // 检查控件是否已在可见视口内（含 15% 内边距）
+        var (canvasLeft, canvasTop) = ImageToCanvas(x, y);
+        var (canvasRight, canvasBottom) = ImageToCanvas(x + w, y + h);
+        float viewW = (float)Canvas.ActualWidth;
+        float viewH = (float)Canvas.ActualHeight;
+        float marginX = viewW * 0.15f;
+        float marginY = viewH * 0.15f;
+
+        bool isVisible = canvasLeft >= marginX &&
+                         canvasTop >= marginY &&
+                         canvasRight <= viewW - marginX &&
+                         canvasBottom <= viewH - marginY;
+
+        if (isVisible)
+            return;
+
+        _offsetX = viewW / 2.0f - centerImgX * _scale;
+        _offsetY = viewH / 2.0f - centerImgY * _scale;
+        Canvas.Invalidate();
+        ScaleChanged?.Invoke(this, _scale);
     }
 
     /// <summary>
@@ -515,6 +561,26 @@ public sealed partial class CanvasView : Page
     /// 获取当前偏移量
     /// </summary>
     public (float X, float Y) GetOffset() => (_offsetX, _offsetY);
+
+    /// <summary>
+    /// 获取当前视图状态。
+    /// </summary>
+    public (float Scale, float OffsetX, float OffsetY) GetViewState()
+    {
+        return (_scale, _offsetX, _offsetY);
+    }
+
+    /// <summary>
+    /// 设置当前视图状态。
+    /// </summary>
+    public void SetViewState(float scale, float offsetX, float offsetY)
+    {
+        _scale = scale;
+        _offsetX = offsetX;
+        _offsetY = offsetY;
+        ScaleChanged?.Invoke(this, _scale);
+        Canvas?.Invalidate();
+    }
 
     /// <summary>
     /// 画布坐标转图像坐标
