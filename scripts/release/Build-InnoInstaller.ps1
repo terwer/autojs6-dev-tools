@@ -91,8 +91,9 @@ $iscc = Resolve-InnoSetupCompiler -PreferredPath $InnoSetupExecutablePath
 
 New-Item -ItemType Directory -Path $resolvedOutputDirectory -Force | Out-Null
 
+$assetVersion = $Version.TrimStart('v')
 $windowsVersion = "$($Version.TrimStart('v')).0"
-$outputBaseFilename = "autojs6-dev-tools-$RuntimeIdentifier-setup"
+$outputBaseFilename = "autojs6-dev-tools-$assetVersion-$RuntimeIdentifier-setup"
 $expectedInstallerPath = Join-Path $resolvedOutputDirectory "$outputBaseFilename.exe"
 
 & $iscc `

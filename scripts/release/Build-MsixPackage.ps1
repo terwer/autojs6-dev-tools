@@ -129,10 +129,11 @@ function Resolve-SignToolCommand {
 $resolvedProjectPath = Resolve-AbsolutePath -Path $ProjectPath -MustExist
 $resolvedPackageCertificatePath = Resolve-AbsolutePath -Path $PackageCertificatePath -MustExist
 $resolvedOutputRoot = Resolve-AbsolutePath -Path $OutputRoot
+$assetVersion = $Version.TrimStart('v')
 $fourPartVersion = "$($Version.TrimStart('v')).0"
 $packageDirectory = Join-Path $resolvedOutputRoot "msix/$RuntimeIdentifier"
 $releaseAssetDirectory = Join-Path $resolvedOutputRoot 'release-assets'
-$destination = Join-Path $releaseAssetDirectory "autojs6-dev-tools-$RuntimeIdentifier.msix"
+$destination = Join-Path $releaseAssetDirectory "autojs6-dev-tools-$assetVersion-$RuntimeIdentifier.msix"
 
 if (Test-Path -LiteralPath $packageDirectory) {
     Remove-Item -LiteralPath $packageDirectory -Recurse -Force

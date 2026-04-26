@@ -17,10 +17,11 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+$assetVersion = $Version.TrimStart('v')
 $fourPartVersion = "$($Version.TrimStart('v')).0"
 $publishDirectory = Join-Path $OutputRoot "publish/$RuntimeIdentifier"
 $releaseAssetDirectory = Join-Path $OutputRoot 'release-assets'
-$zipPath = Join-Path $releaseAssetDirectory "autojs6-dev-tools-$RuntimeIdentifier-portable.zip"
+$zipPath = Join-Path $releaseAssetDirectory "autojs6-dev-tools-$assetVersion-$RuntimeIdentifier-portable.zip"
 $expectedExecutable = Join-Path $publishDirectory "$ExecutableName.exe"
 
 New-Item -ItemType Directory -Path $publishDirectory -Force | Out-Null
