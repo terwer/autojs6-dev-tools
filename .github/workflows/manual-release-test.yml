@@ -4,29 +4,29 @@ on:
   workflow_dispatch:
     inputs:
       source_ref:
-        description: 这次要打包的真实代码来源。测试当前开发代码通常填 dev；验证正式发布代码通常填 main；补已发布版本通常填正式 tag。
+        description: Source ref to package. Use dev for current development validation, main for release-candidate validation, or a production tag when repairing an existing release.
         required: true
-        default: main
+        default: dev
         type: string
       version:
-        description: 本次包显示的版本号，例如 0.0.1。
+        description: Semantic version to stamp into package metadata, for example 0.0.1.
         required: true
         type: string
       publish_to_release:
-        description: 只有当你真的要把产物上传到 GitHub Release 时才打开。
+        description: Enable only when the generated assets should be uploaded to a GitHub Release.
         required: true
         default: false
         type: boolean
       release_tag:
-        description: 要上传到哪个 Release tag；普通测试构建可留空。
+        description: Release tag to upload to. Leave empty for packaging-only validation runs.
         required: false
         type: string
       release_name:
-        description: Release 标题；只有在上传到 GitHub Release 时才会用到。
+        description: Release title used only when uploading assets to GitHub Release.
         required: false
         type: string
       prerelease:
-        description: 如果这次要创建新的 GitHub Release，是否标记为 prerelease。
+        description: Mark a newly created GitHub Release as a prerelease.
         required: true
         default: true
         type: boolean
