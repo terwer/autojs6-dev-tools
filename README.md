@@ -12,12 +12,19 @@
 > Download: [https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0](https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0)  
 > Without .NET 8, the app may fail to start or run correctly on some machines.
 
-> **Choose the edition that fits your platform strategy**  
+## 🎥 Bilibili Quick Start
+
+If you want to understand this tool faster, start with the Bilibili quick-start video. It will walk through .NET 8 installation, first launch, screenshot loading, template cropping, match preview, and AutoJS6 code generation in one complete flow, so you can get from “just downloaded” to “actually usable” with much less trial and error.
+
+**Bilibili quick-start video:** [AutoJS6 Visual Development Toolkit Quick Start](https://space.bilibili.com/)
+
+## 🧭 Which Edition Should You Choose?
+
 > `autojs6-dev-tools` is the Windows-native edition, optimized for a performance-first Windows experience.  
 > For the Cross-platform edition, see [`autojs6-dev-tools-plus`](https://github.com/terwer/autojs6-dev-tools-plus).  
 > Both projects are original works that I design and maintain as part of the same AutoJS6 toolkit family.
 
-## 😫 Why This Tool Exists
+## 😫 Why You May Need It
 
 > **Image recognition takes 20 tries to work? Breaks on different devices?**  
 > Use this tool: Real-time match preview • Visual threshold and region adjustment • Auto-generate AutoJS6 code

@@ -12,12 +12,19 @@
 > 下载地址：[https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0](https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0)  
 > 如果机器上没有正确安装 .NET 8，软件可能无法启动或无法正常运行。
 
-> **选择适合你平台策略的版本**  
+## 🎥 B 站快速上手
+
+如果你想更快理解这个工具，建议先看 B 站快速上手视频。视频会按完整流程带你走一遍：`.NET 8` 安装、首次打开、载入截图、模板裁剪、匹配预览、代码生成，帮助你从“刚下载”尽快进入“真正能用”的状态，少走弯路，少做无效试错。
+
+**B 站快速上手视频：** [AutoJS6 可视化开发工具包快速上手](https://space.bilibili.com/)
+
+## 🧭 版本怎么选
+
 > `autojs6-dev-tools` 是 Windows 原生高性能版。  
 > 如果你需要跨平台增强版，请参阅 [`autojs6-dev-tools-plus`](https://github.com/terwer/autojs6-dev-tools-plus)。  
 > 两个项目都由我原创设计并持续维护，作为同一 AutoJS6 工具体系下、面向不同平台目标的产品。
 
-## 😫 为什么需要这个工具
+## 😫 你为什么会需要它
 
 > **图像识别调试 20 次才跑通？换台设备又失效？**  
 > 用这个工具：实时预览匹配结果 • 可视化调整阈值和区域 • 自动生成 AutoJS6 代码
