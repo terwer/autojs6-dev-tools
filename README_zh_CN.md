@@ -18,21 +18,6 @@
 
 ---
 
-## 📚 文档入口
-
-如果你现在关心的是 **发版测试 / GitHub Actions / 验包 / 补包**，请直接先看：
-
-- [`RELEASE_TEST_zh_CN.md`](RELEASE_TEST_zh_CN.md)
-
-它会告诉你接下来应该看：
-
-- `manual.md`
-- `checklist.md`
-- `PROXY_zh_CN.md`
-- `DEVELOPMENT_zh_CN.md`
-
----
-
 ## ⚡ 一眼看懂这个工具
 
 把截图分析、控件树检查和 AutoJS6 代码生成收进同一个 Windows 原生工作台。你可以直接可视化调整匹配区域与阈值、验证当前 UI 树上的选择器，并导出可粘贴的 AutoJS6 代码，不再在截图软件、终端和真机试错之间来回切换。
@@ -437,6 +422,21 @@ while (true) {
 
 ---
 
+## 📚 发版测试文档入口
+
+如果你现在关心的是 **发版测试 / GitHub Actions / 验包 / 补包**，请直接先看：
+
+- [`RELEASE_TEST_zh_CN.md`](RELEASE_TEST_zh_CN.md)
+
+它会告诉你接下来应该看：
+
+- `manual.md`
+- `checklist.md`
+- `PROXY_zh_CN.md`
+- `DEVELOPMENT_zh_CN.md`
+
+---
+
 ## 📄 许可证
 
 本项目采用 MIT 许可证 - 详见 [LICENSE.txt](LICENSE.txt) 文件。
@@ -471,13 +471,13 @@ while (true) {
     <td align="center">
       <img src="https://img.shields.io/badge/微信支付-09B83E?logo=wechat&logoColor=white" alt="微信支付"/><br/>
       <b>微信支付</b><br/>
-      <img src="docs/images/wechat-pay-qr.png" width="150"/><br/>
+      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/wechat.jpg" alt="wechat" style="width:280px;height:375px;" />
       <sub>扫码赞助</sub>
     </td>
     <td align="center">
       <img src="https://img.shields.io/badge/支付宝-1677FF?logo=alipay&logoColor=white" alt="支付宝"/><br/>
       <b>支付宝</b><br/>
-      <img src="docs/images/alipay-qr.png" width="150"/><br/>
+        <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/alipay.jpg" alt="alipay" style="width:280px;height:375px;" />
       <sub>扫码赞助</sub>
     </td>
     <td align="center">
@@ -506,18 +506,7 @@ while (true) {
 
 ### 💖 赞助者
 
-感谢以下支持者的慷慨赞助：
-
-<a href="https://github.com/supporter1"><img src="https://avatars.githubusercontent.com/u/supporter1?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter2"><img src="https://avatars.githubusercontent.com/u/supporter2?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter3"><img src="https://avatars.githubusercontent.com/u/supporter3?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter4"><img src="https://avatars.githubusercontent.com/u/supporter4?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter5"><img src="https://avatars.githubusercontent.com/u/supporter5?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter6"><img src="https://avatars.githubusercontent.com/u/supporter6?s=60" width="60px;" alt=""/></a>
-
----
-<a href="https://github.com/contributor4"><img src="https://avatars.githubusercontent.com/u/contributor4?s=50" width="50px;" alt="贡献者 4"/></a>
-<a href="https://github.com/contributor5"><img src="https://avatars.githubusercontent.com/u/contributor5?s=50" width="50px;" alt="贡献者 5"/></a>
+虚位以待
 
 ---
 

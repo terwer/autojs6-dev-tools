@@ -18,21 +18,6 @@
 
 ---
 
-## 📚 Documentation Entry
-
-If what you need right now is **release validation / GitHub Actions / package verification / release repair**, start with:
-
-- [`RELEASE_TEST.md`](RELEASE_TEST.md)
-
-That page will point you to:
-
-- `manual.md`
-- `checklist.md`
-- `PROXY.md`
-- `DEVELOPMENT.md`
-
----
-
 ## ⚡ See the Toolkit in Action
 
 Bring screenshot analysis, widget inspection, and AutoJS6 code generation into one native Windows workbench. Tune match regions visually, validate selectors against the current UI tree, and export runnable code without bouncing between crop tools, terminals, and repeated device-side trial and error.
@@ -437,6 +422,21 @@ This toolkit is designed to serve AutoJS6 automation projects, particularly:
 
 ---
 
+## 📚Realase Test Documentation Entry
+
+If what you need right now is **release validation / GitHub Actions / package verification / release repair**, start with:
+
+- [`RELEASE_TEST.md`](RELEASE_TEST.md)
+
+That page will point you to:
+
+- `manual.md`
+- `checklist.md`
+- `PROXY.md`
+- `DEVELOPMENT.md`
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE.txt](LICENSE.txt) file for details.
@@ -471,19 +471,19 @@ If this tool saves you hours of tedious work, consider buying me a coffee! Your 
     <td align="center">
       <img src="https://img.shields.io/badge/WeChat-09B83E?logo=wechat&logoColor=white" alt="WeChat Pay"/><br/>
       <b>WeChat Pay</b><br/>
-      <img src="docs/images/wechat-pay-qr.png" width="150"/><br/>
+      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/wechat.jpg" alt="wechat" style="width:280px;height:375px;" />
       <sub>Scan to donate</sub>
     </td>
     <td align="center">
       <img src="https://img.shields.io/badge/Alipay-1677FF?logo=alipay&logoColor=white" alt="Alipay"/><br/>
       <b>Alipay</b><br/>
-      <img src="docs/images/alipay-qr.png" width="150"/><br/>
+      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/alipay.jpg" alt="alipay" style="width:280px;height:375px;" />
       <sub>Scan to donate</sub>
     </td>
     <td align="center">
       <img src="https://img.shields.io/badge/爱发电-946CE6?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMEw5LjUgNS41TDE1IDdMOS41IDguNUw4IDE1TDYuNSA4LjVMMSA3TDYuNSA1LjVMOCAwWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+&logoColor=white" alt="爱发电"/><br/>
       <b>爱发电 (afdian)</b><br/>
-      <a href="https://afdian.net/@terwer">
+      <a href="https://afdian.com/a/terwer">
         <img src="https://img.shields.io/badge/Support-爱发电-946CE6?style=for-the-badge" alt="Support on 爱发电"/>
       </a><br/>
       <sub>Monthly sponsorship</sub>
@@ -506,14 +506,7 @@ Every contribution matters. Thank you! 🙏
 
 ### 💖 Sponsors
 
-Thanks to the following sponsors for their generous support:
-
-<a href="https://github.com/supporter1"><img src="https://avatars.githubusercontent.com/u/supporter1?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter2"><img src="https://avatars.githubusercontent.com/u/supporter2?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter3"><img src="https://avatars.githubusercontent.com/u/supporter3?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter4"><img src="https://avatars.githubusercontent.com/u/supporter4?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter5"><img src="https://avatars.githubusercontent.com/u/supporter5?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter6"><img src="https://avatars.githubusercontent.com/u/supporter6?s=60" width="60px;" alt=""/></a>
+Wait for you
 
 ---
 
