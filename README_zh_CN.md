@@ -350,7 +350,7 @@ App → Infrastructure → Core ← Infrastructure
 - ✅ 再运行 `dotnet test autojs6-dev-tools.slnx -c Release`
 - ✅ 合并 release PR 之前，先运行 `manual-release-test`，并保持不上传到 GitHub Release
 - ✅ 本地至少先对 `win-x64` 便携版做一次冒烟启动检查
-- ✅ 确认 `win-x64` 和 `win-arm64` 都能产出 ZIP、安装器 EXE、MSIX
+- ✅ 确认 `win-x64` 和 `win-arm64` 都能产出 ZIP、安装器 EXE
 - ✅ 在尽量干净的 Windows 环境里先冒烟验证 ZIP 或 EXE 能正常运行
 - ✅ 确认生成出来的产品名、包标识、发布者都正确
 - ✅ 如果正式 Release 已创建但发包失败，优先用 `manual-release-test` 重打并补传资产，不要凭感觉硬修

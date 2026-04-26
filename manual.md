@@ -80,9 +80,10 @@
 3. 检查是否包含：
    - ZIP
    - setup.exe
-   - msix
    - `SHA256SUMS.txt`
    - `BUILD-INFO.txt`
+
+> 当前版本已临时关闭 MSIX 发包链路；artifact 不再包含 MSIX、证书文件或 MSIX 安装说明。
 
 ---
 

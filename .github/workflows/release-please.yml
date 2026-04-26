@@ -100,15 +100,6 @@ jobs:
           -Publisher "${env:PUBLISHER}"
           -PublisherDisplayName "${env:PUBLISHER_DISPLAY_NAME}"
 
-      - name: Create signing certificate
-        if: ${{ steps.release.outputs.release_created == 'true' }}
-        id: cert
-        shell: pwsh
-        run: >
-          ./scripts/release/New-CodeSigningCertificate.ps1
-          -Subject "${env:PUBLISHER}"
-          -OutputDirectory "artifacts/signing"
-
       - name: Build x64 portable ZIP
         if: ${{ steps.release.outputs.release_created == 'true' }}
         shell: pwsh
@@ -155,39 +146,10 @@ jobs:
           -ArchitecturesAllowed "arm64"
           -ArchitecturesInstallIn64BitMode "arm64"
 
-      - name: Build x64 MSIX
-        if: ${{ steps.release.outputs.release_created == 'true' }}
-        shell: pwsh
-        run: >
-          ./scripts/release/Build-MsixPackage.ps1
-          -ProjectPath "App/App.csproj"
-          -Platform "x64"
-          -RuntimeIdentifier "win-x64"
-          -Version "${{ steps.version.outputs.version }}"
-          -OutputRoot "artifacts"
-          -PackageCertificatePath "${{ steps.cert.outputs.pfx_path }}"
-          -PackageCertificatePassword "${{ steps.cert.outputs.password }}"
-
-      - name: Build ARM64 MSIX
-        if: ${{ steps.release.outputs.release_created == 'true' }}
-        shell: pwsh
-        run: >
-          ./scripts/release/Build-MsixPackage.ps1
-          -ProjectPath "App/App.csproj"
-          -Platform "ARM64"
-          -RuntimeIdentifier "win-arm64"
-          -Version "${{ steps.version.outputs.version }}"
-          -OutputRoot "artifacts"
-          -PackageCertificatePath "${{ steps.cert.outputs.pfx_path }}"
-          -PackageCertificatePassword "${{ steps.cert.outputs.password }}"
-
       - name: Prepare release support files
         if: ${{ steps.release.outputs.release_created == 'true' }}
         shell: pwsh
         run: |
-          Copy-Item -LiteralPath "packaging/windows/MSIX-INSTALL.md" -Destination "artifacts/release-assets/MSIX-INSTALL.md" -Force
-          Copy-Item -LiteralPath "${{ steps.cert.outputs.cer_path }}" -Destination "artifacts/release-assets/autojs6-dev-tools-signing.cer" -Force
-
           $hashLines = Get-ChildItem -LiteralPath "artifacts/release-assets" -File |
             Sort-Object Name |
             ForEach-Object {
