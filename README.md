@@ -8,10 +8,16 @@
 
 🎯 A development toolkit for AutoJS6 script developers, with visual screenshot analysis, UI widget parsing, image matching preview, and AutoJS6 script code generation.
 
+> **Before you try it, install .NET 8 first**  
+> Download: [https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0](https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0)  
+> Without .NET 8, the app may fail to start or run correctly on some machines.
+
 > **Choose the edition that fits your platform strategy**  
 > `autojs6-dev-tools` is the Windows-native edition, optimized for a performance-first Windows experience.  
 > For the Cross-platform edition, see [`autojs6-dev-tools-plus`](https://github.com/terwer/autojs6-dev-tools-plus).  
 > Both projects are original works that I design and maintain as part of the same AutoJS6 toolkit family.
+
+## 😫 Why This Tool Exists
 
 > **Image recognition takes 20 tries to work? Breaks on different devices?**  
 > Use this tool: Real-time match preview • Visual threshold and region adjustment • Auto-generate AutoJS6 code
