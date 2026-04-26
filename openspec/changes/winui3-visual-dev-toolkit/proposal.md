@@ -1,8 +1,8 @@
 ## Why
 
-现有 AutoJS6 开发工具依赖低效的命令行脚本工作流（capture-current.cmd / capture-loop.cmd / generate-region-ref / matchReferenceTemplate），缺乏可视化交互界面，导致截图裁剪、坐标拾取、模板匹配调试效率极低。需要构建 Windows 原生可视化开发工具包，提供像素级图像处理与控件级 UI 图层分析的双引擎并行能力，彻底替代手动调试流程。
+现有 AutoJS6 开发工具依赖低效的命令行脚本工作流（截图、裁剪、匹配与代码生成工作流），缺乏可视化交互界面，导致截图裁剪、坐标拾取、模板匹配调试效率极低。需要构建 Windows 原生可视化开发工具包，提供像素级图像处理与控件级 UI 图层分析的双引擎并行能力，彻底替代手动调试流程。
 
-**核心受益项目：** C:\Users\Administrator\Documents\myscripts\yxs-day-task（英雄杀日常任务自动化脚本），该项目是本工具的直接使用方，其开发流程、模板管理、坐标调试需求直接驱动本工具设计。
+**核心目标用户场景：** 当前项目（AutoJS6 自动化脚本），该项目是本工具的直接使用方，其开发流程、模板管理、坐标调试需求直接驱动本工具设计。
 
 ## What Changes
 
@@ -11,7 +11,7 @@
 - 新增 UI 图层分析引擎：Android UI 树解析、控件边界框渲染、双向联动选择、属性面板
 - 新增 AutoJS6 代码生成器：支持图像模式（images.findImage）和控件模式（UiSelector）双路径生成
 - 新增实时匹配测试：免真机验证图像匹配置信度与控件选择器有效性
-- 复用现有 cmd 脚本的核心业务逻辑与算法流程，确保业务一致性
+- 复用当前工具工作流的核心业务逻辑与算法流程，确保业务一致性
 
 ## Capabilities
 
@@ -36,8 +36,8 @@
 - 兼容性要求：Windows 10/11 (10.0.22621.0+)、.NET 8、VS 2022/2026
 
 **关键参考资源（实施前必须完整理解）：**
-- 现有脚本工作流：C:\Users\Administrator\Documents\myscripts\yxs-day-task（capture-current.cmd、capture-loop.cmd、generate-region-ref、matchReferenceTemplate）
-- 受益项目文档：C:\Users\Administrator\Documents\myscripts\yxs-day-task\AGENTS.md（AutoJS6 开发约束、API 规则、业务逻辑）
+- 当前工具实现工作流：当前项目（截图、裁剪、匹配与代码生成工作流）
+- 目标用户场景文档：当前项目\AGENTS.md（AutoJS6 开发约束、API 规则、业务逻辑）
 - AutoJS6 官方文档：C:\Users\Administrator\Documents\opensouce\AutoJs6-Documentation（json/、api/、docs/）
 - AutoJS6 源码：C:\Users\Administrator\Documents\opensouce\AutoJs6（runtime/api/、core/）
 
@@ -52,7 +52,7 @@
    - 示例：图像对象回收规则、Rhino 引擎限制、坐标系统约定、OpenCV 算法参数
 
 2. **PHASE0_ANALYSIS.md（次高优先级 - 业务实现层）**
-   - 来源：yxs-day-task 项目的业务逻辑分析
+   - 来源：AutoJS6 自动化项目 项目的业务逻辑分析
    - 内容：现有实现的算法流程、参数选择、工作流设计、业务规则
    - 用途：指导工具设计的架构原则和功能需求
    - 示例：锚点构建算法、多容差搜索策略、regionRef 生成规则、双引擎独立架构

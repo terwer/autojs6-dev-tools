@@ -2,6 +2,10 @@
 
 [English](README.md) | [简体中文](README_zh_CN.md)
 
+<p align="center">
+  <img src="docs/images/software-logo.png" alt="AutoJS6 可视化开发工具包 Logo" width="720"/>
+</p>
+
 🎯 AutoJS6 脚本开发辅助工具，提供可视化截图分析、UI 控件解析、图像匹配预览和 AutoJS6 脚本代码生成。
 
 > **选择适合你平台策略的版本**  
@@ -152,12 +156,11 @@ cd autojs6-dev-tools
 dotnet restore
 ```
 
-### 3️⃣ 配置环境变量
+### 3️⃣ 配置可选参考路径
 
-编辑 `AGENTS.md` 设置本地路径：
+如需本地查阅 AutoJS6 API/源码，可编辑 `AGENTS.md` 设置本地路径：
 
 ```bash
-YXS_DAY_TASK_ROOT="C:\path\to\your\yxs-day-task"
 AUTOJS6_DOCS_ROOT="C:\path\to\AutoJs6-Documentation"
 AUTOJS6_SOURCE_ROOT="C:\path\to\AutoJs6"
 ```
@@ -322,7 +325,7 @@ App → Infrastructure → Core ← Infrastructure
 
 1. 阅读 `AGENTS.md` 了解核心设计原则
 2. 阅读 `openspec/project.md` 了解开发清单
-3. 分析 `$YXS_DAY_TASK_ROOT` 中的现有 cmd 脚本
+3. 查阅当前仓库实现、测试和代码模板
 4. 查阅 AutoJS6 文档和源码
 
 ### 💻 实施中
@@ -404,11 +407,9 @@ while (true) {
 
 ---
 
-## 🎯 参考项目
+## 🎯 目标用户
 
-本工具包旨在服务 AutoJS6 自动化项目，特别是：
-
-- **🎮 yxs-day-task**：英雄杀日常任务自动化（主要受益项目）
+本工具包面向需要可视化截图分析、控件检查、模板匹配和代码生成的 AutoJS6 开发者。
 
 ---
 

@@ -1,11 +1,11 @@
 ## 0. 前置准备：完整理解现有项目与 AutoJS6 生态
 
-- [x] 0.1 阅读 C:\Users\Administrator\Documents\myscripts\yxs-day-task\AGENTS.md（AutoJS6 项目上下文、API 规则、开发约束）
-- [x] 0.2 阅读 yxs-day-task 项目所有文档（README.md、openspec/project.md、task-config.json 等）
-- [x] 0.3 分析 yxs-day-task\capture-current.cmd（截图拉取逻辑）
-- [x] 0.4 分析 yxs-day-task\capture-loop.cmd（循环截图逻辑）
-- [x] 0.5 分析 yxs-day-task\generate-region-ref（区域生成算法、regionRef 计算规则）
-- [x] 0.6 分析 yxs-day-task\matchReferenceTemplate（OpenCV 匹配参数、阈值、orientation 处理）
+- [x] 0.1 阅读 当前项目\AGENTS.md（AutoJS6 项目上下文、API 规则、开发约束）
+- [x] 0.2 阅读 AutoJS6 自动化项目 项目所有文档（README.md、openspec/project.md、task-config.json 等）
+- [x] 0.3 分析 AutoJS6 自动化项目\截图拉取能力（截图拉取逻辑）
+- [x] 0.4 分析 AutoJS6 自动化项目\连续截图能力（循环截图逻辑）
+- [x] 0.5 分析 AutoJS6 自动化项目\内置 regionRef 计算（区域生成算法、regionRef 计算规则）
+- [x] 0.6 分析 AutoJS6 自动化项目\matchReferenceTemplate（OpenCV 匹配参数、阈值、orientation 处理）
 - [x] 0.7 查阅 AutoJS6 文档：C:\Users\Administrator\Documents\opensouce\AutoJs6-Documentation（json/、api/、docs/）
 - [x] 0.8 查阅 AutoJS6 源码：C:\Users\Administrator\Documents\opensouce\AutoJs6（runtime/api/、core/）
 - [x] 0.9 提取核心业务逻辑：坐标计算公式、路径处理规则、匹配算法参数、横竖屏处理、regionRef 生成规则

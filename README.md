@@ -2,6 +2,10 @@
 
 [English](README.md) | [简体中文](README_zh_CN.md)
 
+<p align="center">
+  <img src="docs/images/software-logo.png" alt="AutoJS6 Visual Development Toolkit logo" width="720"/>
+</p>
+
 🎯 A development toolkit for AutoJS6 script developers, with visual screenshot analysis, UI widget parsing, image matching preview, and AutoJS6 script code generation.
 
 > **Choose the edition that fits your platform strategy**  
@@ -152,12 +156,11 @@ cd autojs6-dev-tools
 dotnet restore
 ```
 
-### 3️⃣ Configure Environment Variables
+### 3️⃣ Configure Optional Reference Paths
 
-Edit `AGENTS.md` to set your local paths:
+If you need local AutoJS6 API/source lookup, edit `AGENTS.md` to set your local paths:
 
 ```bash
-YXS_DAY_TASK_ROOT="C:\path\to\your\yxs-day-task"
 AUTOJS6_DOCS_ROOT="C:\path\to\AutoJs6-Documentation"
 AUTOJS6_SOURCE_ROOT="C:\path\to\AutoJs6"
 ```
@@ -322,7 +325,7 @@ App → Infrastructure → Core ← Infrastructure
 
 1. Read `AGENTS.md` for core design principles
 2. Read `openspec/project.md` for development checklist
-3. Analyze existing cmd scripts in `$YXS_DAY_TASK_ROOT`
+3. Review the current repository implementation, tests, and code templates
 4. Review AutoJS6 documentation and source code
 
 ### 💻 During Implementation
@@ -404,11 +407,9 @@ We welcome contributions! Please:
 
 ---
 
-## 🎯 Reference Projects
+## 🎯 Target Users
 
-This toolkit is designed to serve AutoJS6 automation projects, particularly:
-
-- **🎮 yxs-day-task**: Hero Kill daily task automation (primary beneficiary)
+This toolkit is designed for AutoJS6 developers who need visual screenshot analysis, widget inspection, template matching, and code generation.
 
 ---
 
