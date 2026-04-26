@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       source_ref:
-        description: 代码从哪里来。先看仓库根目录 RELEASE_TEST_zh_CN.md；日常验包常用 main，补包时常用正式 tag。
+        description: 这次要打包的真实代码来源。测试当前开发代码通常填 dev；验证正式发布代码通常填 main；补已发布版本通常填正式 tag。
         required: true
         default: main
         type: string
