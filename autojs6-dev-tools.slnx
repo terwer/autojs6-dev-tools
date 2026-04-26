@@ -9,6 +9,7 @@
     <File Path=".github\workflows\manual-release-test.yml" />
     <File Path=".github\workflows\release-please.yml" />
     <File Path=".gitignore" />
+    <File Path=".release-please-manifest.json" />
     <File Path="AGENTS.md" />
     <File Path="CHANGELOG.md" />
     <File Path="checklist.md" />
@@ -18,6 +19,7 @@
     <File Path="manual.md" />
     <File Path="README.md" />
     <File Path="README_zh_CN.md" />
+    <File Path="release-please-config.json" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="App/App.csproj" />
