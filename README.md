@@ -12,6 +12,10 @@
 > Download: [https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0](https://dotnet.microsoft.com/zh-cn/download/dotnet/8.0)  
 > Without .NET 8, the app may fail to start or run correctly on some machines.
 
+> **ADB is also required if you want to connect Android devices**  
+> You can install **Android SDK Platform-Tools** directly, install **Android Studio** from the official Google page: [https://developer.android.com/studio](https://developer.android.com/studio), or install **Android Studio** through **JetBrains Toolbox** and then use the built-in SDK Manager to install the SDK / Platform-Tools.  
+> Without ADB, device discovery, screenshot capture, and UI hierarchy inspection will not work.
+
 ## 🎥 Bilibili Quick Start
 
 If you want to understand this tool faster, start with the Bilibili quick-start video. It will walk through .NET 8 installation, first launch, screenshot loading, template cropping, match preview, and AutoJS6 code generation in one complete flow, so you can get from “just downloaded” to “actually usable” with much less trial and error.
