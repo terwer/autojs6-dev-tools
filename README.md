@@ -18,6 +18,21 @@
 
 ---
 
+## 📚 Documentation Entry
+
+If what you need right now is **release validation / GitHub Actions / package verification / release repair**, start with:
+
+- [`RELEASE_TEST.md`](RELEASE_TEST.md)
+
+That page will point you to:
+
+- `manual.md`
+- `checklist.md`
+- `PROXY.md`
+- `DEVELOPMENT.md`
+
+---
+
 ## ⚡ See the Toolkit in Action
 
 Bring screenshot analysis, widget inspection, and AutoJS6 code generation into one native Windows workbench. Tune match regions visually, validate selectors against the current UI tree, and export runnable code without bouncing between crop tools, terminals, and repeated device-side trial and error.

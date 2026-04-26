@@ -32,6 +32,89 @@ When a change really needs packaging validation, trigger the test packaging flow
 
 ---
 
+## Rule for following proven references (important)
+
+When you already have a **real, known-working** reference repository, workflow, or script, the default strategy is not “clean it up first.” It should be:
+
+> **Follow first, understand second; respect the interface before deciding whether to refactor it.**
+
+This matters especially for GitHub Actions, packaging scripts, CLI calls, manifest settings, and other integration-heavy configuration.
+
+### Why this rule exists
+
+In this kind of setup, a working reference is usually not just a sample. It is often:
+
+- already validated against real platform behavior
+- already shaped by previous failures and compatibility issues
+- carrying interface constraints in places that may look stylistically inconsistent
+
+If those constraints are not understood first, “small cleanup” changes can easily break a flow that was already known to work.
+
+### Three different naming layers must be separated
+
+In workflows, at least these three naming layers should be treated separately:
+
+1. **secret storage name**
+   - for example: `secrets.GH_TOKEN`
+
+2. **action input name**
+   - for example: `with: token: ...`
+
+3. **environment variable name expected by the downstream tool**
+   - for example: `env: GITHUB_TOKEN: ...`
+
+These names do not mean the same thing. A rename on the value source side does not automatically justify renaming the consumer-side interface name.
+
+### Typical example: why only the right side should change
+
+If a proven reference uses:
+
+```yaml
+with:
+  token: ${{ secrets.GH_TOKEN }}
+
+env:
+  GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+```
+
+then the meaning is:
+
+- `secrets.GH_TOKEN` = where the value comes from
+- `with.token` = the input interface expected by the action
+- `env.GITHUB_TOKEN` = the interface name expected by the downstream CLI/tool
+
+So the correct approach is:
+
+- changing the value source may be fine
+- changing the consumer-side interface name just for apparent consistency is usually a mistake
+
+Supporting evidence:
+
+- The official GitHub CLI environment documentation explicitly states that `gh` reads established names such as `GH_TOKEN` and `GITHUB_TOKEN`; it does not care about the repository secret name by itself  
+  Documentation: <https://cli.github.com/manual/gh_help_environment>
+
+That reinforces the separation:
+
+- `${{ secrets.GH_TOKEN }}` on the right is the **value source**
+- `GITHUB_TOKEN` / `GH_TOKEN` on the left is the **consumer-facing interface name**
+- this kind of mapping should be decided from the downstream tool contract first, not from visual naming consistency
+
+### Default working method
+
+When a reference is already known to run successfully, use this order:
+
+1. assume the reference shape has a reason
+2. identify whether the left side is a consumer interface or a locally chosen name
+3. avoid renaming interface names unless necessary
+4. if a rename is considered, verify it with official documentation or real runtime evidence first
+5. without strong evidence, prefer to preserve the proven reference shape
+
+### One-sentence principle
+
+> **A proven working reference is not something to casually normalize; it is something to first decode and preserve.**
+
+---
+
 ## Local release prerequisites
 
 If you want to validate ZIP / EXE / MSIX locally before pushing to CI, make sure the machine has:
