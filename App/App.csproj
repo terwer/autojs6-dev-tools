@@ -8,6 +8,7 @@
     <Product>AutoJS6 Visual Development Toolkit</Product>
     <Authors>terwer</Authors>
     <Company>terwer</Company>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platform Condition="'$(Platform)'==''">x64</Platform>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)'=='' and ('$(Platform)'=='AnyCPU' or '$(Platform)'=='Any CPU')">win-x64</RuntimeIdentifier>
@@ -33,6 +34,7 @@
 
   <ItemGroup>
     <Content Include="Assets\SplashScreen.scale-200.png" />
+    <Content Include="Assets\AppIcon.ico" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
     <Content Include="Assets\Square150x150Logo.scale-200.png" />
     <Content Include="Assets\Square44x44Logo.scale-200.png" />

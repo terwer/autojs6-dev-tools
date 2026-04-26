@@ -29,8 +29,23 @@ namespace App
         {
             InitializeComponent();
 
+            SetWindowIcon();
+
             // 启动时最大化窗口
             MaximizeWindow();
+        }
+
+        private void SetWindowIcon()
+        {
+            IntPtr hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            WindowId windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
+            AppWindow appWindow = AppWindow.GetFromWindowId(windowId);
+            var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico");
+
+            if (appWindow != null && File.Exists(iconPath))
+            {
+                appWindow.SetIcon(iconPath);
+            }
         }
 
         private void MaximizeWindow()
