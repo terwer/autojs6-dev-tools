@@ -18,6 +18,21 @@
 
 ---
 
+## 📚 文档入口
+
+如果你现在关心的是 **发版测试 / GitHub Actions / 验包 / 补包**，请直接先看：
+
+- [`RELEASE_TEST_zh_CN.md`](RELEASE_TEST_zh_CN.md)
+
+它会告诉你接下来应该看：
+
+- `manual.md`
+- `checklist.md`
+- `PROXY_zh_CN.md`
+- `DEVELOPMENT_zh_CN.md`
+
+---
+
 ## ⚡ 一眼看懂这个工具
 
 把截图分析、控件树检查和 AutoJS6 代码生成收进同一个 Windows 原生工作台。你可以直接可视化调整匹配区域与阈值、验证当前 UI 树上的选择器，并导出可粘贴的 AutoJS6 代码，不再在截图软件、终端和真机试错之间来回切换。

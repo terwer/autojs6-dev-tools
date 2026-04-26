@@ -5,12 +5,20 @@
 - [CanvasView.xaml](file://App/Views/CanvasView.xaml)
 - [CanvasView.xaml.cs](file://App/Views/CanvasView.xaml.cs)
 - [MainPage.xaml.cs](file://App/Views/MainPage.xaml.cs)
+- [MainPage.UiTree.cs](file://App/Views/MainPage.UiTree.cs)
 - [CropRegion.cs](file://Core/Models/CropRegion.cs)
 - [WidgetNode.cs](file://Core/Models/WidgetNode.cs)
 - [MatchResult.cs](file://Core/Models/MatchResult.cs)
 - [LogService.cs](file://App/Services/LogService.cs)
 - [autojs6-image-match-helper.js](file://App/CodeTemplates/image/autojs6-image-match-helper.js)
 </cite>
+
+## 更新摘要
+**变更内容**
+- 新增 CanvasView.ScrollToWidget 智能滚动功能章节
+- 更新 CanvasView 详细组件分析，增加智能滚动功能说明
+- 更新交互能力章节，包含智能滚动与现有交互功能的整合
+- 更新用户体验优化章节，强调智能滚动带来的体验提升
 
 ## 目录
 1. [简介](#简介)
@@ -25,11 +33,11 @@
 10. [附录](#附录)
 
 ## 简介
-本文件面向 AutoJS6 开发工具的 Canvas 高性能渲染系统，围绕 Win2D GPU 加速渲染架构进行深入解析。重点覆盖 CanvasView 的分层渲染管道、60 FPS 实时渲染优化、图形缓冲区管理、图像绘制机制、控件边界渲染、匹配结果可视化、辅助工具（像素尺、网格、十字准星）的实现思路、渲染状态管理、视图变换与缩放机制、拖拽裁剪交互、实时阈值调整的视觉反馈与性能优化策略，并提供渲染调试技巧与性能监控方法。
+本文件面向 AutoJS6 开发工具的 Canvas 高性能渲染系统，围绕 Win2D GPU 加速渲染架构进行深入解析。重点覆盖 CanvasView 的分层渲染管道、60 FPS 实时渲染优化、图形缓冲区管理、图像绘制机制、控件边界渲染、匹配结果可视化、辅助工具（像素尺、网格、十字准星）的实现思路、渲染状态管理、视图变换与缩放机制、拖拽裁剪交互、实时阈值调整的视觉反馈与性能优化策略，以及新增的智能滚动功能。提供渲染调试技巧与性能监控方法，帮助开发者理解和优化渲染效果。
 
 ## 项目结构
 该系统主要由以下模块构成：
-- 视图层：CanvasView（Win2D CanvasControl + 分层渲染 + 交互处理）
+- 视图层：CanvasView（Win2D CanvasControl + 分层渲染 + 交互处理 + 智能滚动）
 - 模型层：WidgetNode、MatchResult、CropRegion（渲染数据载体）
 - 服务层：LogService（统一日志输出）
 - 主页面：MainPage（事件绑定、状态同步、工作台 UI）
@@ -37,7 +45,7 @@
 ```mermaid
 graph TB
 subgraph "视图层"
-CV["CanvasView<br/>分层渲染 + 交互"]
+CV["CanvasView<br/>分层渲染 + 交互 + 智能滚动"]
 CC["CanvasControl<br/>Win2D 设备"]
 end
 subgraph "模型层"
@@ -69,7 +77,7 @@ CV --> LS
 - [MainPage.xaml.cs:17-60](file://App/Views/MainPage.xaml.cs#L17-L60)
 
 ## 核心组件
-- CanvasView：Win2D 画布视图，负责图像层与 Overlay 层的分层渲染、视图状态管理、交互事件处理、CanvasBitmap 缓存池与导出功能。
+- CanvasView：Win2D 画布视图，负责图像层与 Overlay 层的分层渲染、视图状态管理、交互事件处理、CanvasBitmap 缓存池与导出功能，**新增智能滚动功能**。
 - 模型对象：WidgetNode（控件边界）、MatchResult（匹配结果）、CropRegion（裁剪区域）。
 - 日志服务：LogService 提供统一日志入口，便于渲染调试与性能观测。
 - 主页面：MainPage 订阅 CanvasView 的事件，驱动 UI 状态更新与工作台展示。
@@ -82,10 +90,10 @@ CV --> LS
 - [LogService.cs:9-51](file://App/Services/LogService.cs#L9-L51)
 
 ## 架构总览
-CanvasView 采用 Win2D CanvasControl 进行 GPU 加速渲染，实现“图像层（底层）+ Overlay 层（上层）”的分层渲染架构。渲染流程如下：
+CanvasView 采用 Win2D CanvasControl 进行 GPU 加速渲染，实现"图像层（底层）+ Overlay 层（上层）"的分层渲染架构。渲染流程如下：
 - 图像层：根据当前缩放与平移矩阵绘制 CanvasBitmap。
 - Overlay 层：在同一变换下绘制控件边界、匹配结果与裁剪区域，并支持透明度控制与条件渲染。
-- 交互层：滚轮缩放、拖拽平移、惯性滑动、裁剪模式与手柄调整等。
+- 交互层：滚轮缩放、拖拽平移、惯性滑动、裁剪模式与手柄调整等，**新增智能滚动功能**。
 
 ```mermaid
 sequenceDiagram
@@ -95,6 +103,12 @@ participant DS as "DrawingSession"
 participant CB as "CanvasBitmap"
 UI->>CV : 输入事件指针/滚轮/键盘
 CV->>CV : 更新视图状态缩放/平移/裁剪
+CV->>CV : 检查控件是否在可见区域内
+alt 控件已在可见区域内
+CV->>CV : 无需滚动
+else 控件不在可见区域内
+CV->>CV : 计算目标中心点并设置偏移量
+end
 CV->>DS : 开始绘制
 CV->>DS : 应用变换矩阵缩放+平移
 CV->>CB : 绘制图像
@@ -123,6 +137,10 @@ CV-->>UI : 刷新显示
   - 支持将当前裁剪区域导出为 PNG，包含边界裁剪与像素格式转换。
 - 交互能力
   - 滚轮缩放（以光标为中心）、拖拽平移、惯性滑动、裁剪模式（仅 1:1 下可用）、调整手柄（8 个）、Shift 锁定宽高比。
+- **智能滚动功能**（新增）
+  - 当 UI 树中的控件被选中时自动将画布平移至该控件在视口中的居中显示。
+  - 包含智能视口检测逻辑、15% 边缘缓冲区处理、缩放比例适配等特性。
+  - 仅在控件不在当前可见区域内时才触发滚动，避免不必要的重绘。
 
 ```mermaid
 classDiagram
@@ -148,6 +166,7 @@ class CanvasView {
 +ToggleCropRegion(show)
 +FitToWindow()
 +ResetView()
++ScrollToWidget(widget) void
 +Canvas_Draw(sender,args)
 +Canvas_PointerWheelChanged(...)
 +Canvas_PointerPressed(...)
@@ -160,6 +179,7 @@ class CanvasView {
 - [CanvasView.xaml.cs:24-116](file://App/Views/CanvasView.xaml.cs#L24-L116)
 - [CanvasView.xaml.cs:358-426](file://App/Views/CanvasView.xaml.cs#L358-L426)
 - [CanvasView.xaml.cs:572-627](file://App/Views/CanvasView.xaml.cs#L572-L627)
+- [CanvasView.xaml.cs:199-231](file://App/Views/CanvasView.xaml.cs#L199-L231)
 
 **章节来源**
 - [CanvasView.xaml.cs:358-426](file://App/Views/CanvasView.xaml.cs#L358-L426)
@@ -167,6 +187,51 @@ class CanvasView {
 - [CanvasView.xaml.cs:802-827](file://App/Views/CanvasView.xaml.cs#L802-L827)
 - [CanvasView.xaml.cs:833-1023](file://App/Views/CanvasView.xaml.cs#L833-L1023)
 - [CanvasView.xaml.cs:1097-1305](file://App/Views/CanvasView.xaml.cs#L1097-L1305)
+- [CanvasView.xaml.cs:199-231](file://App/Views/CanvasView.xaml.cs#L199-L231)
+
+### 智能滚动功能详解（新增）
+- 功能概述
+  - 当 UI 树中的控件被选中时自动将画布平移至该控件在视口中的居中显示。
+  - 仅当控件不在当前可见区域内时才触发滚动，避免不必要的重绘。
+- 智能检测逻辑
+  - 计算控件中心点坐标：`centerImgX = x + w / 2.0f; centerImgY = y + h / 2.0f`
+  - 将控件边界转换为画布坐标：`canvasLeft, canvasTop = ImageToCanvas(x, y)` 和 `canvasRight, canvasBottom = ImageToCanvas(x + w, y + h)`
+  - 设置 15% 边缘缓冲区：`marginX = viewW * 0.15f; marginY = viewH * 0.15f`
+  - 检测控件是否已在可见区域内：`canvasLeft >= marginX && canvasTop >= marginY && canvasRight <= viewW - marginX && canvasBottom <= viewH - marginY`
+- 滚动实现
+  - 计算目标偏移量：`offsetX = viewW / 2.0f - centerImgX * scale; offsetY = viewH / 2.0f - centerImgY * scale`
+  - 触发重绘并通知缩放变化：`Canvas.Invalidate(); ScaleChanged?.Invoke(this, _scale)`
+- 性能优化
+  - 仅在控件不在可见区域内时执行滚动，减少不必要的重绘。
+  - 使用缩放比例适配，确保不同缩放下都能正确居中显示。
+  - 异常安全处理，避免无效控件或图像尺寸导致的问题。
+
+```mermaid
+flowchart TD
+Start(["SelectWidget 调用"]) --> CheckCanvas["检查 Canvas 是否存在且尺寸有效"]
+CheckCanvas --> |无效| Return["返回无操作"]
+CheckCanvas --> |有效| GetBounds["获取控件边界 (x,y,w,h)"]
+GetBounds --> CheckBounds["检查边界是否有效"]
+CheckBounds --> |无效| Return
+CheckBounds --> |有效| CalcCenter["计算控件中心点"]
+CalcCenter --> ConvertCoords["转换为画布坐标"]
+ConvertCoords --> CalcMargins["计算 15% 边缘缓冲区"]
+CalcMargins --> CheckVisible{"控件是否在可见区域内？"}
+CheckVisible --> |是| Return
+CheckVisible --> |否| CalcOffset["计算目标偏移量"]
+CalcOffset --> ApplyOffset["设置 _offsetX/_offsetY"]
+ApplyOffset --> TriggerInvalidate["触发重绘和事件"]
+TriggerInvalidate --> End(["完成滚动"])
+Return --> End
+```
+
+**图表来源**
+- [CanvasView.xaml.cs:199-231](file://App/Views/CanvasView.xaml.cs#L199-L231)
+- [MainPage.UiTree.cs:170-172](file://App/Views/MainPage.UiTree.cs#L170-L172)
+
+**章节来源**
+- [CanvasView.xaml.cs:199-231](file://App/Views/CanvasView.xaml.cs#L199-L231)
+- [MainPage.UiTree.cs:170-172](file://App/Views/MainPage.UiTree.cs#L170-L172)
 
 ### 图像绘制机制与缓冲区管理
 - CanvasBitmap 缓存策略
@@ -318,19 +383,16 @@ Invalidate --> End(["结束"])
 - 十字准星：在鼠标位置绘制十字线，支持 Ctrl 键锁定，辅助精确对位。
 - 实现建议：将上述工具作为 Overlay 层的可选项，通过布尔开关与透明度参数控制，避免影响主渲染路径。
 
-[本节为概念性实现建议，不直接分析具体代码文件]
-
 ### 实时阈值调整的视觉反馈
 - 配合匹配结果可视化，阈值变化可通过调整 Overlay 层透明度与颜色分级感知差异。
 - 建议在 UI 中提供阈值滑条，结合 CanvasView 的 SetOverlayOpacity 与 MatchResult 的置信度分级，形成闭环反馈。
-
-[本节为概念性实现建议，不直接分析具体代码文件]
 
 ## 依赖关系分析
 - CanvasView 依赖 Win2D CanvasControl 进行 GPU 加速渲染。
 - 渲染数据来自模型层（WidgetNode、MatchResult、CropRegion）。
 - 日志服务统一输出，便于定位渲染问题。
 - 主页面订阅 CanvasView 事件，驱动 UI 状态更新。
+- **智能滚动功能**：MainPage 通过调用 Canvas.ScrollToWidget(widget) 实现控件自动滚动到可视区域内。
 
 ```mermaid
 graph LR
@@ -340,17 +402,21 @@ CV --> WN["WidgetNode"]
 CV --> MR["MatchResult"]
 CV --> CR["CropRegion"]
 CV --> LS["LogService"]
+MP --> |"SelectWidget"| CV
+CV --> |"ScrollToWidget"| MP
 ```
 
 **图表来源**
 - [MainPage.xaml.cs:56-60](file://App/Views/MainPage.xaml.cs#L56-L60)
 - [CanvasView.xaml.cs:29-33](file://App/Views/CanvasView.xaml.cs#L29-L33)
 - [LogService.cs:32-32](file://App/Services/LogService.cs#L32-L32)
+- [MainPage.UiTree.cs:170-172](file://App/Views/MainPage.UiTree.cs#L170-L172)
 
 **章节来源**
 - [MainPage.xaml.cs:56-60](file://App/Views/MainPage.xaml.cs#L56-L60)
 - [CanvasView.xaml.cs:29-33](file://App/Views/CanvasView.xaml.cs#L29-L33)
 - [LogService.cs:32-32](file://App/Services/LogService.cs#L32-L32)
+- [MainPage.UiTree.cs:170-172](file://App/Views/MainPage.UiTree.cs#L170-L172)
 
 ## 性能考虑
 - 60 FPS 实时渲染
@@ -364,12 +430,17 @@ CV --> LS["LogService"]
   - FitToWindow 限制缩放范围，避免过大缩放导致的过度采样与内存压力。
 - 交互优化
   - 拖拽阈值区分点击与拖拽，减少误触发；裁剪模式仅在 1:1 下启用，保证像素级精度。
+- **智能滚动性能优化**（新增）
+  - 仅在控件不在可见区域内时执行滚动，避免不必要的重绘。
+  - 使用 15% 边缘缓冲区，减少频繁的滚动触发。
+  - 缩放比例适配，确保不同缩放下都能正确居中显示。
 
 **章节来源**
 - [CanvasView.xaml.cs:107-116](file://App/Views/CanvasView.xaml.cs#L107-L116)
 - [CanvasView.xaml.cs:368-417](file://App/Views/CanvasView.xaml.cs#L368-L417)
 - [CanvasView.xaml.cs:472-510](file://App/Views/CanvasView.xaml.cs#L472-L510)
 - [CanvasView.xaml.cs:802-827](file://App/Views/CanvasView.xaml.cs#L802-L827)
+- [CanvasView.xaml.cs:199-231](file://App/Views/CanvasView.xaml.cs#L199-L231)
 
 ## 故障排除指南
 - 位图绘制异常
@@ -384,18 +455,22 @@ CV --> LS["LogService"]
 - 裁剪无效
   - 现象：裁剪区域过小或越界。
   - 处理：检查裁剪区域有效性校验（最小尺寸、范围约束）与事件触发逻辑。
+- **智能滚动问题**（新增）
+  - 现象：控件选择后画布不滚动或滚动异常。
+  - 处理：确认控件边界有效（w>0, h>0）；检查 Canvas 尺寸是否有效；验证缩放比例和图像尺寸；查看日志输出确认滚动逻辑执行。
 - 日志定位
-  - 使用 LogService 输出关键路径日志（如 Canvas_Draw、Overlay 状态、裁剪过程），结合 UI 的日志面板进行问题排查。
+  - 使用 LogService 输出关键路径日志（如 Canvas_Draw、Overlay 状态、裁剪过程、智能滚动），结合 UI 的日志面板进行问题排查。
 
 **章节来源**
 - [CanvasView.xaml.cs:590-593](file://App/Views/CanvasView.xaml.cs#L590-L593)
 - [CanvasView.xaml.cs:448-456](file://App/Views/CanvasView.xaml.cs#L448-L456)
 - [CanvasView.xaml.cs:815-821](file://App/Views/CanvasView.xaml.cs#L815-L821)
 - [CanvasView.xaml.cs:962-971](file://App/Views/CanvasView.xaml.cs#L962-L971)
+- [CanvasView.xaml.cs:199-231](file://App/Views/CanvasView.xaml.cs#L199-L231)
 - [LogService.cs:39-49](file://App/Services/LogService.cs#L39-L49)
 
 ## 结论
-本系统通过 Win2D CanvasControl 实现 GPU 加速的分层渲染，结合 CanvasBitmap 缓存池与严格的视图状态管理，在保证交互流畅的同时实现了稳定的 60 FPS 渲染体验。控件边界、匹配结果与裁剪区域的可视化设计直观清晰，配合日志服务与 UI 状态同步，为开发者提供了高效的调试与优化手段。未来可扩展像素尺、网格与十字准星等辅助工具，进一步提升图像分析与模板匹配的工作效率。
+本系统通过 Win2D CanvasControl 实现 GPU 加速的分层渲染，结合 CanvasBitmap 缓存池与严格的视图状态管理，在保证交互流畅的同时实现了稳定的 60 FPS 渲染体验。新增的智能滚动功能显著提升了用户体验，当 UI 树中的控件被选中时能够自动平移至视口居中显示，智能的视口检测与边缘缓冲区处理确保了良好的交互体验。控件边界、匹配结果与裁剪区域的可视化设计直观清晰，配合日志服务与 UI 状态同步，为开发者提供了高效的调试与优化手段。未来可扩展像素尺、网格与十字准星等辅助工具，进一步提升图像分析与模板匹配的工作效率。
 
 ## 附录
 - 模板匹配辅助脚本：提供参考分辨率与区域构建逻辑，便于生成 regionRef 与多尺度候选区域，支撑更稳健的匹配流程。

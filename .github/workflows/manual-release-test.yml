@@ -4,29 +4,29 @@ on:
   workflow_dispatch:
     inputs:
       source_ref:
-        description: Build from which code? Use main for a routine test, or a tag when repairing an existing release.
+        description: 代码从哪里来。先看仓库根目录 RELEASE_TEST_zh_CN.md；日常验包常用 main，补包时常用正式 tag。
         required: true
         default: main
         type: string
       version:
-        description: Version shown in the package files and app metadata, for example 0.0.1.
+        description: 本次包显示的版本号，例如 0.0.1。
         required: true
         type: string
       publish_to_release:
-        description: Turn this on only when you want to upload files to a GitHub Release.
+        description: 只有当你真的要把产物上传到 GitHub Release 时才打开。
         required: true
         default: false
         type: boolean
       release_tag:
-        description: Release tag to upload to. Leave empty for a normal test build.
+        description: 要上传到哪个 Release tag；普通测试构建可留空。
         required: false
         type: string
       release_name:
-        description: Release title used only when uploading to GitHub Release.
+        description: Release 标题；只有在上传到 GitHub Release 时才会用到。
         required: false
         type: string
       prerelease:
-        description: Mark a newly created GitHub Release as prerelease.
+        description: 如果这次要创建新的 GitHub Release，是否标记为 prerelease。
         required: true
         default: true
         type: boolean
