@@ -42,7 +42,7 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@v4.4.1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
@@ -200,7 +200,7 @@ jobs:
       - name: Upload release assets
         if: ${{ steps.release.outputs.release_created == 'true' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         shell: pwsh
         run: >
           gh release upload "${{ steps.release.outputs.tag_name }}" artifacts/release-assets/* --clobber

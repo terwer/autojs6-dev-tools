@@ -216,7 +216,7 @@ jobs:
       - name: Upload files to GitHub Release
         if: ${{ inputs.publish_to_release }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         shell: pwsh
         run: |
           $tag = "${{ steps.meta.outputs.release_tag }}"
