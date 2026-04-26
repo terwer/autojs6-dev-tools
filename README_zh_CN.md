@@ -2,6 +2,10 @@
 
 [English](README.md) | [简体中文](README_zh_CN.md)
 
+<p align="center">
+  <img src="docs/images/software-logo.png" alt="AutoJS6 可视化开发工具包 Logo" width="720"/>
+</p>
+
 🎯 AutoJS6 脚本开发辅助工具，提供可视化截图分析、UI 控件解析、图像匹配预览和 AutoJS6 脚本代码生成。
 
 > **选择适合你平台策略的版本**  
@@ -15,21 +19,6 @@
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![WinUI 3](https://img.shields.io/badge/WinUI-3-0078D4?logo=windows)](https://microsoft.github.io/microsoft-ui-xaml/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.txt)
-
----
-
-## 📚 文档入口
-
-如果你现在关心的是 **发版测试 / GitHub Actions / 验包 / 补包**，请直接先看：
-
-- [`RELEASE_TEST_zh_CN.md`](RELEASE_TEST_zh_CN.md)
-
-它会告诉你接下来应该看：
-
-- `manual.md`
-- `checklist.md`
-- `PROXY_zh_CN.md`
-- `DEVELOPMENT_zh_CN.md`
 
 ---
 
@@ -167,12 +156,11 @@ cd autojs6-dev-tools
 dotnet restore
 ```
 
-### 3️⃣ 配置环境变量
+### 3️⃣ 配置可选参考路径
 
-编辑 `AGENTS.md` 设置本地路径：
+如需本地查阅 AutoJS6 API/源码，可编辑 `AGENTS.md` 设置本地路径：
 
 ```bash
-YXS_DAY_TASK_ROOT="C:\path\to\your\yxs-day-task"
 AUTOJS6_DOCS_ROOT="C:\path\to\AutoJs6-Documentation"
 AUTOJS6_SOURCE_ROOT="C:\path\to\AutoJs6"
 ```
@@ -337,7 +325,7 @@ App → Infrastructure → Core ← Infrastructure
 
 1. 阅读 `AGENTS.md` 了解核心设计原则
 2. 阅读 `openspec/project.md` 了解开发清单
-3. 分析 `$YXS_DAY_TASK_ROOT` 中的现有 cmd 脚本
+3. 查阅当前仓库实现、测试和代码模板
 4. 查阅 AutoJS6 文档和源码
 
 ### 💻 实施中
@@ -419,11 +407,9 @@ while (true) {
 
 ---
 
-## 🎯 参考项目
+## 🎯 目标用户
 
-本工具包旨在服务 AutoJS6 自动化项目，特别是：
-
-- **🎮 yxs-day-task**：英雄杀日常任务自动化（主要受益项目）
+本工具包面向需要可视化截图分析、控件检查、模板匹配和代码生成的 AutoJS6 开发者。
 
 ---
 
@@ -434,6 +420,21 @@ while (true) {
 - **📙 DEVELOPMENT.md**：发布自动化、手动测试发包、修复与回退说明（英文）
 - **📕 DEVELOPMENT_zh_CN.md**：发布自动化、手动测试发包、修复与回退说明（中文）
 - **📂 openspec/changes/**：OpenSpec 变更提案
+
+---
+
+## 📚 发版测试文档入口
+
+如果你现在关心的是 **发版测试 / GitHub Actions / 验包 / 补包**，请直接先看：
+
+- [`RELEASE_TEST_zh_CN.md`](RELEASE_TEST_zh_CN.md)
+
+它会告诉你接下来应该看：
+
+- `manual.md`
+- `checklist.md`
+- `PROXY_zh_CN.md`
+- `DEVELOPMENT_zh_CN.md`
 
 ---
 
@@ -471,13 +472,13 @@ while (true) {
     <td align="center">
       <img src="https://img.shields.io/badge/微信支付-09B83E?logo=wechat&logoColor=white" alt="微信支付"/><br/>
       <b>微信支付</b><br/>
-      <img src="docs/images/wechat-pay-qr.png" width="150"/><br/>
+      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/wechat.jpg" alt="wechat" style="width:280px;height:375px;" /><br/>
       <sub>扫码赞助</sub>
     </td>
     <td align="center">
       <img src="https://img.shields.io/badge/支付宝-1677FF?logo=alipay&logoColor=white" alt="支付宝"/><br/>
       <b>支付宝</b><br/>
-      <img src="docs/images/alipay-qr.png" width="150"/><br/>
+        <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/alipay.jpg" alt="alipay" style="width:280px;height:375px;" /><br/>
       <sub>扫码赞助</sub>
     </td>
     <td align="center">
@@ -506,18 +507,7 @@ while (true) {
 
 ### 💖 赞助者
 
-感谢以下支持者的慷慨赞助：
-
-<a href="https://github.com/supporter1"><img src="https://avatars.githubusercontent.com/u/supporter1?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter2"><img src="https://avatars.githubusercontent.com/u/supporter2?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter3"><img src="https://avatars.githubusercontent.com/u/supporter3?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter4"><img src="https://avatars.githubusercontent.com/u/supporter4?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter5"><img src="https://avatars.githubusercontent.com/u/supporter5?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter6"><img src="https://avatars.githubusercontent.com/u/supporter6?s=60" width="60px;" alt=""/></a>
-
----
-<a href="https://github.com/contributor4"><img src="https://avatars.githubusercontent.com/u/contributor4?s=50" width="50px;" alt="贡献者 4"/></a>
-<a href="https://github.com/contributor5"><img src="https://avatars.githubusercontent.com/u/contributor5?s=50" width="50px;" alt="贡献者 5"/></a>
+虚位以待
 
 ---
 

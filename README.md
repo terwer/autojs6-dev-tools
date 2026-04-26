@@ -2,6 +2,10 @@
 
 [English](README.md) | [简体中文](README_zh_CN.md)
 
+<p align="center">
+  <img src="docs/images/software-logo.png" alt="AutoJS6 Visual Development Toolkit logo" width="720"/>
+</p>
+
 🎯 A development toolkit for AutoJS6 script developers, with visual screenshot analysis, UI widget parsing, image matching preview, and AutoJS6 script code generation.
 
 > **Choose the edition that fits your platform strategy**  
@@ -15,21 +19,6 @@
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)](https://dotnet.microsoft.com/)
 [![WinUI 3](https://img.shields.io/badge/WinUI-3-0078D4?logo=windows)](https://microsoft.github.io/microsoft-ui-xaml/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.txt)
-
----
-
-## 📚 Documentation Entry
-
-If what you need right now is **release validation / GitHub Actions / package verification / release repair**, start with:
-
-- [`RELEASE_TEST.md`](RELEASE_TEST.md)
-
-That page will point you to:
-
-- `manual.md`
-- `checklist.md`
-- `PROXY.md`
-- `DEVELOPMENT.md`
 
 ---
 
@@ -167,12 +156,11 @@ cd autojs6-dev-tools
 dotnet restore
 ```
 
-### 3️⃣ Configure Environment Variables
+### 3️⃣ Configure Optional Reference Paths
 
-Edit `AGENTS.md` to set your local paths:
+If you need local AutoJS6 API/source lookup, edit `AGENTS.md` to set your local paths:
 
 ```bash
-YXS_DAY_TASK_ROOT="C:\path\to\your\yxs-day-task"
 AUTOJS6_DOCS_ROOT="C:\path\to\AutoJs6-Documentation"
 AUTOJS6_SOURCE_ROOT="C:\path\to\AutoJs6"
 ```
@@ -337,7 +325,7 @@ App → Infrastructure → Core ← Infrastructure
 
 1. Read `AGENTS.md` for core design principles
 2. Read `openspec/project.md` for development checklist
-3. Analyze existing cmd scripts in `$YXS_DAY_TASK_ROOT`
+3. Review the current repository implementation, tests, and code templates
 4. Review AutoJS6 documentation and source code
 
 ### 💻 During Implementation
@@ -419,11 +407,9 @@ We welcome contributions! Please:
 
 ---
 
-## 🎯 Reference Projects
+## 🎯 Target Users
 
-This toolkit is designed to serve AutoJS6 automation projects, particularly:
-
-- **🎮 yxs-day-task**: Hero Kill daily task automation (primary beneficiary)
+This toolkit is designed for AutoJS6 developers who need visual screenshot analysis, widget inspection, template matching, and code generation.
 
 ---
 
@@ -434,6 +420,21 @@ This toolkit is designed to serve AutoJS6 automation projects, particularly:
 - **📙 DEVELOPMENT.md**: Release automation, manual packaging test, recovery, and rollback guide
 - **📕 DEVELOPMENT_zh_CN.md**: Chinese version of the release and recovery guide
 - **📂 openspec/changes/**: OpenSpec change proposals
+
+---
+
+## 📚Realase Test Documentation Entry
+
+If what you need right now is **release validation / GitHub Actions / package verification / release repair**, start with:
+
+- [`RELEASE_TEST.md`](RELEASE_TEST.md)
+
+That page will point you to:
+
+- `manual.md`
+- `checklist.md`
+- `PROXY.md`
+- `DEVELOPMENT.md`
 
 ---
 
@@ -471,19 +472,19 @@ If this tool saves you hours of tedious work, consider buying me a coffee! Your 
     <td align="center">
       <img src="https://img.shields.io/badge/WeChat-09B83E?logo=wechat&logoColor=white" alt="WeChat Pay"/><br/>
       <b>WeChat Pay</b><br/>
-      <img src="docs/images/wechat-pay-qr.png" width="150"/><br/>
+      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/wechat.jpg" alt="wechat" style="width:280px;height:375px;" /><br/>
       <sub>Scan to donate</sub>
     </td>
     <td align="center">
       <img src="https://img.shields.io/badge/Alipay-1677FF?logo=alipay&logoColor=white" alt="Alipay"/><br/>
       <b>Alipay</b><br/>
-      <img src="docs/images/alipay-qr.png" width="150"/><br/>
+      <img src="https://static-rs-terwer.oss-cn-beijing.aliyuncs.com/donate/alipay.jpg" alt="alipay" style="width:280px;height:375px;" /><br/>
       <sub>Scan to donate</sub>
     </td>
     <td align="center">
       <img src="https://img.shields.io/badge/爱发电-946CE6?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMEw5LjUgNS41TDE1IDdMOS41IDguNUw4IDE1TDYuNSA4LjVMMSA3TDYuNSA1LjVMOCAwWiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+&logoColor=white" alt="爱发电"/><br/>
       <b>爱发电 (afdian)</b><br/>
-      <a href="https://afdian.net/@terwer">
+      <a href="https://afdian.com/a/terwer">
         <img src="https://img.shields.io/badge/Support-爱发电-946CE6?style=for-the-badge" alt="Support on 爱发电"/>
       </a><br/>
       <sub>Monthly sponsorship</sub>
@@ -506,14 +507,7 @@ Every contribution matters. Thank you! 🙏
 
 ### 💖 Sponsors
 
-Thanks to the following sponsors for their generous support:
-
-<a href="https://github.com/supporter1"><img src="https://avatars.githubusercontent.com/u/supporter1?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter2"><img src="https://avatars.githubusercontent.com/u/supporter2?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter3"><img src="https://avatars.githubusercontent.com/u/supporter3?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter4"><img src="https://avatars.githubusercontent.com/u/supporter4?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter5"><img src="https://avatars.githubusercontent.com/u/supporter5?s=60" width="60px;" alt=""/></a>
-<a href="https://github.com/supporter6"><img src="https://avatars.githubusercontent.com/u/supporter6?s=60" width="60px;" alt=""/></a>
+Wait for you
 
 ---
 

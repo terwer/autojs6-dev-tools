@@ -2,13 +2,13 @@
 
 **生成时间：** 2026-04-19  
 **任务范围：** 0.1-0.10 前置准备阶段  
-**目标：** 深入理解 yxs-day-task 项目和 AutoJS6 生态，为 WinUI 3 工具开发奠定基础
+**目标：** 深入理解 AutoJS6 自动化项目 项目和 AutoJS6 生态，为 WinUI 3 工具开发奠定基础
 
 ---
 
 ## 1. 核心业务逻辑提取
 
-### 1.1 截图拉取逻辑（capture-current.cmd / capture-current.ps1）
+### 1.1 截图拉取逻辑（截图拉取能力 / 截图拉取实现）
 
 **核心流程：**
 ```powershell
@@ -27,7 +27,7 @@
 - 流式读取避免大图内存溢出
 - 元数据与截图配对保存，便于后续分析
 
-### 1.2 区域生成算法（generate-region-ref.js）
+### 1.2 区域生成算法（内置 regionRef 计算实现）
 
 **核心算法：**
 ```javascript
@@ -172,15 +172,15 @@ if (img && typeof img.recycle === "function") {
 ### 3.2 regionRef 生成规则
 
 **强制流程：**
-1. 必须使用 `generate-region-ref` 工具
+1. 必须使用 `内置 regionRef 计算` 工具
 2. 基于真实模板图 + 当前 ADB 截图生成
 3. 禁止凭感觉手填或拍脑袋猜测
 4. 工具输出后仍需结合页面方向和业务语义核对
 
 **命令示例：**
 ```cmd
-.\generate-region-ref.cmd -Template assets\xxx.png -Serial emulator-5554
-.\generate-region-ref.cmd -Template assets\xxx.png -Screenshot captures\xxx.png
+.\内置 regionRef 计算.cmd -Template assets\xxx.png -Serial emulator-5554
+.\内置 regionRef 计算.cmd -Template assets\xxx.png -Screenshot captures\xxx.png
 ```
 
 ### 3.3 模板裁剪规则
@@ -203,12 +203,12 @@ if (img && typeof img.recycle === "function") {
 
 ## 4. 核心技术栈映射
 
-### 4.1 现有技术栈（yxs-day-task）
+### 4.1 现有技术栈（AutoJS6 自动化项目）
 
 | 功能 | 现有实现 | 技术 |
 |------|---------|------|
-| 截图拉取 | capture-current.ps1 | PowerShell + ADB |
-| 图像处理 | generate-region-ref.js | Node.js + ImageMagick |
+| 截图拉取 | 截图拉取实现 | PowerShell + ADB |
+| 图像处理 | 内置 regionRef 计算实现 | Node.js + ImageMagick |
 | 模板匹配 | images.matchTemplate | AutoJS6 + OpenCV |
 | 特征匹配 | images.matchFeatures | AutoJS6 + OpenCV |
 | UI 树解析 | uiautomator dump | ADB + XML |
@@ -342,10 +342,10 @@ adb pull /sdcard/window_dump.xml captures/
 
 | 算法 | 现有实现 | 目标实现 | 优先级 |
 |------|---------|---------|--------|
-| 锚点构建 | generate-region-ref.js | ImageProcessor.BuildAnchors() | P0 |
-| 多容差搜索 | generate-region-ref.js | OpenCVMatchService.MultiToleranceSearch() | P0 |
-| 逐像素评分 | generate-region-ref.js | OpenCVMatchService.ScoreCandidate() | P0 |
-| regionRef 转换 | generate-region-ref.js | CoordinateMapper.ToReferenceRect() | P0 |
+| 锚点构建 | 内置 regionRef 计算实现 | ImageProcessor.BuildAnchors() | P0 |
+| 多容差搜索 | 内置 regionRef 计算实现 | OpenCVMatchService.MultiToleranceSearch() | P0 |
+| 逐像素评分 | 内置 regionRef 计算实现 | OpenCVMatchService.ScoreCandidate() | P0 |
+| regionRef 转换 | 内置 regionRef 计算实现 | CoordinateMapper.ToReferenceRect() | P0 |
 | 模板匹配 | images.matchTemplate | OpenCVMatchService.MatchTemplate() | P0 |
 | 特征匹配 | images.matchFeatures | OpenCVMatchService.MatchFeatures() | P1 |
 | UI 树解析 | XML 解析 | UiDumpParser.Parse() | P0 |
@@ -394,14 +394,14 @@ adb pull /sdcard/window_dump.xml captures/
 - 日志记录解析错误
 - 提供原始 Dump 文本查看面板
 
-### 8.4 生成代码与现有脚本行为不一致
+### 8.4 生成代码与当前工具实现行为不一致
 
 **风险：** 生成代码不符合 AutoJS6 约束
 
 **缓解措施：**
-- 严格复用现有脚本的坐标计算/匹配算法/路径处理逻辑
+- 严格复用当前工具实现的坐标计算/匹配算法/路径处理逻辑
 - 提供代码预览与手动编辑功能
-- 实施前完整理解 yxs-day-task 业务逻辑（AGENTS.md、README.md、openspec/project.md）
+- 实施前完整理解 AutoJS6 自动化项目 业务逻辑（AGENTS.md、README.md、openspec/project.md）
 - 确保生成代码符合 AutoJS6 API 约束（Rhino 引擎限制、图像识别 OOM 预防、模板裁剪规则、横竖屏处理、regionRef 生成规则）
 
 ---
@@ -443,7 +443,7 @@ adb pull /sdcard/window_dump.xml captures/
 
 ### 10.1 核心发现
 
-1. **yxs-day-task 项目已经形成了完整的 AutoJS6 开发工作流**
+1. **AutoJS6 自动化项目 项目已经形成了完整的 AutoJS6 开发工作流**
    - 截图取证 → 模板裁剪 → regionRef 生成 → 代码生成 → 真机验证
    - 所有核心算法和业务规则都已经过真机验证
 
@@ -460,7 +460,7 @@ adb pull /sdcard/window_dump.xml captures/
 ### 10.2 关键成功因素
 
 1. **严格复用现有算法**
-   - generate-region-ref.js 的锚点构建、多容差搜索、逐像素评分算法必须完整移植
+   - 内置 regionRef 计算实现 的锚点构建、多容差搜索、逐像素评分算法必须完整移植
    - 参数值必须保持一致（padding=20, alphaThreshold=32, pixelTolerance=20 等）
 
 2. **遵守 AutoJS6 API 约束**

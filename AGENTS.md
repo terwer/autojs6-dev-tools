@@ -29,7 +29,6 @@
 
 本项目是 **Windows 原生可视化开发工具包**，用于替代低效的命令行脚本工作流，为 AutoJS6 开发者提供像素级图像处理与控件级 UI 图层分析的双引擎并行能力。
 
-**核心受益项目：** yxs-day-task（英雄杀日常任务自动化脚本，位于 `$YXS_DAY_TASK_ROOT`）
 
 **相关文档：**
 - `openspec/project.md`：开发清单，本文档的执行展开版，包含具体验证规则与开发步骤
@@ -100,9 +99,6 @@
 ### 环境变量约定（按本机环境替换）
 
 ```bash
-# 受益项目根目录（英雄杀日常任务自动化脚本）
-YXS_DAY_TASK_ROOT="C:\Users\Administrator\Documents\myscripts\yxs-day-task"
-
 # AutoJS6 文档根目录
 AUTOJS6_DOCS_ROOT="C:\Users\Administrator\Documents\opensouce\AutoJs6-Documentation"
 
@@ -110,34 +106,18 @@ AUTOJS6_DOCS_ROOT="C:\Users\Administrator\Documents\opensouce\AutoJs6-Documentat
 AUTOJS6_SOURCE_ROOT="C:\Users\Administrator\Documents\opensouce\AutoJs6"
 ```
 
-### 1. 现有脚本工作流（核心参考）
-**路径：** `$YXS_DAY_TASK_ROOT`
+### 1. 当前项目实现（默认事实来源）
 
-必须分析的脚本：
-- `capture-current.cmd`：截图拉取逻辑
-- `capture-loop.cmd`：循环截图逻辑
-- `generate-region-ref`：区域生成算法、regionRef 计算规则
-- `matchReferenceTemplate`：OpenCV 匹配参数、阈值、orientation 处理
+必须优先查看当前仓库中的真实实现、测试、模板与运行行为；禁止再依赖外部历史脚本或外部业务项目作为参考实现。
 
-### 2. 受益项目文档（业务约束来源）
-**路径：** `$YXS_DAY_TASK_ROOT\AGENTS.md`
-
-该文档定义了：
-- AutoJS6 API 使用规则
-- 模板裁剪规则（禁止红点、动态元素）
-- 横竖屏处理（landscape/portrait）
-- regionRef 生成规则（必须用 generate-region-ref 工具）
-- 图像识别 OOM 预防规则
-- 坐标系对齐策略
-
-### 3. AutoJS6 官方文档（API 发现与引用）
+### 2. AutoJS6 官方文档（API 发现与引用）
 **路径：** `$AUTOJS6_DOCS_ROOT`
 
 - `json/`：用于 API 发现（快速定位模块、方法名、参数结构）
 - `api/`：用于引用（提取用法、参数、返回值、版本标签、示例）
 - `docs/`：用于辅助阅读
 
-### 4. AutoJS6 源码（最终定论层）
+### 3. AutoJS6 源码（最终定论层）
 **路径：** `$AUTOJS6_SOURCE_ROOT`
 
 关键源码根：
@@ -220,9 +200,9 @@ while (true) {
 ### 5. regionRef 生成规则
 生成代码时，必须提示用户：
 
-- **新增或调整 `regionRef` 时，必须优先使用 `generate-region-ref` 工具**
+- **新增或调整 `regionRef` 时，必须使用当前工具的真实截图、模板尺寸与导出结果**
 - 禁止凭感觉手填或拍脑袋猜测
-- 推荐入口：`.\generate-region-ref.cmd -Template assets\\xxx.png -Serial <serial>`
+- regionRef 必须与当前截图分辨率、orientation、模板区域保持一致
 
 ---
 
@@ -327,4 +307,4 @@ while (true) {
 
 ## 一句话工作准则
 
-**双核独立、异步非阻塞、60FPS 流畅、严格遵循 AutoJS6 约束、复用现有脚本逻辑。**
+**双核独立、异步非阻塞、60FPS 流畅、严格遵循 AutoJS6 约束、以当前产品实现和 AutoJS6 源码为准。**

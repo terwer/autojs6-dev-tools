@@ -14,21 +14,20 @@
 
 ---
 
-## 0. 开发前先理解现有项目与 AutoJS6 生态
+## 0. 开发前先理解当前项目与 AutoJS6 生态
 
 先完成这 10 项准备工作：
 
-1. **阅读 yxs-day-task 项目文档**
-   - `$YXS_DAY_TASK_ROOT\AGENTS.md`
-   - `$YXS_DAY_TASK_ROOT\README.md`
-   - `$YXS_DAY_TASK_ROOT\openspec\project.md`
-   - `$YXS_DAY_TASK_ROOT\task-config.json`
+1. **阅读当前项目文档**
+   - `AGENTS.md`
+   - `README.md` / `README_zh_CN.md`
+   - `openspec/project.md`
 
-2. **分析现有 cmd 脚本**
-   - `capture-current.cmd`：截图拉取逻辑
-   - `capture-loop.cmd`：循环截图逻辑
-   - `generate-region-ref`：区域生成算法、regionRef 计算规则
-   - `matchReferenceTemplate`：OpenCV 匹配参数、阈值、orientation 处理
+2. **查阅当前仓库实现**
+   - `App/`：WinUI 交互、窗口、视图与 MVVM
+   - `Core/`：纯业务逻辑、模型与接口
+   - `Infrastructure/`：外部依赖封装
+   - `App/CodeTemplates/`：AutoJS6 代码模板
 
 3. **查阅 AutoJS6 文档**
    - `$AUTOJS6_DOCS_ROOT\json\`：API 发现
@@ -44,7 +43,7 @@
    - 路径处理规则（正斜杠、assets/相对/绝对路径）
    - 匹配算法参数（TM_CCOEFF_NORMED、阈值范围 0.50~0.95）
    - 横竖屏处理（landscape/portrait、参考分辨率）
-   - regionRef 生成规则（必须用 generate-region-ref 工具）
+   - regionRef 生成规则（基于当前工具真实截图、模板尺寸与导出结果）
 
 6. **理解 AutoJS6 API 约束**
    - `images.findImage()`、`images.matchTemplate()`

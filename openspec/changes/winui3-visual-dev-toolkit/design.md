@@ -2,10 +2,10 @@
 
 现有项目已完成 WinUI 3 脚手架初始化（VS 2026），基础工程结构就绪。
 
-**现有 cmd 脚本参考路径：** C:\Users\Administrator\Documents\myscripts\yxs-day-task  
-该目录包含完整的命令行工作流（capture-current.cmd / capture-loop.cmd / generate-region-ref / matchReferenceTemplate），其截图、区域生成、匹配逻辑必须作为核心参考，直接复用业务逻辑与算法流程。
+**当前工具工作流参考路径：** 当前项目  
+该目录包含完整的命令行工作流（截图、裁剪、匹配与代码生成工作流），其截图、区域生成、匹配逻辑必须作为核心参考，直接复用业务逻辑与算法流程。
 
-**核心受益项目：** yxs-day-task（英雄杀日常任务自动化脚本）  
+**核心目标用户场景：** AutoJS6 自动化项目（AutoJS6 自动化脚本）  
 该项目是本工具的直接使用方，其 AGENTS.md 文档详细定义了 AutoJS6 开发约束、API 使用规则、模板裁剪规则、横竖屏处理、regionRef 生成规则、图像识别 OOM 预防等关键业务逻辑，实施前必须完整理解。
 
 **AutoJS6 生态参考资源：**
@@ -20,7 +20,7 @@
   - 核心 API 签名和参数（images.findImage、images.matchTemplate、UiSelector）
   - 源码常量（DEFAULT_COLOR_THRESHOLD=4、DEFAULT_IMAGE_SIMILARITY_METRIC="mssim"）
   - C# 实现映射表（AutoJS6 API → C# 类/方法）
-- **PHASE0_ANALYSIS.md**（次高优先级）：yxs-day-task 业务逻辑分析，提供算法和设计参考
+- **PHASE0_ANALYSIS.md**（次高优先级）：AutoJS6 自动化项目 业务逻辑分析，提供算法和设计参考
   - 锚点构建算法（16 个分散锚点、局部对比度排序）
   - 多容差搜索策略（[24, 40, 64] 步进）
   - regionRef 生成规则（padding=20、参考分辨率 1280x720/720x1280）
@@ -40,13 +40,13 @@
 - 实现交互式裁剪、坐标拾取、模板匹配、控件树解析的可视化操作
 - 生成可直接替换现有 cmd 工作流的 AutoJS6 代码
 - 确保 60FPS 流畅渲染与异步非阻塞架构
-- 复用现有 cmd 脚本的核心业务逻辑与算法流程
+- 复用当前工具工作流的核心业务逻辑与算法流程
 
 **Non-Goals:**
 - 不支持 iOS 设备或非 Android 平台
 - 不实现 AutoJS6 脚本运行时或调试器
 - 不提供云端存储或多设备协同功能
-- 不修改现有 cmd 脚本文件
+- 不修改当前工具工作流文件
 
 ## Decisions
 
@@ -102,7 +102,7 @@
 - 图像模式依赖像素坐标，需 requestScreenCapture() + images.read() + matchTemplate()
 - 控件模式依赖 UiSelector，优先 id()，降级 text()/desc()，补充 boundsInside()
 - 两者 API 完全不同，必须独立生成路径
-- 生成代码必须严格遵循 yxs-day-task\AGENTS.md 中的 AutoJS6 API 约束（如 Rhino 引擎循环体内禁止 const/let、图像识别 OOM 预防规则）
+- 生成代码必须严格遵循 AGENTS.md 中的 AutoJS6 API 约束（如 Rhino 引擎循环体内禁止 const/let、图像识别 OOM 预防规则）
 
 **替代方案：** 混合模式（图像+控件） → 被拒绝，因 AutoJS6 不支持同时使用两种匹配方式
 
@@ -142,8 +142,8 @@
 ### [风险] Win2D 渲染性能不足（大图/高分辨率设备）
 **缓解措施：** 图像降采样（最大 1920x1080），分层渲染仅重绘变化图层，启用 GPU 加速
 
-### [风险] 生成代码与现有 cmd 脚本行为不一致
-**缓解措施：** 严格复用现有脚本的坐标计算/匹配算法/路径处理逻辑，提供代码预览与手动编辑功能。实施前必须完整理解 yxs-day-task 项目的业务逻辑（AGENTS.md、README.md、openspec/project.md）与现有脚本实现（capture-current.cmd、generate-region-ref、matchReferenceTemplate），确保生成代码符合 AutoJS6 API 约束（Rhino 引擎限制、图像识别 OOM 预防、模板裁剪规则、横竖屏处理、regionRef 生成规则）。
+### [风险] 生成代码与当前工具工作流行为不一致
+**缓解措施：** 严格复用当前工具实现的坐标计算/匹配算法/路径处理逻辑，提供代码预览与手动编辑功能。实施前必须完整理解 AutoJS6 自动化项目 项目的业务逻辑（AGENTS.md、README.md、openspec/project.md）与当前工具实现实现（截图拉取能力、内置 regionRef 计算、matchReferenceTemplate），确保生成代码符合 AutoJS6 API 约束（Rhino 引擎限制、图像识别 OOM 预防、模板裁剪规则、横竖屏处理、regionRef 生成规则）。
 
 ### [权衡] 双引擎独立架构增加代码复杂度
 **接受理由：** 解耦带来的可维护性与扩展性收益远大于复杂度成本，且符合单一职责原则

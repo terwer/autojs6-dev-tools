@@ -144,6 +144,15 @@ public sealed partial class MainPage : Page
         ShowActionTip(e.Message, tone);
     }
 
+    private async void AboutAuthorButton_Click(object sender, RoutedEventArgs e)
+    {
+        var launched = await Windows.System.Launcher.LaunchUriAsync(new Uri("https://terwer.space"));
+        ShowActionTip(
+            launched ? "已打开作者主页" : "打开作者主页失败",
+            launched ? StatusTone.Success : StatusTone.Error,
+            AboutAuthorButton);
+    }
+
     private async void CaptureButton_Click(object sender, RoutedEventArgs e)
     {
         if (_currentDevice == null)
