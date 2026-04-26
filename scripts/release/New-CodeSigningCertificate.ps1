@@ -9,7 +9,9 @@ param(
     [string]$FriendlyName = 'AutoJS6 Visual Development Toolkit CI Signing',
     [string]$PackageManifestPath = 'App/Package.appxmanifest',
     [string]$TrustedPeopleStorePath = 'Cert:\CurrentUser\TrustedPeople',
-    [string]$TrustedRootStorePath = 'Cert:\CurrentUser\Root'
+    [string]$TrustedRootStorePath = 'Cert:\CurrentUser\Root',
+    [switch]$ImportToTrustedPeople,
+    [switch]$ImportToRoot
 )
 
 $ErrorActionPreference = 'Stop'
@@ -52,6 +54,23 @@ function Resolve-AbsolutePath {
     return [System.IO.Path]::GetFullPath((Join-Path (Get-Location) $Path))
 }
 
+function Test-NonInteractiveSession {
+    if (Test-Path Env:CI) {
+        return $true
+    }
+
+    if (Test-Path Env:GITHUB_ACTIONS) {
+        return $true
+    }
+
+    try {
+        return -not [System.Environment]::UserInteractive
+    }
+    catch {
+        return $true
+    }
+}
+
 function Get-PackagePublisher {
     param(
         [Parameter(Mandatory)]
@@ -84,6 +103,9 @@ $normalizedSubject = $Subject.Trim()
 Write-Step "Manifest path: $resolvedManifestPath"
 Write-Step "Output directory: $resolvedOutputDirectory"
 Write-Step "Requested subject: $normalizedSubject"
+
+$isNonInteractiveSession = Test-NonInteractiveSession
+Write-Step "Non-interactive session: $isNonInteractiveSession"
 
 $expectedPublisher = Invoke-Step -Name "Reading package publisher from manifest" -Action {
     Get-PackagePublisher -ManifestPath $resolvedManifestPath
@@ -134,12 +156,32 @@ Invoke-Step -Name "Exporting CER certificate" -Action {
     Export-Certificate -Cert $certificate -FilePath $cerPath | Out-Null
 }
 
-Invoke-Step -Name "Importing certificate into TrustedPeople" -Action {
-    Import-Certificate -FilePath $cerPath -CertStoreLocation $TrustedPeopleStorePath | Out-Null
+if ($ImportToTrustedPeople.IsPresent) {
+    if ($isNonInteractiveSession) {
+        Write-Step "Skipping TrustedPeople import in non-interactive session"
+    }
+    else {
+        Invoke-Step -Name "Importing certificate into TrustedPeople" -Action {
+            Import-Certificate -FilePath $cerPath -CertStoreLocation $TrustedPeopleStorePath | Out-Null
+        }
+    }
+}
+else {
+    Write-Step "Skipping TrustedPeople import (pass -ImportToTrustedPeople to enable)"
 }
 
-Invoke-Step -Name "Importing certificate into Root store" -Action {
-    Import-Certificate -FilePath $cerPath -CertStoreLocation $TrustedRootStorePath | Out-Null
+if ($ImportToRoot.IsPresent) {
+    if ($isNonInteractiveSession) {
+        Write-Step "Skipping Root store import in non-interactive session"
+    }
+    else {
+        Invoke-Step -Name "Importing certificate into Root store" -Action {
+            Import-Certificate -FilePath $cerPath -CertStoreLocation $TrustedRootStorePath | Out-Null
+        }
+    }
+}
+else {
+    Write-Step "Skipping Root store import (pass -ImportToRoot to enable)"
 }
 
 $resolvedPfxPath = (Resolve-Path -LiteralPath $pfxPath).Path

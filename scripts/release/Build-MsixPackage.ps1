@@ -43,6 +43,47 @@ function Resolve-AbsolutePath {
     return [System.IO.Path]::GetFullPath((Join-Path (Get-Location) $Path))
 }
 
+function Test-NonInteractiveSession {
+    if (Test-Path Env:CI) {
+        return $true
+    }
+
+    if (Test-Path Env:GITHUB_ACTIONS) {
+        return $true
+    }
+
+    try {
+        return -not [System.Environment]::UserInteractive
+    }
+    catch {
+        return $true
+    }
+}
+
+function Get-SigningCertificateInfo {
+    param(
+        [Parameter(Mandatory)]
+        [string]$PfxPath,
+
+        [Parameter(Mandatory)]
+        [string]$Password
+    )
+
+    $certificate = [System.Security.Cryptography.X509Certificates.X509Certificate2]::new()
+    $certificate.Import(
+        $PfxPath,
+        $Password,
+        [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]::DefaultKeySet
+    )
+
+    return [pscustomobject]@{
+        Subject = $certificate.Subject
+        Issuer = $certificate.Issuer
+        Thumbprint = $certificate.Thumbprint
+        IsSelfSigned = $certificate.Subject -eq $certificate.Issuer
+    }
+}
+
 function Resolve-MsBuildCommand {
     $command = Get-Command msbuild.exe -ErrorAction SilentlyContinue
     if ($command) {
@@ -129,11 +170,17 @@ function Resolve-SignToolCommand {
 $resolvedProjectPath = Resolve-AbsolutePath -Path $ProjectPath -MustExist
 $resolvedPackageCertificatePath = Resolve-AbsolutePath -Path $PackageCertificatePath -MustExist
 $resolvedOutputRoot = Resolve-AbsolutePath -Path $OutputRoot
+$isNonInteractiveSession = Test-NonInteractiveSession
+$signingCertificateInfo = Get-SigningCertificateInfo -PfxPath $resolvedPackageCertificatePath -Password $PackageCertificatePassword
 $assetVersion = $Version.TrimStart('v')
 $fourPartVersion = "$($Version.TrimStart('v')).0"
 $packageDirectory = Join-Path $resolvedOutputRoot "msix/$RuntimeIdentifier"
 $releaseAssetDirectory = Join-Path $resolvedOutputRoot 'release-assets'
 $destination = Join-Path $releaseAssetDirectory "autojs6-dev-tools-$assetVersion-$RuntimeIdentifier.msix"
+
+Write-Host "MSIX signing certificate subject: $($signingCertificateInfo.Subject)"
+Write-Host "MSIX signing certificate thumbprint: $($signingCertificateInfo.Thumbprint)"
+Write-Host "Non-interactive session: $isNonInteractiveSession"
 
 if (Test-Path -LiteralPath $packageDirectory) {
     Remove-Item -LiteralPath $packageDirectory -Recurse -Force
@@ -191,9 +238,25 @@ if ($LASTEXITCODE -ne 0) {
     throw "MSIX 签名失败：$($msix.FullName)"
 }
 
-& $signTool verify /pa /v $msix.FullName
-if ($LASTEXITCODE -ne 0) {
-    throw "MSIX 签名校验失败：$($msix.FullName)"
+$verificationOutput = & $signTool verify /pa /v $msix.FullName 2>&1
+$verificationExitCode = $LASTEXITCODE
+
+foreach ($line in $verificationOutput) {
+    Write-Host $line
+}
+
+if ($verificationExitCode -ne 0) {
+    $allowSoftFailure =
+        $isNonInteractiveSession -and
+        $signingCertificateInfo.IsSelfSigned
+
+    if ($allowSoftFailure) {
+        Write-Warning "MSIX 严格签名校验未通过，但当前是 CI/无交互环境 + 自签名证书，且发布链路已跳过 Root 信任导入。该校验结果不再阻塞产物生成。"
+        Write-Warning "常见原因：证书未导入 Root、包未加时间戳，或 SignTool 在当前 runner 上无法按公共信任链完成 /pa 校验。"
+    }
+    else {
+        throw "MSIX 签名校验失败：$($msix.FullName)"
+    }
 }
 
 Copy-Item -LiteralPath $msix.FullName -Destination $destination -Force

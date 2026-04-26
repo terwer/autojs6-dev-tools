@@ -117,7 +117,7 @@ When a reference is already known to run successfully, use this order:
 
 ## Local release prerequisites
 
-If you want to validate ZIP / EXE / MSIX locally before pushing to CI, make sure the machine has:
+If you want to validate ZIP / EXE locally before pushing to CI, make sure the machine has:
 
 - .NET 8 SDK
 - Visual Studio 2022/2026 or Build Tools with **MSBuild** and Windows 10/11 SDK (**SignTool**)
@@ -154,10 +154,78 @@ Use this order when validating a release candidate on your own machine:
 4. Build `win-x64` and `win-arm64` portable ZIP packages
 5. Run `scripts/release/Test-PortablePackageSmoke.ps1` against the `win-x64` portable EXE
 6. Build `win-x64` and `win-arm64` EXE installers
-7. Build `win-x64` and `win-arm64` MSIX packages
-8. Confirm the files in `release-assets/` match the expected version, publisher, and SHA256 list
+7. Confirm the files in `release-assets/` match the expected version, publisher, and SHA256 list
 
 Use CI after local validation, not instead of it.
+
+---
+
+## Non-interactive CI safety and hang review
+
+The release path has now been reviewed specifically for **“can this block waiting for a human?”** behavior.
+
+### Confirmed high-risk interactive point
+
+- `scripts/release/New-CodeSigningCertificate.ps1`
+  - Risk source: importing a generated certificate into `TrustedPeople` / `Root`
+  - Why it can hang: `Root` trust import may trigger Windows trust confirmation and stall in headless CI
+  - Current behavior:
+    - CI / non-interactive sessions skip trust-store import automatically
+    - local trust import is **opt-in only**
+    - enable only when you explicitly pass:
+      - `-ImportToTrustedPeople`
+      - `-ImportToRoot`
+
+### Current release policy
+
+- MSIX packaging is **temporarily disabled** in both `manual-release-test` and `release-please`
+- current supported release outputs are:
+  - ZIP
+  - EXE installer
+- MSIX remains a deferred follow-up item until certificate trust, signing verification, install flow, and end-user experience are validated end to end
+
+### Reviewed release scripts that should not require manual confirmation in CI
+
+- `scripts/release/Build-PortablePackage.ps1`
+  - Uses `dotnet publish`
+  - No interactive prompt path in the script itself
+
+- `scripts/release/Build-InnoInstaller.ps1`
+  - Uses `ISCC.exe`
+  - No script-level confirmation prompt
+  - If Inno Setup is missing, it should fail fast with a direct error
+
+- `scripts/release/Build-MsixPackage.ps1`
+  - currently kept in the repository for future work
+  - not part of the active CI release path
+
+- `scripts/release/Set-AppReleaseMetadata.ps1`
+  - File-edit only, no interactive path
+
+- `scripts/release/Test-PortablePackageSmoke.ps1`
+  - Starts the app, waits a bounded number of seconds, then force-stops it
+  - This is time-bounded, not an infinite confirmation wait
+
+### Scripts that are local-install oriented and should not be used in CI
+
+- `App/AppPackages/**/Add-AppDevPackage.ps1`
+- `App/AppPackages/**/Install.ps1`
+
+These generated install scripts are for local sideload / local package install flows and may involve certificate trust or install-time interaction. They are **not** part of the CI release packaging path and should not be called from GitHub Actions.
+
+### Fast triage when a workflow looks “stuck”
+
+If a Windows release job appears frozen:
+
+1. check the **last printed log line**
+2. identify the exact script / step name
+3. assume the last visible operation is the first suspect
+4. cancel the run if it is clearly waiting on a trust / install / UI action
+5. fix the script to become fail-fast or non-interactive before rerunning
+
+### Practical rule
+
+> In CI, package generation is allowed; machine trust changes are not a safe default.
 
 ---
 
@@ -175,7 +243,7 @@ Typical examples:
 
 - the workflow was changed
 - packaging scripts were changed
-- a release is coming and ZIP / EXE / MSIX should be validated first
+- a release is coming and ZIP / EXE should be validated first
 
 In that case, simply run `manual-release-test`.
 
@@ -192,7 +260,7 @@ That keeps all outputs in the current Actions run, where they can be downloaded 
 Typical examples:
 
 - the official Release page already exists
-- some ZIP / EXE / MSIX files are missing
+- some ZIP / EXE files are missing
 - upload failed partway through
 
 In that case, a new version is usually not needed right away. The existing Release should be repaired first.
@@ -267,8 +335,6 @@ Each full packaging run produces a full set of files, but the ones that matter m
 
 - **EXE**: the most familiar Windows installation experience
 - **ZIP**: best for users who want to extract and run directly
-
-MSIX is also produced, but because it currently requires trusting a certificate first, it is not the easiest first choice for most users.
 
 If release quality is judged from the real end-user experience, the priority should be:
 
@@ -369,7 +435,5 @@ If installer titles, package names, or publisher details ever look wrong, these 
 - `scripts/release/New-CodeSigningCertificate.ps1`
 - `scripts/release/Build-PortablePackage.ps1`
 - `scripts/release/Build-InnoInstaller.ps1`
-- `scripts/release/Build-MsixPackage.ps1`
 - `packaging/windows/autojs6-dev-tools.iss`
 - `packaging/windows/ChineseSimplified.isl`
-- `packaging/windows/MSIX-INSTALL.md`

@@ -109,14 +109,6 @@ jobs:
           -Publisher "${env:PUBLISHER}"
           -PublisherDisplayName "${env:PUBLISHER_DISPLAY_NAME}"
 
-      - name: Create signing certificate
-        id: cert
-        shell: pwsh
-        run: >
-          ./scripts/release/New-CodeSigningCertificate.ps1
-          -Subject "${env:PUBLISHER}"
-          -OutputDirectory "artifacts/signing"
-
       - name: Build x64 portable ZIP
         shell: pwsh
         run: >
@@ -159,42 +151,16 @@ jobs:
           -ArchitecturesAllowed "arm64"
           -ArchitecturesInstallIn64BitMode "arm64"
 
-      - name: Build x64 MSIX
-        shell: pwsh
-        run: >
-          ./scripts/release/Build-MsixPackage.ps1
-          -ProjectPath "App/App.csproj"
-          -Platform "x64"
-          -RuntimeIdentifier "win-x64"
-          -Version "${{ steps.meta.outputs.version }}"
-          -OutputRoot "artifacts"
-          -PackageCertificatePath "${{ steps.cert.outputs.pfx_path }}"
-          -PackageCertificatePassword "${{ steps.cert.outputs.password }}"
-
-      - name: Build ARM64 MSIX
-        shell: pwsh
-        run: >
-          ./scripts/release/Build-MsixPackage.ps1
-          -ProjectPath "App/App.csproj"
-          -Platform "ARM64"
-          -RuntimeIdentifier "win-arm64"
-          -Version "${{ steps.meta.outputs.version }}"
-          -OutputRoot "artifacts"
-          -PackageCertificatePath "${{ steps.cert.outputs.pfx_path }}"
-          -PackageCertificatePassword "${{ steps.cert.outputs.password }}"
-
       - name: Prepare output files
         shell: pwsh
         run: |
-          Copy-Item -LiteralPath "packaging/windows/MSIX-INSTALL.md" -Destination "artifacts/release-assets/MSIX-INSTALL.md" -Force
-          Copy-Item -LiteralPath "${{ steps.cert.outputs.cer_path }}" -Destination "artifacts/release-assets/autojs6-dev-tools-signing.cer" -Force
-
           @(
             "source_ref=${{ inputs.source_ref }}",
             "version=${{ steps.meta.outputs.version }}",
             "release_tag=${{ steps.meta.outputs.release_tag }}",
             "publish_to_release=${{ inputs.publish_to_release }}",
-            "prerelease=${{ inputs.prerelease }}"
+            "prerelease=${{ inputs.prerelease }}",
+            "msix_status=temporarily_disabled"
           ) | Set-Content -LiteralPath "artifacts/release-assets/BUILD-INFO.txt"
 
           $hashLines = Get-ChildItem -LiteralPath "artifacts/release-assets" -File |

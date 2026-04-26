@@ -350,7 +350,7 @@ App → Infrastructure → Core ← Infrastructure
 - ✅ Run `dotnet test autojs6-dev-tools.slnx -c Release`
 - ✅ Run the `manual-release-test` workflow with release upload turned off before merging the release PR
 - ✅ Verify the local portable smoke check on `win-x64` before trusting a full release candidate
-- ✅ Verify `win-x64` and `win-arm64` both produce ZIP, EXE installer, and MSIX
+- ✅ Verify `win-x64` and `win-arm64` both produce ZIP and EXE installer
 - ✅ Smoke test the ZIP or EXE on a clean Windows machine before publishing
 - ✅ Confirm the generated app name, package identity, and publisher are correct
 - ✅ If packaging fails after a release is created, use `manual-release-test` to rebuild and re-upload assets instead of guessing fixes
