@@ -42,6 +42,23 @@
 
 现在的 release 脚本会自动探测这些工具；如果缺失，会尽量在一开始就报清楚，而不是拖到后面的打包阶段再模糊失败。
 
+### GitHub 提交 / 代理前置说明
+
+如果你当前网络环境无法直接访问 GitHub，请先完成代理设置，再继续：
+
+- 推代码到 GitHub
+- 推送 `.github/workflows/*`
+- 验证 GitHub Actions
+
+详见：
+
+- [`PROXY_zh_CN.md`](PROXY_zh_CN.md)
+
+特别注意：
+
+- 如果 `origin` 是 `git@github.com:...`，单纯设置 `HTTP_PROXY` / `HTTPS_PROXY` 可能仍然无法 `git push`
+- 如果只是为了尽快把本项目提交到 GitHub，推荐默认方案：**把 GitHub 远端改成 HTTPS，再给 Git 配代理**
+
 ---
 
 ## 推荐的本地验包顺序

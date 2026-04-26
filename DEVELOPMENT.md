@@ -42,6 +42,23 @@ If you want to validate ZIP / EXE / MSIX locally before pushing to CI, make sure
 
 The release scripts now auto-detect these tools. If one is missing, the script should stop early with a direct message instead of failing later with an ambiguous packaging error.
 
+### GitHub push / proxy prerequisite
+
+If your network cannot reach GitHub directly, finish the proxy setup before trying to:
+
+- push code to GitHub
+- push `.github/workflows/*`
+- validate GitHub Actions
+
+See:
+
+- [`PROXY.md`](PROXY.md)
+
+Important:
+
+- if `origin` still uses `git@github.com:...`, setting only `HTTP_PROXY` / `HTTPS_PROXY` may still leave `git push` broken
+- if the goal is simply to get this project onto GitHub quickly, the default recommendation is: **switch the GitHub remote to HTTPS, then configure a Git proxy**
+
 ---
 
 ## Recommended local validation sequence

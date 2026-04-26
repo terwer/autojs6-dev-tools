@@ -122,6 +122,22 @@ Bring screenshot analysis, widget inspection, and AutoJS6 code generation into o
 - **Inno Setup 6**: required for building the EXE installer (`ISCC.exe`)
 - **Tip**: the local release scripts auto-detect `ISCC.exe`, `msbuild.exe`, and `signtool.exe`, but they now fail with clear prerequisite messages if a tool is missing
 
+### GitHub / proxy note (if GitHub is not directly reachable)
+
+If your network cannot reach GitHub directly, read:
+
+- [`PROXY.md`](PROXY.md)
+
+before trying to:
+
+- `git clone`
+- `git push`
+- push `.github/workflows/*` and validate Actions
+
+> Important:  
+> If `origin` still uses an SSH remote like `git@github.com:...`, setting only `HTTP_PROXY` / `HTTPS_PROXY` is often **not enough**.  
+> The simplest default fix is usually: **switch the remote to HTTPS, then configure a Git proxy**.
+
 ### 1️⃣ Clone the Repository
 
 ```bash

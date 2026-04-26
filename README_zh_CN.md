@@ -122,6 +122,22 @@
 - **Inno Setup 6**：生成 EXE 安装器时需要 `ISCC.exe`
 - **说明**：本地 release 脚本现在会自动探测 `ISCC.exe`、`msbuild.exe`、`signtool.exe`，缺失时会直接给出清晰提示
 
+### GitHub / 代理说明（如无法访问 GitHub）
+
+如果你所在网络环境无法直接访问 GitHub，建议先阅读：
+
+- [`PROXY_zh_CN.md`](PROXY_zh_CN.md)
+
+否则以下操作都可能失败：
+
+- `git clone`
+- `git push`
+- 把 `.github/workflows/*` 推到 GitHub 后再验证 Actions
+
+> 特别注意：  
+> 如果 `origin` 仍然是 `git@github.com:...` 这种 SSH 远端，仅设置 `HTTP_PROXY` / `HTTPS_PROXY` 往往**不够**。  
+> 最省事的默认方案通常是：**改成 HTTPS 远端，再给 Git 配代理。**
+
 ### 1️⃣ 克隆仓库
 
 ```bash

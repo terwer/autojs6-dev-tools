@@ -106,6 +106,16 @@ GitHub Actions 不是第一道门，而是最后一道门。
 - 有权限查看和下载 artifacts
 - 如需上传 Release，需有仓库内容写权限
 
+如果你当前连“把 workflow push 到 GitHub”都做不到，先不要继续验证 Actions，先看：
+
+- [`PROXY_zh_CN.md`](PROXY_zh_CN.md)
+
+否则最常见的结果是：
+
+- 本地已经有 `.github/workflows/*`
+- 但 GitHub 默认分支上还没有这些文件
+- 最终在 Actions 页面里完全看不到对应 workflow
+
 ---
 
 ## 5. 第一次验证：只验证打包链，不上传 Release
