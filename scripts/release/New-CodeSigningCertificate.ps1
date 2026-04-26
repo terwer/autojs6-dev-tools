@@ -14,6 +14,31 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
+function Write-Step {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Message
+    )
+
+    Write-Host "[cert] $Message"
+}
+
+function Invoke-Step {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Name,
+
+        [Parameter(Mandatory)]
+        [scriptblock]$Action
+    )
+
+    Write-Step "$Name ..."
+    $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    & $Action
+    $stopwatch.Stop()
+    Write-Step "$Name completed in $($stopwatch.Elapsed.TotalSeconds.ToString('F1'))s"
+}
+
 function Resolve-AbsolutePath {
     param(
         [Parameter(Mandatory)]
@@ -50,48 +75,78 @@ function Get-PackagePublisher {
     return $publisher.Trim()
 }
 
+Write-Step "Starting code-signing certificate setup"
+
 $resolvedOutputDirectory = Resolve-AbsolutePath -Path $OutputDirectory
 $resolvedManifestPath = Resolve-AbsolutePath -Path $PackageManifestPath
-$expectedPublisher = Get-PackagePublisher -ManifestPath $resolvedManifestPath
 $normalizedSubject = $Subject.Trim()
+
+Write-Step "Manifest path: $resolvedManifestPath"
+Write-Step "Output directory: $resolvedOutputDirectory"
+Write-Step "Requested subject: $normalizedSubject"
+
+$expectedPublisher = Invoke-Step -Name "Reading package publisher from manifest" -Action {
+    Get-PackagePublisher -ManifestPath $resolvedManifestPath
+}
+
+Write-Step "Package publisher: $expectedPublisher"
 
 if ($normalizedSubject -ne $expectedPublisher) {
     throw "证书 Subject（$normalizedSubject）必须与 Package.appxmanifest 中的 Publisher（$expectedPublisher）完全一致。"
 }
 
-New-Item -ItemType Directory -Path $resolvedOutputDirectory -Force | Out-Null
+Invoke-Step -Name "Ensuring output directory exists" -Action {
+    New-Item -ItemType Directory -Path $resolvedOutputDirectory -Force | Out-Null
+}
 
 $pfxPath = Join-Path $resolvedOutputDirectory 'autojs6-dev-tools-signing.pfx'
 $cerPath = Join-Path $resolvedOutputDirectory 'autojs6-dev-tools-signing.cer'
 $password = "rp$([Guid]::NewGuid().ToString('N'))"
 $securePassword = ConvertTo-SecureString -String $password -AsPlainText -Force
 
-$certificate = New-SelfSignedCertificate `
-    -Subject $normalizedSubject `
-    -FriendlyName $FriendlyName `
-    -Type Custom `
-    -KeyAlgorithm RSA `
-    -KeyLength 2048 `
-    -HashAlgorithm SHA256 `
-    -KeyExportPolicy Exportable `
-    -KeyUsage DigitalSignature `
-    -KeySpec Signature `
-    -CertStoreLocation 'Cert:\CurrentUser\My' `
-    -NotAfter (Get-Date).AddYears(3) `
-    -TextExtension @(
-        '2.5.29.19={text}',
-        '2.5.29.37={text}1.3.6.1.5.5.7.3.3'
-    )
+$certificate = $null
+Invoke-Step -Name "Creating self-signed certificate" -Action {
+    $script:certificate = New-SelfSignedCertificate `
+        -Subject $normalizedSubject `
+        -FriendlyName $FriendlyName `
+        -Type Custom `
+        -KeyAlgorithm RSA `
+        -KeyLength 2048 `
+        -HashAlgorithm SHA256 `
+        -KeyExportPolicy Exportable `
+        -KeyUsage DigitalSignature `
+        -KeySpec Signature `
+        -CertStoreLocation 'Cert:\CurrentUser\My' `
+        -NotAfter (Get-Date).AddYears(3) `
+        -TextExtension @(
+            '2.5.29.19={text}',
+            '2.5.29.37={text}1.3.6.1.5.5.7.3.3'
+        )
+}
 
-Export-PfxCertificate -Cert $certificate -FilePath $pfxPath -Password $securePassword | Out-Null
-Export-Certificate -Cert $certificate -FilePath $cerPath | Out-Null
-Import-Certificate -FilePath $cerPath -CertStoreLocation $TrustedPeopleStorePath | Out-Null
-Import-Certificate -FilePath $cerPath -CertStoreLocation $TrustedRootStorePath | Out-Null
+Write-Step "Certificate thumbprint: $($certificate.Thumbprint)"
+
+Invoke-Step -Name "Exporting PFX certificate" -Action {
+    Export-PfxCertificate -Cert $certificate -FilePath $pfxPath -Password $securePassword | Out-Null
+}
+
+Invoke-Step -Name "Exporting CER certificate" -Action {
+    Export-Certificate -Cert $certificate -FilePath $cerPath | Out-Null
+}
+
+Invoke-Step -Name "Importing certificate into TrustedPeople" -Action {
+    Import-Certificate -FilePath $cerPath -CertStoreLocation $TrustedPeopleStorePath | Out-Null
+}
+
+Invoke-Step -Name "Importing certificate into Root store" -Action {
+    Import-Certificate -FilePath $cerPath -CertStoreLocation $TrustedRootStorePath | Out-Null
+}
 
 $resolvedPfxPath = (Resolve-Path -LiteralPath $pfxPath).Path
 $resolvedCerPath = (Resolve-Path -LiteralPath $cerPath).Path
 
 Write-Host "Generated self-signed certificate at $resolvedPfxPath"
+Write-Step "CER path: $resolvedCerPath"
 
 if (Test-Path Env:GITHUB_OUTPUT) {
     Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "pfx_path=$resolvedPfxPath"
@@ -101,3 +156,5 @@ if (Test-Path Env:GITHUB_OUTPUT) {
     Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "trusted_people_store=$TrustedPeopleStorePath"
     Add-Content -LiteralPath $env:GITHUB_OUTPUT -Value "trusted_root_store=$TrustedRootStorePath"
 }
+
+Write-Step "Code-signing certificate setup finished"
